@@ -807,7 +807,7 @@ class QwenImageTransformerBlock(nn.Module):
         img_modulated = self.img_norm1(hidden_states, img_scale1, img_shift1)
 
         # Process text stream - norm1 + modulation
-        txt_scale1, txt_shift1, txt_gate1 = self._modulate(txt_mod1, modulate_index)
+        txt_scale1, txt_shift1, txt_gate1 = self._modulate(txt_mod1)
         txt_modulated = self.txt_norm1(encoder_hidden_states, txt_scale1, txt_shift1)
 
         # Use QwenAttnProcessor2_0 for joint attention computation
@@ -840,7 +840,7 @@ class QwenImageTransformerBlock(nn.Module):
         hidden_states = hidden_states + img_gate2 * img_mlp_output
 
         # Process text stream - norm2 + MLP
-        txt_scale2, txt_shift2, txt_gate2 = self._modulate(txt_mod2, modulate_index)
+        txt_scale2, txt_shift2, txt_gate2 = self._modulate(txt_mod2)
         txt_modulated2 = self.txt_norm2(encoder_hidden_states, txt_scale2, txt_shift2)
 
         txt_mlp_output = self.txt_mlp(txt_modulated2)
