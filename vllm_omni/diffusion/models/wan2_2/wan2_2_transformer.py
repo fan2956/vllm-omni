@@ -24,6 +24,7 @@ from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 
 from vllm_omni.diffusion.attention.backends.abstract import AttentionMetadata
 from vllm_omni.diffusion.attention.layer import Attention
+from vllm_omni.diffusion.layers.adalayernorm import AdaLayerNorm
 from vllm_omni.diffusion.distributed.sp_plan import (
     SequenceParallelInput,
     SequenceParallelOutput,
@@ -619,7 +620,8 @@ class WanTransformerBlock(nn.Module):
         head_dim = dim // num_heads
 
         # 1. Self-attention
-        self.norm1 = FP32LayerNorm(dim, eps, elementwise_affine=False)
+        self.norm1 = AdaLayerNorm(dim, eps, elementwise_affine=False)
+        
         self.attn1 = WanSelfAttention(
             dim=dim,
             num_heads=num_heads,
@@ -639,7 +641,7 @@ class WanTransformerBlock(nn.Module):
 
         # 3. Feed-forward
         self.ffn = WanFeedForward(dim=dim, inner_dim=ffn_dim, dim_out=dim)
-        self.norm3 = FP32LayerNorm(dim, eps, elementwise_affine=False)
+        self.norm3 = AdaLayerNorm(dim, eps, elementwise_affine=False)
 
         # Scale-shift table for modulation
         self.scale_shift_table = nn.Parameter(torch.randn(1, 6, dim) / dim**0.5)
@@ -670,7 +672,7 @@ class WanTransformerBlock(nn.Module):
             ).chunk(6, dim=1)
 
         # 1. Self-attention
-        norm_hidden_states = (self.norm1(hidden_states.float()) * (1 + scale_msa) + shift_msa).type_as(hidden_states)
+        norm_hidden_states = self.norm1(hidden_states.float(), scale_msa, shift_msa).type_as(hidden_states)
         attn_output = self.attn1(norm_hidden_states, rotary_emb, hidden_states_mask)
         hidden_states = (hidden_states.float() + attn_output * gate_msa).type_as(hidden_states)
 
@@ -680,7 +682,7 @@ class WanTransformerBlock(nn.Module):
         hidden_states = hidden_states + attn_output
 
         # 3. Feed-forward
-        norm_hidden_states = (self.norm3(hidden_states.float()) * (1 + c_scale_msa) + c_shift_msa).type_as(
+        norm_hidden_states = self.norm3(hidden_states.float(), c_scale_msa, c_shift_msa).type_as(
             hidden_states
         )
         ff_output = self.ffn(norm_hidden_states)
