@@ -672,17 +672,17 @@ class WanTransformerBlock(nn.Module):
             ).chunk(6, dim=1)
 
         # 1. Self-attention
-        norm_hidden_states = self.norm1(hidden_states.float(), scale_msa, shift_msa).type_as(hidden_states)
+        norm_hidden_states = self.norm1(hidden_states, scale_msa, shift_msa).type_as(hidden_states)
         attn_output = self.attn1(norm_hidden_states, rotary_emb, hidden_states_mask)
         hidden_states = (hidden_states.float() + attn_output * gate_msa).type_as(hidden_states)
 
         # 2. Cross-attention
-        norm_hidden_states = self.norm2(hidden_states.float()).type_as(hidden_states)
+        norm_hidden_states = self.norm2(hidden_states).type_as(hidden_states)
         attn_output = self.attn2(norm_hidden_states, encoder_hidden_states)
         hidden_states = hidden_states + attn_output
 
         # 3. Feed-forward
-        norm_hidden_states = self.norm3(hidden_states.float(), c_scale_msa, c_shift_msa).type_as(
+        norm_hidden_states = self.norm3(hidden_states, c_scale_msa, c_shift_msa).type_as(
             hidden_states
         )
         ff_output = self.ffn(norm_hidden_states)
@@ -943,7 +943,7 @@ class WanTransformer3DModel(nn.Module):
             shift = shift.unsqueeze(1)
             scale = scale.unsqueeze(1)
 
-        hidden_states = (self.norm_out(hidden_states.float()) * (1 + scale) + shift).type_as(hidden_states)
+        hidden_states = (self.norm_out(hidden_states) * (1 + scale) + shift).type_as(hidden_states)
         hidden_states = self.proj_out(hidden_states)
 
         hidden_states = hidden_states.reshape(
