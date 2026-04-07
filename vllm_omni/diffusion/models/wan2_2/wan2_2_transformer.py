@@ -620,7 +620,7 @@ class WanTransformerBlock(nn.Module):
         head_dim = dim // num_heads
 
         # 1. Self-attention
-        self.norm1 = AdaLayerNorm(dim, eps, elementwise_affine=False)
+        self.norm1 = AdaLayerNorm(dim, elementwise_affine=False, eps=eps)
         
         self.attn1 = WanSelfAttention(
             dim=dim,
@@ -641,7 +641,7 @@ class WanTransformerBlock(nn.Module):
 
         # 3. Feed-forward
         self.ffn = WanFeedForward(dim=dim, inner_dim=ffn_dim, dim_out=dim)
-        self.norm3 = AdaLayerNorm(dim, eps, elementwise_affine=False)
+        self.norm3 = AdaLayerNorm(dim, elementwise_affine=False, eps=eps)
 
         # Scale-shift table for modulation
         self.scale_shift_table = nn.Parameter(torch.randn(1, 6, dim) / dim**0.5)
