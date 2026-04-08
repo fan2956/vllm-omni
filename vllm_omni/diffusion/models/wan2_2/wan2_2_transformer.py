@@ -59,7 +59,6 @@ def apply_rotary_emb_wan(
     if find_spec("mindiesd"):
         from vllm_omni.diffusion.layers.rope import apply_rotary_emb_mindiesd
 
-        logger.info("Using MindIE-SD fused ROPE")
         if cos.dim() > 2:
             cos = cos.reshape(-1, cos.shape[-1])
             sin = sin.reshape(-1, sin.shape[-1])
