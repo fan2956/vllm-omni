@@ -24,6 +24,7 @@ from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 
 from vllm_omni.diffusion.attention.backends.abstract import AttentionMetadata
 from vllm_omni.diffusion.attention.layer import Attention
+from vllm_omni.diffusion.layers.norm import RMSNorm
 from vllm_omni.diffusion.distributed.sp_plan import (
     SequenceParallelInput,
     SequenceParallelOutput,
@@ -377,8 +378,12 @@ class WanSelfAttention(nn.Module):
         self.tp_inner_dim = self.num_heads * head_dim
 
         # QK normalization using vLLM's RMSNorm
-        self.norm_q = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
-        self.norm_k = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
+        if get_tensor_model_parallel_world_size() > 1:
+            self.norm_q = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
+            self.norm_k = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
+        else:
+            self.norm_q = RMSNorm(self.tp_inner_dim, eps=eps)
+            self.norm_k = RMSNorm(self.tp_inner_dim, eps=eps)
 
         self.to_out = RowParallelLinear(
             self.inner_dim,
@@ -497,8 +502,12 @@ class WanCrossAttention(nn.Module):
         self.tp_inner_dim = self.num_heads * head_dim
 
         # QK normalization
-        self.norm_q = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
-        self.norm_k = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
+        if get_tensor_model_parallel_world_size() > 1:
+            self.norm_q = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
+            self.norm_k = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
+        else:
+            self.norm_q = RMSNorm(self.tp_inner_dim, eps=eps)
+            self.norm_k = RMSNorm(self.tp_inner_dim, eps=eps)
 
         # Optional added KV projections for I2V (image embeddings)
         self.added_kv_proj_dim = added_kv_proj_dim
@@ -517,7 +526,10 @@ class WanCrossAttention(nn.Module):
                 gather_output=False,
                 return_bias=False,
             )
-            self.norm_added_k = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
+            if get_tensor_model_parallel_world_size() > 1:
+                self.norm_added_k = DistributedRMSNorm(self.tp_inner_dim, eps=eps)
+            else:
+                self.norm_added_k = RMSNorm(self.tp_inner_dim, eps=eps)
         else:
             self.add_k_proj = None
             self.add_v_proj = None
