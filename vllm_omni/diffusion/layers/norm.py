@@ -8,7 +8,6 @@ logger = init_logger(__name__)
 
 
 class RMSNorm(CustomOp):
-
     def __init__(self, hidden_size: int, eps: float = 1e-6) -> None:
         super().__init__()
         self.weight = nn.Parameter(torch.ones(hidden_size))
