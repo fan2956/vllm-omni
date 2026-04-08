@@ -778,7 +778,7 @@ class QwenImageTransformerBlock(nn.Module):
             scale_result = scale.unsqueeze(1)
             gate_result = gate.unsqueeze(1)
 
-        return x * (1 + scale_result) + shift_result, gate_result
+        return scale_result, shift_result, gate_result
 
     def forward(
         self,
