@@ -23,7 +23,7 @@ class LayerNorm(nn.LayerNorm):
     """
 
     def __init__(self, dim: int, eps: float = 1e-6, elementwise_affine: bool = False):
-        super().__init__(dim=dim, eps=eps, elementwise_affine=elementwise_affine)
+        super().__init__(normalized_shape=dim, eps=eps, elementwise_affine=elementwise_affine)
         self._forward_method = self.dispatch_forward()
 
     def dispatch_forward(self):
