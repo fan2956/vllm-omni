@@ -2,7 +2,6 @@ from importlib.util import find_spec
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from vllm.logger import init_logger
 
 from vllm_omni.diffusion.layers.custom_op import CustomOp
@@ -14,8 +13,8 @@ _HAS_MINDIESD = find_spec("mindiesd") is not None
 
 
 class LayerNorm(nn.LayerNorm):
-    """LayerNorm implementation that inherits from nn.LayerNorm.
-
+    """
+    LayerNorm implementation that inherits from nn.LayerNorm.
     NPU:
         Uses ``mindiesd.fast_layernorm(self, x)`` when MindIE-SD is installed.
     CUDA / HIP / XPU / native:
