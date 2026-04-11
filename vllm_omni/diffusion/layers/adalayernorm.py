@@ -59,8 +59,7 @@ class AdaLayerNorm(CustomOp):
         import torch_npu
 
         output = (
-            torch_npu.npu_layer_norm_eval(x, normalized_shape=[self.hidden_size], eps=self.eps) * (1 + scale)
-            + shift
+            torch_npu.npu_layer_norm_eval(x, normalized_shape=[self.hidden_size], eps=self.eps) * (1 + scale) + shift
         )
 
         return output

@@ -743,9 +743,9 @@ class QwenImageTransformerBlock(nn.Module):
 
         self.zero_cond_t = zero_cond_t
 
-    def _modulate(self, x, mod_params, index=None):
+    def _modulate(self, mod_params, index=None):
         """Apply modulation to input tensor"""
-        # x: b l d, shift: b d, scale: b d, gate: b d
+        # shift: b d, scale: b d, gate: b d
         shift, scale, gate = mod_params.chunk(3, dim=-1)
 
         if index is not None:
