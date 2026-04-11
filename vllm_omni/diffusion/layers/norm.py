@@ -64,8 +64,8 @@ class LayerNorm(CustomOp):
             eps=self.eps,
         )
 
-class RMSNorm(CustomOp):
 
+class RMSNorm(CustomOp):
     def __init__(self, hidden_size: int, eps: float = 1e-6) -> None:
         super().__init__()
         self.weight = nn.Parameter(torch.ones(hidden_size))
@@ -74,18 +74,14 @@ class RMSNorm(CustomOp):
     def forward_cuda(
         self,
         x: torch.Tensor,
-        scale: torch.Tensor,
-        shift: torch.Tensor,
     ) -> torch.Tensor:
-        return self.forward_native(x, scale, shift)
+        return self.forward_native(x)
 
     def forward_hip(
         self,
         x: torch.Tensor,
-        scale: torch.Tensor,
-        shift: torch.Tensor,
     ) -> torch.Tensor:
-        return self.forward_native(x, scale, shift)
+        return self.forward_native(x)
 
     def forward_npu(
         self,
@@ -100,10 +96,8 @@ class RMSNorm(CustomOp):
     def forward_xpu(
         self,
         x: torch.Tensor,
-        scale: torch.Tensor,
-        shift: torch.Tensor,
     ) -> torch.Tensor:
-        return self.forward_native(x, scale, shift)
+        return self.forward_native(x)
 
     def forward_native(
         self,
