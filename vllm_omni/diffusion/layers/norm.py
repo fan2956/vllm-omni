@@ -12,7 +12,7 @@ logger = init_logger(__name__)
 _HAS_MINDIESD = find_spec("mindiesd") is not None
 
 
-class FastLayerNorm(CustomOp):
+class LayerNorm(CustomOp):
     """
     LayerNorm implementation that inherits from CustomOp.
     Behaves identically to nn.LayerNorm.
