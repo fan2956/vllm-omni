@@ -687,7 +687,7 @@ class WanTransformerBlock(nn.Module):
         hidden_states = (hidden_states.float() + attn_output * gate_msa).type_as(hidden_states)
 
         # 2. Cross-attention
-        norm_hidden_states = self.norm2(hidden_states.float()).type_as(hidden_states)
+        norm_hidden_states = self.norm2(hidden_states).type_as(hidden_states)
         attn_output = self.attn2(norm_hidden_states, encoder_hidden_states)
         hidden_states = hidden_states + attn_output
 
