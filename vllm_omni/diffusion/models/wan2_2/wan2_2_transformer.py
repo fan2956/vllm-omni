@@ -865,7 +865,7 @@ class WanTransformer3DModel(nn.Module):
         )
 
         # 4. Output norm & projection
-        self.norm_out = FP32LayerNorm(inner_dim, eps, elementwise_affine=False)
+        self.norm_out = LayerNorm(inner_dim, eps, elementwise_affine=False)
         self.proj_out = nn.Linear(inner_dim, out_channels * math.prod(patch_size))
 
         # SP helper modules

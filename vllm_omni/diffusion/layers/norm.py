@@ -2,37 +2,43 @@ from importlib.util import find_spec
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from vllm.logger import init_logger
 
 from vllm_omni.diffusion.layers.custom_op import CustomOp
+from vllm_omni.platforms import current_omni_platform
 
 logger = init_logger(__name__)
 
 _HAS_MINDIESD = find_spec("mindiesd") is not None
 
 
-class LayerNorm(CustomOp):
+class LayerNorm(nn.LayerNorm):
     """
-    LayerNorm implementation that inherits from CustomOp.
-    Behaves identically to nn.LayerNorm.
+    LayerNorm implementation that inherits from nn.LayerNorm.
     NPU:
         Uses ``mindiesd.fast_layernorm(self, x)`` when MindIE-SD is installed.
     CUDA / HIP / XPU / native:
-        Falls back to the reference implementation.
+        Falls back to nn.LayerNorm implementation.
     """
 
-    def __init__(self, normalized_shape, eps: float = 1e-5, elementwise_affine: bool = True):
-        super().__init__()
-        self.normalized_shape = (normalized_shape,) if isinstance(normalized_shape, int) else tuple(normalized_shape)
-        self.eps = eps
-        self.elementwise_affine = elementwise_affine
-        if self.elementwise_affine:
-            self.weight = nn.Parameter(torch.ones(self.normalized_shape))
-            self.bias = nn.Parameter(torch.zeros(self.normalized_shape))
+    def __init__(self, dim: int, eps: float = 1e-6, elementwise_affine: bool = False):
+        super().__init__(normalized_shape=dim, eps=eps, elementwise_affine=elementwise_affine)
+        self._forward_method = self.dispatch_forward()
+
+    def dispatch_forward(self):
+        if current_omni_platform.is_rocm():
+            return self.forward_hip
+        elif current_omni_platform.is_cuda():
+            return self.forward_cuda
+        elif current_omni_platform.is_npu():
+            return self.forward_npu
+        elif current_omni_platform.is_xpu():
+            return self.forward_xpu
         else:
-            self.register_parameter('weight', None)
-            self.register_parameter('bias', None)
+            return self.forward_native
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self._forward_method(x)
 
     def forward_cuda(self, x: torch.Tensor) -> torch.Tensor:
         return self.forward_native(x)
@@ -40,32 +46,28 @@ class LayerNorm(CustomOp):
     def forward_hip(self, x: torch.Tensor) -> torch.Tensor:
         return self.forward_native(x)
 
+    def forward_xpu(self, x: torch.Tensor) -> torch.Tensor:
+        return self.forward_native(x)
+
     def forward_npu(self, x: torch.Tensor) -> torch.Tensor:
         if _HAS_MINDIESD:
             try:
                 from mindiesd import fast_layernorm
+
                 return fast_layernorm(self, x)
             except ImportError as e:
                 logger.warning_once(
-                    "mindiesd.fast_layernorm import failed, falling back to nn.LayerNorm: %s",
+                    "mindiesd.fast_layernorm import failed, falling back to FP32 layer_norm: %s",
                     e,
                 )
-        return self.forward_native(x)
 
-    def forward_xpu(self, x: torch.Tensor) -> torch.Tensor:
         return self.forward_native(x)
 
     def forward_native(self, x: torch.Tensor) -> torch.Tensor:
-        return F.layer_norm(
-            x,
-            normalized_shape=self.normalized_shape,
-            weight=self.weight,
-            bias=self.bias,
-            eps=self.eps,
-        )
+        return super().forward(x)
+
 
 class RMSNorm(CustomOp):
-
     def __init__(self, hidden_size: int, eps: float = 1e-6) -> None:
         super().__init__()
         self.weight = nn.Parameter(torch.ones(hidden_size))
@@ -74,18 +76,14 @@ class RMSNorm(CustomOp):
     def forward_cuda(
         self,
         x: torch.Tensor,
-        scale: torch.Tensor,
-        shift: torch.Tensor,
     ) -> torch.Tensor:
-        return self.forward_native(x, scale, shift)
+        return self.forward_native(x)
 
     def forward_hip(
         self,
         x: torch.Tensor,
-        scale: torch.Tensor,
-        shift: torch.Tensor,
     ) -> torch.Tensor:
-        return self.forward_native(x, scale, shift)
+        return self.forward_native(x)
 
     def forward_npu(
         self,
@@ -100,10 +98,8 @@ class RMSNorm(CustomOp):
     def forward_xpu(
         self,
         x: torch.Tensor,
-        scale: torch.Tensor,
-        shift: torch.Tensor,
     ) -> torch.Tensor:
-        return self.forward_native(x, scale, shift)
+        return self.forward_native(x)
 
     def forward_native(
         self,
