@@ -19,10 +19,10 @@ class LayerNorm(nn.LayerNorm):
     NPU:
         Uses ``mindiesd.fast_layernorm(self, x)`` when MindIE-SD is installed.
     CUDA / HIP / XPU / native:
-        Falls back to nn.LayerNorm implementation.
+        Falls back to FP32 nn.LayerNorm implementation.
     """
 
-    def __init__(self, dim: int, eps: float = 1e-6, elementwise_affine: bool = False):
+    def __init__(self, dim: int, eps: float = 1e-6, elementwise_affine: bool = True):
         super().__init__(normalized_shape=dim, eps=eps, elementwise_affine=elementwise_affine)
         self._forward_method = self.dispatch_forward()
 
@@ -117,4 +117,5 @@ class RMSNorm(CustomOp):
         x = x.to(torch.float32)
         variance = x.pow(2).mean(-1, keepdim=True)
         out = x * torch.rsqrt(variance + self.variance_epsilon)
-        return self.weight * out.to(input_dtype)
+        out = self.weight.to(torch.float32) * out
+        return out.to(input_dtype)
