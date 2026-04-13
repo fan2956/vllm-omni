@@ -22,7 +22,7 @@ class LayerNorm(nn.LayerNorm):
         Falls back to FP32 nn.LayerNorm implementation.
     """
 
-    def __init__(self, dim: int, eps: float = 1e-6, elementwise_affine: bool = False):
+    def __init__(self, dim: int, eps: float = 1e-6, elementwise_affine: bool = True):
         super().__init__(normalized_shape=dim, eps=eps, elementwise_affine=elementwise_affine)
         self._forward_method = self.dispatch_forward()
 
