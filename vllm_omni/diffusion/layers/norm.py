@@ -117,4 +117,5 @@ class RMSNorm(CustomOp):
         x = x.to(torch.float32)
         variance = x.pow(2).mean(-1, keepdim=True)
         out = x * torch.rsqrt(variance + self.variance_epsilon)
-        return self.weight * out.to(input_dtype)
+        out = self.weight.to(torch.float32) * out
+        return out.to(input_dtype)
