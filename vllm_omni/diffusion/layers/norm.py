@@ -13,9 +13,10 @@ logger = init_logger(__name__)
 _HAS_MINDIESD = find_spec("mindiesd") is not None
 
 
-class LayerNorm(nn.LayerNorm):
+class LayerNorm(nn.LayerNorm, CustomOp):
     """
-    LayerNorm implementation that inherits from nn.LayerNorm.
+    LayerNorm implementation that inherits from both ``nn.LayerNorm`` and
+    ``CustomOp``.
     NPU:
         Uses ``mindiesd.fast_layernorm(self, x)`` when MindIE-SD is installed.
     CUDA / HIP / XPU / native:
@@ -24,19 +25,9 @@ class LayerNorm(nn.LayerNorm):
 
     def __init__(self, dim: int, eps: float = 1e-6, elementwise_affine: bool = True):
         super().__init__(normalized_shape=dim, eps=eps, elementwise_affine=elementwise_affine)
-        self._forward_method = self.dispatch_forward()
-
-    def dispatch_forward(self):
-        if current_omni_platform.is_rocm():
-            return self.forward_hip
-        elif current_omni_platform.is_cuda():
-            return self.forward_cuda
-        elif current_omni_platform.is_npu():
-            return self.forward_npu
-        elif current_omni_platform.is_xpu():
-            return self.forward_xpu
-        else:
-            return self.forward_native
+        # CustomOp.__init__ cannot be called here because it would re-run
+        # nn.Module initialization and clear LayerNorm parameters.
+        self._forward_method = CustomOp.dispatch_forward(self)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self._forward_method(x)
