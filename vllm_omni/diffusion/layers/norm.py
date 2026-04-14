@@ -6,7 +6,6 @@ import torch.nn.functional as F
 from vllm.logger import init_logger
 
 from vllm_omni.diffusion.layers.custom_op import CustomOp
-from vllm_omni.platforms import current_omni_platform
 
 logger = init_logger(__name__)
 
