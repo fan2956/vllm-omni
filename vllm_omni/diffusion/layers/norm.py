@@ -15,8 +15,7 @@ _HAS_MINDIESD = find_spec("mindiesd") is not None
 
 class LayerNorm(nn.LayerNorm, CustomOp):
     """
-    LayerNorm implementation that inherits from both ``nn.LayerNorm`` and
-    ``CustomOp``.
+    LayerNorm implementation that inherits from both ``nn.LayerNorm`` and ``CustomOp``.
     NPU:
         Uses ``mindiesd.fast_layernorm(self, x)`` when MindIE-SD is installed.
     CUDA / HIP / XPU / native:
