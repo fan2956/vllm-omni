@@ -29,11 +29,8 @@ from vllm_omni.diffusion.distributed.sp_plan import (
     SequenceParallelOutput,
 )
 from vllm_omni.diffusion.forward_context import get_forward_context
-<<<<<<< main_add_wan22_rmsnorm
 from vllm_omni.diffusion.layers.norm import LayerNorm, RMSNorm
-=======
 from vllm_omni.diffusion.layers.adalayernorm import AdaLayerNorm
->>>>>>> main
 from vllm_omni.platforms import current_omni_platform
 
 logger = init_logger(__name__)
