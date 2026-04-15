@@ -72,18 +72,18 @@ class RotaryEmbedding(CustomOp):
            of 1st half and 2nd half (GPT-NeoX style).
     """
 
-    def __init__(
-        self,
-        is_neox_style: bool = False,
-    ) -> None:
+    def __init__(self, is_neox_style: bool = False, half_head_dim: bool = False) -> None:
         super().__init__()
         self.is_neox_style = is_neox_style
         self.interleaved = not is_neox_style
         self.apply_rotary_emb_flash_attn = None
+        self.half_head_dim = half_head_dim
         if find_spec("flash_attn") is not None:
             from flash_attn.ops.triton.rotary import apply_rotary
 
             self.apply_rotary_emb_flash_attn = apply_rotary
+        if find_spec("mindiesd") is not None:
+            self.has_mindie = True
 
     def forward_cuda(
         self,
@@ -132,8 +132,8 @@ class RotaryEmbedding(CustomOp):
         cos: torch.Tensor,
         sin: torch.Tensor,
     ) -> torch.Tensor:
-        if find_spec("mindiesd"):
-            return apply_rotary_emb_mindiesd(x, cos, sin, self.interleaved)
+        if self.has_mindie:
+            return apply_rotary_emb_mindiesd(x, cos, sin, self.interleaved, self.half_head_dim)
         else:
             return self.forward_native(x, cos, sin)
 

@@ -30,9 +30,12 @@ from vllm_omni.diffusion.distributed.sp_plan import (
     SequenceParallelOutput,
 )
 from vllm_omni.diffusion.forward_context import get_forward_context
+from vllm_omni.diffusion.layers.rope import RotaryEmbedding
 
 logger = init_logger(__name__)
 
+
+rotary_embedding = RotaryEmbedding(is_neox_style=False, half_head_dim=True)
 
 def apply_rotary_emb_wan(
     hidden_states: torch.Tensor,
@@ -50,17 +53,8 @@ def apply_rotary_emb_wan(
     Returns:
         Tensor with rotary embeddings applied
     """
-    x1, x2 = hidden_states.unflatten(-1, (-1, 2)).unbind(-1)
-    cos = freqs_cos[..., 0::2]
-    sin = freqs_sin[..., 1::2]
-    rotated = torch.stack(
-        (
-            x1 * cos - x2 * sin,
-            x1 * sin + x2 * cos,
-        ),
-        dim=-1,
-    )
-    return rotated.flatten(-2, -1).to(hidden_states.dtype)
+    
+    return rotary_embedding(hidden_states, freqs_cos, freqs_sin)
 
 
 class DistributedRMSNorm(nn.Module):
@@ -872,6 +866,10 @@ class WanTransformer3DModel(nn.Module):
         self.timestep_proj_prepare = TimestepProjPrepare()
         self.output_scale_shift_prepare = OutputScaleShiftPrepare(inner_dim)
 
+        # ROPE helper
+        self._cached_rope_emb = None
+        self._hidden_states_shape = None
+
     @property
     def dtype(self) -> torch.dtype:
         """Return the dtype of the model parameters."""
@@ -893,7 +891,16 @@ class WanTransformer3DModel(nn.Module):
         post_patch_width = width // p_w
 
         # Compute RoPE embeddings (sharded by _sp_plan via split_output=True)
-        rotary_emb = self.rope(hidden_states)
+        if hidden_states.shape == self._hidden_states_shape and self._cached_rope_emb is not None:
+            rotary_emb = self._cached_rope_emb
+        else:
+            freqs_cos, freqs_sin = self.rope(hidden_states)
+            if freqs_cos.dim() > 2:
+                freqs_cos = freqs_cos.flatten(0, -2)
+                freqs_sin = freqs_sin.flatten(0, -2)
+            rotary_emb = (freqs_cos[..., 0::2].to(torch.bfloat16), freqs_sin[..., 1::2].to(torch.bfloat16))
+            self._hidden_states_shape = hidden_states.shape
+            self._cached_rope_emb = rotary_emb
 
         # Patch embedding and flatten to sequence
         # (hidden_states is sharded at blocks.0 input by _sp_plan)
