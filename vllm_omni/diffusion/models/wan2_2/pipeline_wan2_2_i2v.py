@@ -792,7 +792,9 @@ class Wan22I2VPipeline(
             return latents, latent_condition, first_frame_mask
 
         # Wan2.1 style: create mask and concatenate with condition
-        mask_lat_size = torch.ones(batch_size, 1, num_frames, latent_height, latent_width, device=latent_condition.device)
+        mask_lat_size = torch.ones(
+            batch_size, 1, num_frames, latent_height, latent_width, device=latent_condition.device
+        )
 
         if last_image is None:
             mask_lat_size[:, :, 1:] = 0
