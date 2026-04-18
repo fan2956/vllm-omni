@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 from vllm.logger import init_logger
 
+from vllm_omni.diffusion.data import normalize_omni_error
 from vllm_omni.engine.stage_init_utils import StageMetadata
 from vllm_omni.entrypoints.async_omni_diffusion import AsyncOmniDiffusion
 from vllm_omni.outputs import OmniRequestOutput
@@ -21,6 +22,21 @@ if TYPE_CHECKING:
     from vllm_omni.inputs.data import OmniDiffusionSamplingParams, OmniPromptType
 
 logger = init_logger(__name__)
+
+
+def create_diffusion_client(
+    model: str,
+    od_config: OmniDiffusionConfig,
+    metadata: StageMetadata,
+    batch_size: int = 1,
+    use_inline: bool = False,
+) -> Any:
+    """Factory to create either an inline or the default diffusion client."""
+    if use_inline:
+        from vllm_omni.diffusion.inline_stage_diffusion_client import InlineStageDiffusionClient
+
+        return InlineStageDiffusionClient(model, od_config, metadata, batch_size=batch_size)
+    return StageDiffusionClient(model, od_config, metadata, batch_size=batch_size)
 
 
 class StageDiffusionClient:
@@ -75,11 +91,24 @@ class StageDiffusionClient:
             result = await self._engine.generate(prompt, sampling_params, request_id)
             await self._output_queue.put(result)
         except Exception as e:
+            err = normalize_omni_error(e, request_id=request_id, stage_id=self.stage_id)
             logger.exception(
                 "[StageDiffusionClient] Stage-%s req=%s failed: %s",
                 self.stage_id,
                 request_id,
-                e,
+                err,
+            )
+            await self._output_queue.put(
+                {
+                    "type": "error",
+                    "request_id": request_id,
+                    "stage_id": self.stage_id,
+                    "status_code": err.status_code,
+                    "error": str(err),
+                    "error_type": err.error_type,
+                    "detail": err.detail,
+                    "finished": True,
+                }
             )
         finally:
             self._tasks.pop(request_id, None)
@@ -162,10 +191,8 @@ class StageDiffusionClient:
                     "todo": True,
                     "reason": f"AsyncOmniDiffusion.{method} is not implemented",
                 }
-            # Extract is_start and profile_prefix from args
             is_start = args[0] if args else True
             profile_prefix = args[1] if len(args) > 1 else None
-            # Generate profile_prefix with stage_id if starting and no prefix provided
             if is_start and profile_prefix is None:
                 profile_prefix = f"stage_{self.stage_id}_diffusion_{int(time.time())}"
             result = target(is_start, profile_prefix)
@@ -186,7 +213,6 @@ class StageDiffusionClient:
                 return await asyncio.wait_for(result, timeout=timeout)
             return await result
 
-        # Fall back to collective RPC for other methods
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             self._engine._executor,
