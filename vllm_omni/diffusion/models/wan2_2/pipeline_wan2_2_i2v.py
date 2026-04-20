@@ -806,6 +806,7 @@ class Wan22I2VPipeline(
         mask_lat_size = torch.concat([first_frame_mask, mask_lat_size[:, :, 1:, :]], dim=2)
         mask_lat_size = mask_lat_size.view(batch_size, -1, self.vae_scale_factor_temporal, latent_height, latent_width)
         mask_lat_size = mask_lat_size.transpose(1, 2)
+        mask_lat_size = mask_lat_size.to(latent_condition.device)
 
         # Concatenate mask with condition for channel dimension
         condition = torch.concat([mask_lat_size, latent_condition], dim=1)
