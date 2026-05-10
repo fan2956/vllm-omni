@@ -247,7 +247,12 @@ def _inject_inferred_kv_tp_topology(
         setattr(omni_kv, "rank_mapping", rank_mapping)
 
 
-def inject_kv_stage_info(stage_cfg: Any, stage_id: int, stage_configs: Sequence[Any] | None = None) -> None:
+def inject_kv_stage_info(
+    stage_cfg: Any,
+    stage_id: int,
+    stage_configs: Sequence[Any] | None = None,
+    replica_id: int = 0,
+) -> None:
     """Inject stage_id, engine_input_source, and inferred TP topology into omni_kv_config.
 
     When *stage_configs* is provided, also infers from_tp/to_tp for
@@ -266,9 +271,11 @@ def inject_kv_stage_info(stage_cfg: Any, stage_id: int, stage_configs: Sequence[
 
         if hasattr(omni_kv, "setdefault"):
             omni_kv.setdefault("stage_id", stage_id)
+            omni_kv["replica_id"] = replica_id
         elif hasattr(omni_kv, "__setitem__"):
             if "stage_id" not in omni_kv:
                 omni_kv["stage_id"] = stage_id
+            omni_kv["replica_id"] = replica_id
 
         engine_input_source = getattr(stage_cfg, "engine_input_source", None)
         if engine_input_source is not None:

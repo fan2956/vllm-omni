@@ -25,8 +25,16 @@ KV_TRANSFER_PORT_OFFSET = 100
 
 # Port stride between TP ranks so each worker binds a unique ZMQ port
 # when TP > 1.  Must be larger than the maximum number of pipeline stages.
-# Formula: zmq_port = base + KV_TRANSFER_PORT_OFFSET + rank * STRIDE + stage
+# Formula:
+#   zmq_port = base + KV_TRANSFER_PORT_OFFSET
+#              + replica * REPLICA_STRIDE
+#              + rank * RANK_STRIDE
+#              + stage
 KV_RANK_PORT_STRIDE = 16
+
+# Port stride between stage replicas.  Must be large enough to contain all
+# per-rank/per-stage KV ports for one replica.
+KV_REPLICA_PORT_STRIDE = 1024
 
 
 def initialize_connectors_from_config(

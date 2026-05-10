@@ -5,6 +5,7 @@ import pytest
 from vllm import SamplingParams
 
 from vllm_omni.engine.cfg_companion_tracker import CfgCompanionTracker
+from vllm_omni.distributed.omni_connectors.utils.initialization import KV_REPLICA_PORT_STRIDE
 from vllm_omni.engine.orchestrator import Orchestrator, OrchestratorRequestState
 from vllm_omni.engine.stage_engine_core_client import StageEngineCoreClient
 from vllm_omni.engine.stage_pool import StagePool
@@ -56,6 +57,7 @@ def _build_sender_pool(stage_id: int, sender_info: dict[str, object]) -> StagePo
 def test_stage_engine_core_client_builds_kv_sender_info_from_tcp_address():
     client = object.__new__(StageEngineCoreClient)
     client.stage_id = 0
+    client.replica_id = 0
     client.client_addresses = {"input_address": "tcp://10.20.30.40:1234"}
     client._omni_kv_config = None
     client._kv_sender_info = None
@@ -72,6 +74,7 @@ def test_stage_engine_core_client_builds_kv_sender_info_from_tcp_address():
 def test_stage_engine_core_client_falls_back_to_detected_ip_for_loopback(monkeypatch):
     client = object.__new__(StageEngineCoreClient)
     client.stage_id = 1
+    client.replica_id = 0
     client.client_addresses = {"input_address": "tcp://127.0.0.1:1234"}
     client._omni_kv_config = None
     client._kv_sender_info = None
@@ -89,6 +92,7 @@ def test_stage_engine_core_client_falls_back_to_detected_ip_for_loopback(monkeyp
 def test_stage_engine_core_client_uses_connector_config_for_sender_port():
     client = object.__new__(StageEngineCoreClient)
     client.stage_id = 3
+    client.replica_id = 0
     client.client_addresses = {"input_address": "tcp://10.20.30.40:1234"}
     client._kv_sender_info = None
     client._kv_sender_initialized = False
@@ -113,6 +117,7 @@ def test_stage_engine_core_client_uses_connector_config_for_sender_port():
 def test_stage_engine_core_client_preserves_explicit_loopback_sender_host():
     client = object.__new__(StageEngineCoreClient)
     client.stage_id = 2
+    client.replica_id = 0
     client.client_addresses = {"input_address": "tcp://10.20.30.40:1234"}
     client._kv_sender_info = None
     client._kv_sender_initialized = False
@@ -131,6 +136,48 @@ def test_stage_engine_core_client_preserves_explicit_loopback_sender_host():
     assert client.get_kv_sender_info() == {
         "host": "127.0.0.1",
         "zmq_port": 51102,
+    }
+
+
+def test_stage_engine_core_client_offsets_kv_sender_info_by_replica_id():
+    client = object.__new__(StageEngineCoreClient)
+    client.stage_id = 0
+    client.replica_id = 2
+    client.client_addresses = {"input_address": "tcp://10.20.30.40:1234"}
+    client._omni_kv_config = None
+    client._kv_sender_info = None
+    client._kv_sender_initialized = False
+    client._kv_sender_host = client._resolve_contact_host()
+    client._initialize_kv_sender_endpoint()
+
+    assert client.get_kv_sender_info() == {
+        "host": "10.20.30.40",
+        "zmq_port": 50151 + 2 * KV_REPLICA_PORT_STRIDE,
+    }
+
+
+def test_stage_engine_core_client_offsets_connector_sender_port_by_replica_id():
+    client = object.__new__(StageEngineCoreClient)
+    client.stage_id = 3
+    client.replica_id = 2
+    client.client_addresses = {"input_address": "tcp://10.20.30.40:1234"}
+    client._kv_sender_info = None
+    client._kv_sender_initialized = False
+    client._omni_kv_config = {
+        "omni_from_stage": "3",
+        "connector_config": {
+            "type": "MooncakeTransferEngineConnector",
+            "role": "sender",
+            "host": "10.20.30.99",
+            "zmq_port": 51000,
+        },
+    }
+    client._kv_sender_host = client._resolve_contact_host()
+    client._initialize_kv_sender_endpoint()
+
+    assert client.get_kv_sender_info() == {
+        "host": "10.20.30.99",
+        "zmq_port": 51103 + 2 * KV_REPLICA_PORT_STRIDE,
     }
 
 
@@ -186,6 +233,42 @@ def test_forward_to_diffusion_uses_engine_input_source_for_kv_sender_info():
 
     assert diffusion_stage.calls[0]["kv_sender_info"] == {
         0: {"host": "10.0.0.2", "zmq_port": 50151},
+    }
+
+
+def test_forward_to_diffusion_uses_bound_sender_replica_for_kv_sender_info():
+    orchestrator = object.__new__(Orchestrator)
+    diffusion_stage = _DummyDiffusionStage(engine_input_source=[0])
+    sender_pool = StagePool(
+        0,
+        [
+            _DummySenderStage({"host": "10.0.0.2", "zmq_port": 50151}),
+            _DummySenderStage({"host": "10.0.0.3", "zmq_port": 50151 + KV_REPLICA_PORT_STRIDE}),
+        ],
+        output_processor=object(),
+        stage_vllm_config=SimpleNamespace(model_config=SimpleNamespace(max_model_len=64)),
+    )
+    diffusion_pool = StagePool(1, diffusion_stage)
+
+    orchestrator.num_stages = 2
+    orchestrator.stage_pools = [sender_pool, diffusion_pool]
+    orchestrator._cfg_tracker = CfgCompanionTracker()
+
+    sender_pool.select_replica_id("other-req")
+    sender_pool.select_replica_id("req-bound")
+    params = OmniDiffusionSamplingParams()
+    req_state = OrchestratorRequestState(
+        request_id="req-bound",
+        prompt={"prompt": "hello"},
+        sampling_params_list=[SamplingParams(max_tokens=4), params],
+        final_stage_id=1,
+    )
+
+    output = SimpleNamespace(request_id="req-bound", finished=True)
+    asyncio.run(Orchestrator._forward_to_next_stage(orchestrator, "req-bound", 0, output, req_state))
+
+    assert diffusion_stage.calls[0]["kv_sender_info"] == {
+        0: {"host": "10.0.0.3", "zmq_port": 50151 + KV_REPLICA_PORT_STRIDE},
     }
 
 

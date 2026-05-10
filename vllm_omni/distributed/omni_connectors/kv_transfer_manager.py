@@ -65,6 +65,7 @@ class OmniKVCacheConfig:
     from_stage: str | None = None
     to_stage: str | None = None
     stage_id: str | int | None = None
+    replica_id: str | int | None = 0
     engine_input_source: list[str | int] | None = None
     need_recv_cache: bool = False
     need_send_cache: bool = False
@@ -357,6 +358,7 @@ class OmniKVTransferManager:
                 engine_input_source=cfg.get("engine_input_source", []),
                 need_recv_cache=cfg.get("need_recv_cache", False),
                 need_send_cache=cfg.get("need_send_cache", False),
+                replica_id=cfg.get("replica_id", 0),
                 recv_timeout=cfg.get("recv_timeout", 30.0),
                 from_tp=int(rank_mapping.get("from_tp", 1)),
                 to_tp=int(rank_mapping.get("to_tp", 1)),
@@ -415,7 +417,16 @@ class OmniKVTransferManager:
                             stage_int = int(self.config.from_stage) if self.config.from_stage is not None else 0
                         except (TypeError, ValueError):
                             stage_int = 0
-                        zmq_port = kv_zmq_port(base_port, stage_int, self._tp_topo.local_rank)
+                        try:
+                            replica_id = int(self.config.replica_id or 0)
+                        except (TypeError, ValueError):
+                            replica_id = 0
+                        zmq_port = kv_zmq_port(
+                            base_port,
+                            stage_int,
+                            self._tp_topo.local_rank,
+                            replica_id=replica_id,
+                        )
 
                         if self.config.need_send_cache:
                             c_extra["role"] = "sender"

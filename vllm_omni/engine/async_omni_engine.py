@@ -516,12 +516,41 @@ class AsyncOmniEngine:
                 replica_cfg = copy.deepcopy(stage_cfg) if replica_id > 0 else stage_cfg
                 if stage_idx in replica_devices_map:
                     replica_cfg.runtime.devices = replica_devices_map[stage_idx][replica_id]
+                inject_kv_stage_info(
+                    replica_cfg,
+                    configured_stage_id,
+                    self.stage_configs,
+                    replica_id=replica_id,
+                )
 
                 replica_metadata = extract_stage_metadata(replica_cfg)
                 replica_metadata.replica_id = replica_id
                 if self.single_stage_mode:
                     if replica_metadata.stage_type != "diffusion":
                         replica_metadata.runtime_cfg = None
+
+                replica_stage_vllm_config = stage_vllm_config
+                if stage_vllm_config is not None:
+                    replica_stage_vllm_config = copy.deepcopy(stage_vllm_config)
+                    model_config = getattr(replica_stage_vllm_config, "model_config", None)
+                    omni_kv = getattr(model_config, "omni_kv_config", None)
+                    if isinstance(omni_kv, dict):
+                        omni_kv = dict(omni_kv)
+                        omni_kv.setdefault("stage_id", configured_stage_id)
+                        omni_kv["replica_id"] = replica_id
+                        try:
+                            model_config.omni_kv_config = omni_kv
+                        except Exception:
+                            setattr(model_config, "omni_kv_config", omni_kv)
+                    elif omni_kv is not None:
+                        try:
+                            setattr(omni_kv, "replica_id", replica_id)
+                        except Exception:
+                            logger.debug(
+                                "Failed to set replica_id on omni_kv_config for stage=%s replica=%s",
+                                configured_stage_id,
+                                replica_id,
+                            )
 
                 replicas.append(
                     ReplicaInitPlan(
@@ -532,7 +561,7 @@ class AsyncOmniEngine:
                         metadata=replica_metadata,
                         stage_connector_spec=stage_connector_spec,
                         omni_kv_connector=omni_kv_connector,
-                        stage_vllm_config=stage_vllm_config,
+                        stage_vllm_config=replica_stage_vllm_config,
                         executor_class=executor_class,
                     )
                 )
@@ -788,7 +817,12 @@ class AsyncOmniEngine:
                         omni_conn_cfg, omni_from, omni_to = plan.omni_kv_connector
                         if omni_conn_cfg:
                             inject_omni_kv_config(plan.stage_cfg, omni_conn_cfg, omni_from, omni_to)
-                        inject_kv_stage_info(plan.stage_cfg, plan.metadata.stage_id, self.stage_configs)
+                        inject_kv_stage_info(
+                            plan.stage_cfg,
+                            plan.metadata.stage_id,
+                            self.stage_configs,
+                            replica_id=plan.replica_id,
+                        )
                         if self.single_stage_mode:
                             assert self._omni_master_server is not None
                             od_config = build_diffusion_config(self.model, plan.stage_cfg, plan.metadata)

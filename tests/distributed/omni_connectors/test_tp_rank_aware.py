@@ -23,6 +23,7 @@ from vllm_omni.distributed.omni_connectors.kv_transfer_manager import (
 )
 from vllm_omni.distributed.omni_connectors.utils.initialization import (
     KV_RANK_PORT_STRIDE,
+    KV_REPLICA_PORT_STRIDE,
 )
 from vllm_omni.distributed.omni_connectors.utils.kv_utils import (
     KVTPTopology,
@@ -31,6 +32,7 @@ from vllm_omni.distributed.omni_connectors.utils.kv_utils import (
     get_kv_connector_key,
     get_kv_source_ranks,
     get_kv_target_ranks,
+    kv_zmq_port,
     merge_received_rank_shards,
     slice_received_rank_shard,
 )
@@ -107,6 +109,19 @@ class TestConnectorKeyFormat:
         key = get_kv_connector_key("r", "s", 5, 3, 7)
         parts = key.split("_")
         assert parts == ["r", "s", "5", "3", "7"]
+
+
+class TestKVZmqPort:
+    def test_replica_zero_rank_zero_keeps_legacy_port(self):
+        assert kv_zmq_port(50051, 0, local_rank=0, replica_id=0) == 50151
+
+    def test_replica_id_offsets_port_range(self):
+        assert kv_zmq_port(50051, 0, local_rank=0, replica_id=2) == 50151 + 2 * KV_REPLICA_PORT_STRIDE
+
+    def test_rank_offset_is_inside_replica_port_range(self):
+        assert kv_zmq_port(50051, 3, local_rank=1, replica_id=2) == (
+            50151 + 3 + 1 * KV_RANK_PORT_STRIDE + 2 * KV_REPLICA_PORT_STRIDE
+        )
 
 
 # ── Source / target rank mapping ─────────────────────────────────────

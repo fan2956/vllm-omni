@@ -614,7 +614,7 @@ def run_headless(args: argparse.Namespace) -> None:
         metadata = extract_stage_metadata(stage_cfg)
         if omni_conn_cfg:
             inject_omni_kv_config(stage_cfg, omni_conn_cfg, omni_from, omni_to)
-        inject_kv_stage_info(stage_cfg, stage_id)
+        inject_kv_stage_info(stage_cfg, stage_id, stage_configs, replica_id=replica_id)
         od_config = build_diffusion_config(model, stage_cfg, metadata)
 
         logger.info(
@@ -660,6 +660,7 @@ def run_headless(args: argparse.Namespace) -> None:
 
     # Device assignment is managed externally (e.g. CUDA_VISIBLE_DEVICES);
     # runtime_cfg is intentionally ignored in headless mode.
+    inject_kv_stage_info(stage_cfg, stage_id, stage_configs, replica_id=replica_id)
     engine_args_dict = build_engine_args_dict(
         stage_cfg,
         model,
@@ -677,6 +678,7 @@ def run_headless(args: argparse.Namespace) -> None:
         omni_kv["omni_from_stage"] = omni_from
         omni_kv["omni_to_stage"] = omni_to
         omni_kv.setdefault("stage_id", stage_id)
+        omni_kv["replica_id"] = replica_id
         engine_args_dict["omni_kv_config"] = omni_kv
 
     vllm_config, executor_class = build_vllm_config(
