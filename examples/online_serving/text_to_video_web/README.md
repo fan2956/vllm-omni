@@ -13,11 +13,13 @@ Wan2.2 vLLM-Omni server, while the page is opened from a browser on the host.
   proxied through `/api/videos/{video_id}/content`, which reads from the omni
   server's `/v1/videos/{video_id}/content` endpoint.
 
-When starting the Docker container, map both ports:
+When using bridge networking, map both ports:
 
 ```bash
 docker run --gpus all -p 8099:8099 -p 7862:7862 ...
 ```
+
+If the container is started with `--net=host`, no `-p` mapping is needed.
 
 ## Start
 
@@ -57,17 +59,22 @@ The UI defaults match the local `curl.sh` example:
 
 | Field | Default |
 | --- | --- |
-| `size` | `720x1280` |
+| `size` | `832x480`; selectable: `832x480`, `1280x720` |
 | `fps` | `12` |
 | `num_frames` | `61` |
 | `guidance_scale` | `1.0` |
-| `flow_shift` | `5.0` |
 | `num_inference_steps` | `40` |
 | `seed` | `42` |
 | `enable_frame_interpolation` | `true` |
-| `frame_interpolation_model_path` | `/home/zf/vllm-omni/elfgum` |
-| `frame_interpolation_exp` | `1` |
-| `frame_interpolation_scale` | `1.0` |
+
+`flow_shift` is fixed to `5.0` in the proxy. When frame interpolation is
+enabled, the proxy forwards the local RIFE defaults from the original curl
+example: model path `/home/zf/vllm-omni/elfgum`, exp `1`, and scale `1.0`.
+The UI only exposes the enable switch.
+
+The job detail response includes `step_progress` when the omni server reports
+real Wan2.2 denoising step callbacks. The page only displays server-reported
+progress; it does not estimate in-flight progress locally.
 
 ## API Shape
 

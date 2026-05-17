@@ -22,6 +22,11 @@ from pydantic import BaseModel, Field, field_validator
 
 DEFAULT_OMNI_SERVER_URL = "http://127.0.0.1:8099"
 STATIC_DIR = Path(__file__).with_name("static")
+ALLOWED_VIDEO_SIZES = {"832x480", "1280x720"}
+DEFAULT_FLOW_SHIFT = 5.0
+DEFAULT_FRAME_INTERPOLATION_MODEL_PATH = "/home/zf/vllm-omni/elfgum"
+DEFAULT_FRAME_INTERPOLATION_EXP = 1
+DEFAULT_FRAME_INTERPOLATION_SCALE = 1.0
 
 
 class CreateVideoRequest(BaseModel):
@@ -33,18 +38,14 @@ class CreateVideoRequest(BaseModel):
 
     server_id: str = "default"
     prompt: str
-    size: str = "720x1280"
+    size: str = "832x480"
     fps: int = Field(default=12, ge=1)
     num_frames: int = Field(default=61, ge=1)
     guidance_scale: float = Field(default=1.0, ge=0.0)
-    flow_shift: float = 5.0
     num_inference_steps: int = Field(default=40, ge=1)
     seed: int | None = 42
     negative_prompt: str | None = None
     enable_frame_interpolation: bool = True
-    frame_interpolation_model_path: str | None = "/home/zf/vllm-omni/elfgum"
-    frame_interpolation_exp: int = Field(default=1, ge=1)
-    frame_interpolation_scale: float = Field(default=1.0, gt=0.0)
 
     @field_validator("prompt")
     @classmethod
@@ -61,6 +62,15 @@ class CreateVideoRequest(BaseModel):
             raise ValueError("Only server_id='default' is configured in this demo.")
         return value
 
+    @field_validator("size")
+    @classmethod
+    def validate_size(cls, value: str) -> str:
+        value = value.strip()
+        if value not in ALLOWED_VIDEO_SIZES:
+            supported = ", ".join(sorted(ALLOWED_VIDEO_SIZES))
+            raise ValueError(f"size must be one of: {supported}")
+        return value
+
     def to_omni_form(self) -> dict[str, str]:
         data: dict[str, Any] = self.model_dump(exclude={"server_id"})
         form: dict[str, str] = {}
@@ -73,6 +83,11 @@ class CreateVideoRequest(BaseModel):
                 form[key] = "true" if value else "false"
             else:
                 form[key] = str(value)
+        form["flow_shift"] = str(DEFAULT_FLOW_SHIFT)
+        if self.enable_frame_interpolation:
+            form["frame_interpolation_model_path"] = DEFAULT_FRAME_INTERPOLATION_MODEL_PATH
+            form["frame_interpolation_exp"] = str(DEFAULT_FRAME_INTERPOLATION_EXP)
+            form["frame_interpolation_scale"] = str(DEFAULT_FRAME_INTERPOLATION_SCALE)
         return form
 
 
@@ -148,17 +163,19 @@ def create_app(omni_server_url: str | None = None) -> FastAPI:
     async def create_video(request_data: CreateVideoRequest, request: Request) -> dict[str, Any]:
         client = _client_from_request(request)
         try:
-            return await client.create_video(request_data)
+            response = await client.create_video(request_data)
         except httpx.RequestError as exc:
             raise HTTPException(status_code=502, detail=f"Failed to connect to omni server: {exc}") from exc
+        return response
 
     @app.get("/api/videos/{video_id}")
     async def get_video(video_id: str, request: Request) -> dict[str, Any]:
         client = _client_from_request(request)
         try:
-            return await client.get_video(video_id)
+            response = await client.get_video(video_id)
         except httpx.RequestError as exc:
             raise HTTPException(status_code=502, detail=f"Failed to connect to omni server: {exc}") from exc
+        return response
 
     @app.get("/api/videos/{video_id}/content")
     async def video_content(video_id: str, request: Request) -> Response:

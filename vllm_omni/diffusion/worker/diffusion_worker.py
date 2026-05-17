@@ -11,7 +11,7 @@ to DiffusionModelRunner.
 import gc
 import multiprocessing as mp
 import os
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import AbstractContextManager, nullcontext
 from typing import Any
 
@@ -179,9 +179,13 @@ class DiffusionWorker:
             lora_scale=self.od_config.lora_scale,
         )
 
-    def generate(self, request: OmniDiffusionRequest) -> DiffusionOutput:
+    def generate(
+        self,
+        request: OmniDiffusionRequest,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> DiffusionOutput:
         """Generate output for the given requests."""
-        return self.execute_model(request, self.od_config)
+        return self.execute_model(request, self.od_config, progress_callback=progress_callback)
 
     def profile(self, is_start: bool = True, profile_prefix: str | None = None) -> None:
         """Start or stop profiling for this GPU worker.
@@ -210,7 +214,12 @@ class DiffusionWorker:
         else:
             self.profiler.stop()
 
-    def execute_model(self, req: OmniDiffusionRequest, od_config: OmniDiffusionConfig) -> DiffusionOutput:
+    def execute_model(
+        self,
+        req: OmniDiffusionRequest,
+        od_config: OmniDiffusionConfig,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> DiffusionOutput:
         """Execute a forward pass by delegating to the model runner."""
         assert self.model_runner is not None, "Model runner not initialized"
         if self.lora_manager is not None:
@@ -220,7 +229,7 @@ class DiffusionWorker:
                 if req.sampling_params.lora_request is not None:
                     raise
                 logger.warning("LoRA activation skipped: %s", exc)
-        return self.model_runner.execute_model(req)
+        return self.model_runner.execute_model(req, progress_callback=progress_callback)
 
     def execute_stepwise(self, scheduler_output: DiffusionSchedulerOutput) -> RunnerOutput:
         """Execute one diffusion step by delegating to the model runner."""
@@ -420,11 +429,16 @@ class WorkerProc:
     def return_result(self, output: object):
         """Reply to client, only on rank 0."""
         if self.result_mq is not None:
-            try:
-                pack_diffusion_output_shm(output)
-            except Exception as e:
-                logger.warning("SHM pack failed, falling back to raw enqueue: %s", e)
+            if isinstance(output, DiffusionOutput):
+                try:
+                    pack_diffusion_output_shm(output)
+                except Exception as e:
+                    logger.warning("SHM pack failed, falling back to raw enqueue: %s", e)
             self.result_mq.enqueue(output)
+
+    def return_progress(self, event: dict[str, Any]) -> None:
+        if self.result_mq is not None:
+            self.result_mq.enqueue(event)
 
     def recv_message(self):
         """Receive messages from broadcast queue."""
@@ -445,6 +459,9 @@ class WorkerProc:
             return None, False
 
         try:
+            if method == "generate" and should_reply:
+                kwargs = dict(kwargs)
+                kwargs["progress_callback"] = self.return_progress
             # Use execute_method from WorkerWrapperBase for consistent method resolution
             result = self.worker.execute_method(method, *args, **kwargs)
             return result, should_reply
@@ -639,7 +656,11 @@ class WorkerWrapperBase:
 
         return worker_class
 
-    def generate(self, requests: list[OmniDiffusionRequest]) -> DiffusionOutput:
+    def generate(
+        self,
+        requests: list[OmniDiffusionRequest],
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> DiffusionOutput:
         """
         Generate output for the given requests.
 
@@ -649,9 +670,14 @@ class WorkerWrapperBase:
         Returns:
             DiffusionOutput with generated results
         """
-        return self.worker.generate(requests)
+        return self.worker.generate(requests, progress_callback=progress_callback)
 
-    def execute_model(self, reqs: list[OmniDiffusionRequest], od_config: OmniDiffusionConfig) -> DiffusionOutput:
+    def execute_model(
+        self,
+        reqs: list[OmniDiffusionRequest],
+        od_config: OmniDiffusionConfig,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> DiffusionOutput:
         """
         Execute a forward pass.
 
@@ -662,7 +688,7 @@ class WorkerWrapperBase:
         Returns:
             DiffusionOutput with generated results
         """
-        return self.worker.execute_model(reqs, od_config)
+        return self.worker.execute_model(reqs, od_config, progress_callback=progress_callback)
 
     def execute_stepwise(self, scheduler_output: DiffusionSchedulerOutput) -> RunnerOutput:
         """Execute one diffusion step."""

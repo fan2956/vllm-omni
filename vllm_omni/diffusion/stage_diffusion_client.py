@@ -64,7 +64,7 @@ class StageDiffusionClient:
         self.engine_input_source = metadata.engine_input_source
 
         self._engine = AsyncOmniDiffusion(model=model, od_config=od_config, batch_size=batch_size)
-        self._output_queue: asyncio.Queue[OmniRequestOutput] = asyncio.Queue()
+        self._output_queue: asyncio.Queue[OmniRequestOutput | dict[str, Any]] = asyncio.Queue()
         self._tasks: dict[str, asyncio.Task] = {}
 
         logger.info("[StageDiffusionClient] Stage-%s initialized (batch_size=%d)", self.stage_id, batch_size)
@@ -87,8 +87,22 @@ class StageDiffusionClient:
         prompt: OmniPromptType,
         sampling_params: OmniDiffusionSamplingParams,
     ) -> None:
+        loop = asyncio.get_running_loop()
+
+        def _progress_callback(event: dict[str, Any]) -> None:
+            payload = dict(event)
+            payload["type"] = "progress"
+            payload["request_id"] = request_id
+            payload["stage_id"] = self.stage_id
+            loop.call_soon_threadsafe(self._output_queue.put_nowait, payload)
+
         try:
-            result = await self._engine.generate(prompt, sampling_params, request_id)
+            result = await self._engine.generate(
+                prompt,
+                sampling_params,
+                request_id,
+                progress_callback=_progress_callback,
+            )
             await self._output_queue.put(result)
         except Exception as e:
             err = normalize_omni_error(e, request_id=request_id, stage_id=self.stage_id)
@@ -139,11 +153,21 @@ class StageDiffusionClient:
         prompts: list[OmniPromptType],
         sampling_params: OmniDiffusionSamplingParams,
     ) -> None:
+        loop = asyncio.get_running_loop()
+
+        def _progress_callback(event: dict[str, Any]) -> None:
+            payload = dict(event)
+            payload["type"] = "progress"
+            payload["request_id"] = request_id
+            payload["stage_id"] = self.stage_id
+            loop.call_soon_threadsafe(self._output_queue.put_nowait, payload)
+
         try:
             result = await self._engine.generate_batch(
                 prompts,
                 sampling_params,
                 request_id,
+                progress_callback=_progress_callback,
             )
             await self._output_queue.put(result)
         except Exception as e:
@@ -156,7 +180,7 @@ class StageDiffusionClient:
         finally:
             self._tasks.pop(request_id, None)
 
-    def get_diffusion_output_async(self) -> OmniRequestOutput | None:
+    def get_diffusion_output_async(self) -> OmniRequestOutput | dict[str, Any] | None:
         try:
             return self._output_queue.get_nowait()
         except asyncio.QueueEmpty:

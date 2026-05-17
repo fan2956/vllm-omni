@@ -231,6 +231,12 @@ class VideoError(BaseModel):
     message: str = Field(..., description="A human-readable description of the error that was returned.")
 
 
+class VideoStepProgress(BaseModel):
+    current_step: int = Field(default=0, ge=0, description="Completed diffusion denoising steps.")
+    total_steps: int = Field(default=0, ge=0, description="Total diffusion denoising steps.")
+    percent: int = Field(default=0, ge=0, le=100, description="Denoising progress percentage.")
+
+
 class VideoResponse(BaseModel):
     """Stored metadata for an async video generation job."""
 
@@ -246,6 +252,10 @@ class VideoResponse(BaseModel):
     )
     size: SizeStr | None = Field(default=None, description="Requested output size in WIDTHxHEIGHT format.")
     progress: int = Field(default=0, description="Best-effort progress indicator from 0 to 100.")
+    step_progress: VideoStepProgress | None = Field(
+        default=None,
+        description="Real diffusion denoising step progress when the backend reports it.",
+    )
     seconds: SecondStr = Field(default="4", description="Requested clip length in seconds.")
     quality: str = Field(default="default", description="Requested quality level for generation.")
     completed_at: int | None = Field(

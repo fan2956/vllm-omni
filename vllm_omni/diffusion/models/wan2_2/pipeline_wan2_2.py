@@ -574,8 +574,9 @@ class Wan22Pipeline(nn.Module, CFGParallelMixin, ProgressBarMixin, DiffusionPipe
 
         if DEBUG_PERF:
             _t_denoise_start = time.perf_counter()
+        total_steps = len(timesteps)
         with self.progress_bar(total=len(timesteps)) as pbar:
-            for t in timesteps:
+            for step_index, t in enumerate(timesteps, start=1):
                 self._current_timestep = t
 
                 # Select model based on timestep and boundary_ratio
@@ -658,6 +659,7 @@ class Wan22Pipeline(nn.Module, CFGParallelMixin, ProgressBarMixin, DiffusionPipe
                 latents = self.scheduler_step_maybe_with_cfg(noise_pred, t, latents, do_true_cfg)
 
                 pbar.update()
+                self.report_step_progress(step_index, total_steps)
 
         # Wan2.2 is prone to out of memory errors when predicting large videos
         # so we empty the cache here to avoid OOM before vae decoding.

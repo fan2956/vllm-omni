@@ -12,8 +12,9 @@ from __future__ import annotations
 
 import copy
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import nullcontext
+from typing import Any
 
 import torch
 from torch.profiler import record_function
@@ -217,7 +218,11 @@ class DiffusionModelRunner:
             pool_overhead_gb / peak_reserved_gb * 100 if peak_reserved_gb > 0 else 0.0,
         )
 
-    def execute_model(self, req: OmniDiffusionRequest) -> DiffusionOutput:
+    def execute_model(
+        self,
+        req: OmniDiffusionRequest,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> DiffusionOutput:
         """
         Execute a forward pass for the given requests.
 
@@ -270,9 +275,27 @@ class DiffusionModelRunner:
             if is_primary:
                 current_omni_platform.reset_peak_memory_stats()
 
-            with set_forward_context(vllm_config=self.vllm_config, omni_diffusion_config=self.od_config):
-                with record_function("pipeline_forward"):
-                    output = self.pipeline.forward(req)
+            request_id = req.request_ids[0] if req.request_ids else ""
+            previous_progress_callback = getattr(self.pipeline, "_progress_callback", None)
+
+            def _progress_callback(event: dict[str, Any]) -> None:
+                if progress_callback is None:
+                    return
+                payload = dict(event)
+                payload.setdefault("type", "progress")
+                payload["request_id"] = request_id
+                progress_callback(payload)
+
+            if hasattr(self.pipeline, "set_progress_callback"):
+                self.pipeline.set_progress_callback(_progress_callback if progress_callback is not None else None)
+
+            try:
+                with set_forward_context(vllm_config=self.vllm_config, omni_diffusion_config=self.od_config):
+                    with record_function("pipeline_forward"):
+                        output = self.pipeline.forward(req)
+            finally:
+                if hasattr(self.pipeline, "set_progress_callback"):
+                    self.pipeline.set_progress_callback(previous_progress_callback)
 
             if is_primary:
                 self._record_peak_memory(output)

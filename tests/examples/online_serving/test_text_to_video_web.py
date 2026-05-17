@@ -32,6 +32,7 @@ class FakeOmniClient:
             "id": video_id,
             "status": "failed",
             "progress": 0,
+            "step_progress": {"current_step": 3, "total_steps": 40, "percent": 8},
             "error": {"code": "RuntimeError", "message": "boom"},
         }
 
@@ -48,7 +49,7 @@ def test_create_video_request_defaults_are_forwarded_as_omni_form():
 
     assert request.to_omni_form() == {
         "prompt": "a bright racing car",
-        "size": "720x1280",
+        "size": "832x480",
         "fps": "12",
         "num_frames": "61",
         "guidance_scale": "1.0",
@@ -62,15 +63,39 @@ def test_create_video_request_defaults_are_forwarded_as_omni_form():
     }
 
 
+def test_create_video_request_accepts_exact_size_choices():
+    request = CreateVideoRequest(prompt="wide shot", size="1280x720")
+
+    assert request.size == "1280x720"
+    assert request.to_omni_form()["size"] == "1280x720"
+
+
+def test_create_video_request_rejects_asterisk_size_without_normalizing():
+    with pytest.raises(ValueError, match="size must be one of"):
+        CreateVideoRequest(prompt="wide shot", size="1280*720")
+
+
+def test_disabled_frame_interpolation_only_forwards_enable_flag():
+    request = CreateVideoRequest(prompt="no interpolation", enable_frame_interpolation=False)
+
+    form = request.to_omni_form()
+    assert form["enable_frame_interpolation"] == "false"
+    assert "frame_interpolation_model_path" not in form
+    assert "frame_interpolation_exp" not in form
+    assert "frame_interpolation_scale" not in form
+
+
 def test_create_video_proxies_to_default_omni_client():
     fake_client = FakeOmniClient()
     with _test_client(fake_client) as client:
-        response = client.post("/api/videos", json={"prompt": "a lighthouse", "fps": 16})
+        response = client.post("/api/videos", json={"prompt": "a lighthouse", "fps": 16, "num_inference_steps": 50})
 
     assert response.status_code == 200
     assert response.json()["id"] == "video_gen_test"
+    assert "step_progress" not in response.json()
     assert fake_client.created_forms[0]["prompt"] == "a lighthouse"
     assert fake_client.created_forms[0]["fps"] == "16"
+    assert fake_client.created_forms[0]["flow_shift"] == "5.0"
 
 
 def test_status_polling_passes_failed_job_payload_through():
@@ -79,6 +104,7 @@ def test_status_polling_passes_failed_job_payload_through():
 
     assert response.status_code == 200
     assert response.json()["status"] == "failed"
+    assert response.json()["step_progress"]["current_step"] == 3
     assert response.json()["error"]["message"] == "boom"
 
 

@@ -11,7 +11,7 @@ enabling concurrent request handling and streaming generation.
 import asyncio
 import uuid
 import weakref
-from collections.abc import AsyncGenerator, Iterable
+from collections.abc import AsyncGenerator, Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -178,6 +178,7 @@ class AsyncOmniDiffusion:
         sampling_params: OmniDiffusionSamplingParams,
         request_id: str | None = None,
         lora_request: LoRARequest | None = None,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
     ) -> OmniRequestOutput:
         """Generate images from multiple prompts in a single engine call.
 
@@ -197,7 +198,7 @@ class AsyncOmniDiffusion:
         """
         if request_id is None:
             request_id = f"diff-batch-{uuid.uuid4().hex[:8]}"
-        return await self._generate_batch(prompts, sampling_params, request_id, lora_request)
+        return await self._generate_batch(prompts, sampling_params, request_id, lora_request, progress_callback)
 
     # ------------------------------------------------------------------
     # Internal batch generation
@@ -209,6 +210,7 @@ class AsyncOmniDiffusion:
         sampling_params: OmniDiffusionSamplingParams,
         request_id: str,
         lora_request: LoRARequest | None = None,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
     ) -> OmniRequestOutput:
         """Generate images from multiple prompts in a single engine call."""
         if not prompts:
@@ -232,8 +234,7 @@ class AsyncOmniDiffusion:
         try:
             results = await loop.run_in_executor(
                 self._executor,
-                self.engine.step,
-                request,
+                lambda: self.engine.step(request, progress_callback=progress_callback),
             )
         except Exception as e:
             logger.error("Batch generation failed for request %s: %s", request_id, e)
@@ -266,6 +267,7 @@ class AsyncOmniDiffusion:
         sampling_params: OmniDiffusionSamplingParams,
         request_id: str | None = None,
         lora_request: LoRARequest | None = None,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
     ) -> OmniRequestOutput:
         """Generate images asynchronously from a single text prompt.
 
@@ -305,8 +307,7 @@ class AsyncOmniDiffusion:
         try:
             result = await loop.run_in_executor(
                 self._executor,
-                self.engine.step,
-                request,
+                lambda: self.engine.step(request, progress_callback=progress_callback),
             )
             result = result[0]
         except Exception as e:

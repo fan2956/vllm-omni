@@ -5,6 +5,8 @@ const jobStatus = document.querySelector("#job-status");
 const jobId = document.querySelector("#job-id");
 const elapsed = document.querySelector("#elapsed");
 const progress = document.querySelector("#progress");
+const stepProgress = document.querySelector("#step-progress");
+const progressPercent = document.querySelector("#progress-percent");
 const videoPlayer = document.querySelector("#video-player");
 const message = document.querySelector("#message");
 
@@ -34,18 +36,14 @@ function payloadFromForm(formData) {
   return {
     server_id: "default",
     prompt,
-    size: String(formData.get("size") || "720x1280").trim(),
+    size: String(formData.get("size") || "832x480").trim(),
     fps: numberOrNull(formData.get("fps")),
     num_frames: numberOrNull(formData.get("num_frames")),
     guidance_scale: numberOrNull(formData.get("guidance_scale")),
-    flow_shift: numberOrNull(formData.get("flow_shift")),
     num_inference_steps: numberOrNull(formData.get("num_inference_steps")),
     seed: numberOrNull(formData.get("seed")),
     negative_prompt: String(formData.get("negative_prompt") || "").trim() || null,
     enable_frame_interpolation: formData.get("enable_frame_interpolation") === "on",
-    frame_interpolation_model_path: String(formData.get("frame_interpolation_model_path") || "").trim() || null,
-    frame_interpolation_exp: numberOrNull(formData.get("frame_interpolation_exp")),
-    frame_interpolation_scale: numberOrNull(formData.get("frame_interpolation_scale")),
   };
 }
 
@@ -74,16 +72,35 @@ function stopPolling() {
   }
 }
 
+function updateProgress(data, fallbackTotalSteps = 40) {
+  const stepData = data.step_progress || {};
+  const totalSteps = Number.isFinite(stepData.total_steps) ? stepData.total_steps : fallbackTotalSteps;
+  const currentStep = Number.isFinite(stepData.current_step) ? stepData.current_step : 0;
+  const percent = Number.isFinite(stepData.percent)
+    ? stepData.percent
+    : Number.isFinite(data.progress)
+      ? data.progress
+      : 0;
+
+  progress.value = Math.max(0, Math.min(100, percent));
+  progressPercent.textContent = `${Math.round(progress.value)}%`;
+  if (currentStep >= totalSteps && data.status === "in_progress") {
+    stepProgress.textContent = `Step ${Math.max(0, currentStep)} / ${totalSteps} finalizing`;
+  } else {
+    stepProgress.textContent = `Step ${Math.max(0, currentStep)} / ${totalSteps}`;
+  }
+}
+
 async function pollJob(id) {
   const data = await requestJson(`/api/videos/${id}`);
   setStatus(data.status || "unknown");
-  progress.value = Number.isFinite(data.progress) ? data.progress : 0;
+  updateProgress(data);
   updateElapsed();
 
   if (data.status === "completed") {
     stopPolling();
     generateButton.disabled = false;
-    progress.value = 100;
+    updateProgress(data);
     videoPlayer.src = `/api/videos/${id}/content?t=${Date.now()}`;
     videoPlayer.load();
     setMessage(`Completed in ${data.inference_time_s ? data.inference_time_s.toFixed(2) : "unknown"} seconds.`);
@@ -112,7 +129,7 @@ form.addEventListener("submit", async (event) => {
   setMessage("");
   setStatus("submitting");
   jobId.textContent = "-";
-  progress.value = 0;
+  updateProgress({ progress: 0, step_progress: { current_step: 0, total_steps: 40, percent: 0 } });
   videoPlayer.removeAttribute("src");
   videoPlayer.load();
 
@@ -135,6 +152,7 @@ form.addEventListener("submit", async (event) => {
     });
     jobId.textContent = data.id || "-";
     setStatus(data.status || "queued");
+    updateProgress(data, payload.num_inference_steps || 40);
     activePoll = setInterval(() => {
       pollJob(data.id).catch((error) => {
         stopPolling();
@@ -142,7 +160,7 @@ form.addEventListener("submit", async (event) => {
         setStatus("error");
         setMessage(error.message, true);
       });
-    }, 2000);
+    }, 1000);
     await pollJob(data.id);
   } catch (error) {
     generateButton.disabled = false;
@@ -151,5 +169,6 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
+updateProgress({ progress: 0, step_progress: { current_step: 0, total_steps: 40, percent: 0 } });
 checkHealth();
 setInterval(checkHealth, 10000);

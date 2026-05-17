@@ -26,7 +26,10 @@
           <div class="grid">
             <label class="field">
               <span>Size</span>
-              <input name="size" value="720x1280" pattern="[0-9]+x[0-9]+" />
+              <select name="size">
+                <option value="832x480" selected>832x480</option>
+                <option value="1280x720">1280x720</option>
+              </select>
             </label>
             <label class="field">
               <span>FPS</span>
@@ -45,10 +48,6 @@
               <input name="guidance_scale" type="number" min="0" step="0.1" value="1.0" />
             </label>
             <label class="field">
-              <span>Flow Shift</span>
-              <input name="flow_shift" type="number" step="0.1" value="5.0" />
-            </label>
-            <label class="field">
               <span>Seed</span>
               <input name="seed" type="number" step="1" value="42" />
             </label>
@@ -65,20 +64,6 @@
               <input name="enable_frame_interpolation" type="checkbox" checked />
               <span>Enable</span>
             </label>
-            <div class="grid">
-              <label class="field">
-                <span>Model Path</span>
-                <input name="frame_interpolation_model_path" value="/home/zf/vllm-omni/elfgum" />
-              </label>
-              <label class="field">
-                <span>Exp</span>
-                <input name="frame_interpolation_exp" type="number" min="1" step="1" value="1" />
-              </label>
-              <label class="field">
-                <span>Scale</span>
-                <input name="frame_interpolation_scale" type="number" min="0.1" step="0.1" value="1.0" />
-              </label>
-            </div>
           </fieldset>
         </form>
 
@@ -97,7 +82,13 @@
               <strong id="elapsed">0s</strong>
             </div>
           </div>
-          <progress id="progress" value="0" max="100"></progress>
+          <div class="progress-block">
+            <div class="progress-meta">
+              <span id="step-progress">Step 0 / 40</span>
+              <span id="progress-percent">0%</span>
+            </div>
+            <progress id="progress" value="0" max="100"></progress>
+          </div>
           <video id="video-player" controls playsinline></video>
           <pre id="message"></pre>
         </section>

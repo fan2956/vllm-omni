@@ -233,6 +233,27 @@ class TestConcurrentAddReqVsCollectiveRpcBug:
 # ─────────────── backward-compatibility (serial) tests ────────────────────
 
 
+def test_add_req_forwards_progress_events_before_final_output():
+    executor, req_q, res_q = _make_executor()
+    events = []
+
+    def _run():
+        req_q.get(timeout=10)
+        res_q.put({"type": "progress", "request_id": "A", "current_step": 1, "total_steps": 2, "percent": 50})
+        res_q.put(_tagged_output("done"))
+
+    worker = threading.Thread(target=_run, daemon=True)
+    worker.start()
+
+    output = executor.add_req(_mock_request("A"), progress_callback=events.append)
+    worker.join(5)
+
+    assert output.error == "done"
+    assert events == [
+        {"type": "progress", "request_id": "A", "current_step": 1, "total_steps": 2, "percent": 50},
+    ]
+
+
 class TestSerialOperations:
     """Verify correct behaviour for single-threaded (serial) usage.
 

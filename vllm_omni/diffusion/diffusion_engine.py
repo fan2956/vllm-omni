@@ -6,7 +6,7 @@ from __future__ import annotations
 import inspect
 import threading
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any
 
 import numpy as np
@@ -92,7 +92,11 @@ class DiffusionEngine:
             self.close()
             raise e
 
-    def step(self, request: OmniDiffusionRequest) -> list[OmniRequestOutput]:
+    def step(
+        self,
+        request: OmniDiffusionRequest,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> list[OmniRequestOutput]:
         diffusion_engine_start_time = time.perf_counter()
 
         # Apply pre-processing if available
@@ -104,7 +108,7 @@ class DiffusionEngine:
             logger.info(f"Pre-processing completed in {preprocess_time:.4f} seconds")
 
         exec_start_time = time.perf_counter()
-        output = self.add_req_and_wait_for_response(request)
+        output = self.add_req_and_wait_for_response(request, progress_callback=progress_callback)
         exec_total_time = time.perf_counter() - exec_start_time
 
         if output.error:
@@ -319,7 +323,11 @@ class DiffusionEngine:
         """
         return DiffusionEngine(config, scheduler=scheduler)
 
-    def add_req_and_wait_for_response(self, request: OmniDiffusionRequest) -> DiffusionOutput:
+    def add_req_and_wait_for_response(
+        self,
+        request: OmniDiffusionRequest,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> DiffusionOutput:
         with self._rpc_lock:
             target_sched_req_id = self.scheduler.add_request(request)
 
@@ -344,7 +352,7 @@ class DiffusionEngine:
                     sched_req_id = sched_output.scheduled_req_ids[0]
                     req = sched_output.scheduled_new_reqs[0].req
                     try:
-                        output = self.executor.add_req(req)
+                        output = self.executor.add_req(req, progress_callback=progress_callback)
                     except Exception as exc:
                         logger.error(
                             "Execution failed for diffusion request %s",

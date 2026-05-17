@@ -388,8 +388,9 @@ class Wan22TI2VPipeline(nn.Module, SupportImageInput, CFGParallelMixin, Progress
             attention_kwargs = {}
 
         # Denoising loop
+        total_steps = len(timesteps)
         with self.progress_bar(total=len(timesteps)) as pbar:
-            for t in timesteps:
+            for step_index, t in enumerate(timesteps, start=1):
                 self._current_timestep = t
 
                 # Prepare latent input
@@ -445,6 +446,7 @@ class Wan22TI2VPipeline(nn.Module, SupportImageInput, CFGParallelMixin, Progress
                 latents = self.scheduler_step_maybe_with_cfg(noise_pred, t, latents, do_true_cfg)
 
                 pbar.update()
+                self.report_step_progress(step_index, total_steps)
 
         # Wan2.2 is prone to out of memory errors when predicting large videos
         # so we empty the cache here to avoid OOM before vae decoding.

@@ -105,6 +105,7 @@ from vllm_omni.entrypoints.openai.protocol.videos import (
     VideoGenerationStatus,
     VideoListResponse,
     VideoResponse,
+    VideoStepProgress,
 )
 from vllm_omni.entrypoints.openai.serving_chat import OmniOpenAIServingChat
 from vllm_omni.entrypoints.openai.serving_speech import OmniOpenAIServingSpeech
@@ -1962,9 +1963,37 @@ async def _run_video_generation_job(
     await VIDEO_STORE.update_fields(video_id, {"status": VideoGenerationStatus.IN_PROGRESS})
     started_at = time.perf_counter()
     output_path = None
+    loop = asyncio.get_running_loop()
+
+    async def _update_progress(event: dict[str, Any]) -> None:
+        job = await VIDEO_STORE.get(video_id)
+        if job is None or job.status != VideoGenerationStatus.IN_PROGRESS:
+            return
+        current_step = int(event.get("current_step") or 0)
+        total_steps = int(event.get("total_steps") or 0)
+        percent = int(event.get("percent") or 0)
+        percent = max(0, min(100, percent))
+        await VIDEO_STORE.update_fields(
+            video_id,
+            {
+                "progress": percent,
+                "step_progress": VideoStepProgress(
+                    current_step=current_step,
+                    total_steps=total_steps,
+                    percent=percent,
+                ),
+            },
+        )
+
+    def _progress_callback(event: dict[str, Any]) -> None:
+        loop.call_soon_threadsafe(lambda: asyncio.create_task(_update_progress(event)))
+
     try:
         video_bytes, stage_durations, peak_memory_mb = await handler.generate_video_bytes(
-            request, video_id, reference_image=reference_image
+            request,
+            video_id,
+            reference_image=reference_image,
+            progress_callback=_progress_callback,
         )
 
         file_name = f"{video_id}.{job.file_extension}"

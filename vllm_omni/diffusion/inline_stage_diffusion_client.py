@@ -132,7 +132,17 @@ class InlineStageDiffusionClient:
             )
 
             loop = asyncio.get_running_loop()
-            results = await loop.run_in_executor(self._executor, self._engine.step, request)
+            def _progress_callback(event: dict[str, Any]) -> None:
+                payload = dict(event)
+                payload["type"] = "progress"
+                payload["request_id"] = request_id
+                payload["stage_id"] = self.stage_id
+                loop.call_soon_threadsafe(self._output_queue.put_nowait, payload)
+
+            results = await loop.run_in_executor(
+                self._executor,
+                lambda: self._engine.step(request, progress_callback=_progress_callback),
+            )
             result = results[0]
             if not result.request_id:
                 result.request_id = request_id
@@ -178,7 +188,17 @@ class InlineStageDiffusionClient:
             )
 
             loop = asyncio.get_running_loop()
-            results = await loop.run_in_executor(self._executor, self._engine.step, request)
+            def _progress_callback(event: dict[str, Any]) -> None:
+                payload = dict(event)
+                payload["type"] = "progress"
+                payload["request_id"] = request_id
+                payload["stage_id"] = self.stage_id
+                loop.call_soon_threadsafe(self._output_queue.put_nowait, payload)
+
+            results = await loop.run_in_executor(
+                self._executor,
+                lambda: self._engine.step(request, progress_callback=_progress_callback),
+            )
 
             all_images: list = []
             merged_mm: dict[str, Any] = {}

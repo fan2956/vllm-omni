@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from collections.abc import AsyncGenerator, Iterable, Sequence
+from collections.abc import AsyncGenerator, Callable, Iterable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from vllm.engine.protocol import EngineClient
@@ -156,6 +156,7 @@ class AsyncOmni(EngineClient, OmniBase):
         tokenization_kwargs: dict[str, Any] | None = None,
         sampling_params_list: Sequence[OmniSamplingParams] | None = None,
         output_modalities: list[str] | None = None,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
     ) -> AsyncGenerator[OmniRequestOutput, None]:
         """Generate outputs for the given prompt(s) asynchronously.
 
@@ -236,6 +237,7 @@ class AsyncOmni(EngineClient, OmniBase):
                 final_stage_id_for_e2e,
                 req_start_ts,
                 wall_start_ts,
+                progress_callback=progress_callback,
             ):
                 yield output
 
@@ -274,6 +276,7 @@ class AsyncOmni(EngineClient, OmniBase):
         final_stage_id_for_e2e: int,
         req_start_ts: dict[str, float],
         wall_start_ts: float,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
     ) -> AsyncGenerator[OmniRequestOutput, None]:
         """Read results from the Orchestrator (via the request's asyncio.Queue)
         and yield OmniRequestOutput objects.
@@ -289,6 +292,11 @@ class AsyncOmni(EngineClient, OmniBase):
             result = await req_state.queue.get()
 
             stage_id = result.get("stage_id", 0)
+
+            if isinstance(result, dict) and result.get("type") == "progress":
+                if progress_callback is not None:
+                    progress_callback(result)
+                continue
 
             # Check for errors
             if isinstance(result, dict) and result.get("type") == "error":
@@ -347,6 +355,13 @@ class AsyncOmni(EngineClient, OmniBase):
                         continue
 
                     if isinstance(msg, dict) and msg.get("type") == "error":
+                        req_id = msg.get("request_id")
+                        req_state = self.request_states.get(req_id)
+                        if req_state is not None:
+                            await req_state.queue.put(msg)
+                        continue
+
+                    if isinstance(msg, dict) and msg.get("type") == "progress":
                         req_id = msg.get("request_id")
                         req_state = self.request_states.get(req_id)
                         if req_state is not None:

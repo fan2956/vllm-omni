@@ -243,6 +243,20 @@ class Orchestrator:
                     if output is not None:
                         idle = False
 
+                        if isinstance(output, dict) and output.get("type") == "progress":
+                            req_id = output.get("request_id")
+                            req_state = self.request_states.get(req_id)
+                            await self.output_async_queue.put(
+                                {
+                                    **output,
+                                    "stage_id": stage_id,
+                                    "stage_submit_ts": (
+                                        req_state.stage_submit_ts.get(stage_id) if req_state else None
+                                    ),
+                                }
+                            )
+                            continue
+
                         if isinstance(output, dict) and output.get("type") == "error":
                             req_id = output.get("request_id")
                             req_state = self.request_states.get(req_id)

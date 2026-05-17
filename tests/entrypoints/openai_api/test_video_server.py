@@ -66,7 +66,7 @@ class FakeAsyncOmni:
         self.captured_prompt = None
         self.captured_sampling_params_list = None
 
-    async def generate(self, prompt, request_id, sampling_params_list):
+    async def generate(self, prompt, request_id, sampling_params_list, progress_callback=None):
         self.captured_prompt = prompt
         self.captured_sampling_params_list = sampling_params_list
         num_outputs = sampling_params_list[0].num_outputs_per_prompt
@@ -79,7 +79,7 @@ class ErrorAsyncOmni(FakeAsyncOmni):
         super().__init__()
         self._exc = exc
 
-    async def generate(self, prompt, request_id, sampling_params_list):
+    async def generate(self, prompt, request_id, sampling_params_list, progress_callback=None):
         self.captured_prompt = prompt
         self.captured_sampling_params_list = sampling_params_list
         raise self._exc
@@ -97,7 +97,7 @@ class BlockingVideoHandler:
         if self.stage_configs is None:
             self.stage_configs = stage_configs
 
-    async def generate_video_bytes(self, request, reference_id, *, reference_image=None):
+    async def generate_video_bytes(self, request, reference_id, *, reference_image=None, progress_callback=None):
         self.started.set()
         try:
             await asyncio.Future()
@@ -636,6 +636,43 @@ def test_video_job_persists_profiler_metadata(test_client, mocker: MockerFixture
 
     assert completed["stage_durations"] == {"diffuse": 2.5, "vae.decode": 0.3}
     assert completed["peak_memory_mb"] == 4096.5
+
+
+@pytest.mark.asyncio
+async def test_video_job_progress_callback_updates_store(mocker: MockerFixture):
+    mocker.patch(
+        "vllm_omni.entrypoints.openai.api_server.STORAGE_MANAGER.save",
+        return_value="/tmp/video_gen_progress.mp4",
+    )
+
+    class ProgressHandler:
+        async def generate_video_bytes(self, request, reference_id, *, reference_image=None, progress_callback=None):
+            assert progress_callback is not None
+            progress_callback({"current_step": 2, "total_steps": 4, "percent": 50})
+            job = None
+            for _ in range(10):
+                job = await api_server.VIDEO_STORE.get(reference_id)
+                if job is not None and job.progress == 50:
+                    break
+                await asyncio.sleep(0.01)
+            assert job is not None
+            assert job.progress == 50
+            assert job.step_progress.current_step == 2
+            return b"fake-video", {}, 0.0
+
+    job = VideoResponse(model="test-model", prompt="track progress", id="video_gen_progress")
+    await api_server.VIDEO_STORE.upsert(job.id, job)
+
+    await api_server._run_video_generation_job(
+        ProgressHandler(),
+        VideoGenerationRequest(prompt="track progress"),
+        job.id,
+    )
+
+    completed = await api_server.VIDEO_STORE.get(job.id)
+    assert completed is not None
+    assert completed.status == VideoGenerationStatus.COMPLETED
+    assert completed.progress == 100
 
 
 def test_missing_handler_returns_503():

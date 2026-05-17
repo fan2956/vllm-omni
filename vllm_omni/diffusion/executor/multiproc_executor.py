@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import time
 import weakref
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -158,7 +159,11 @@ class MultiprocDiffusionExecutor(DiffusionExecutor):
 
         return processes, result_handle
 
-    def add_req(self, request: OmniDiffusionRequest) -> DiffusionOutput:
+    def add_req(
+        self,
+        request: OmniDiffusionRequest,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> DiffusionOutput:
         self._ensure_open()
         rpc_request = {
             "type": "rpc",
@@ -171,21 +176,27 @@ class MultiprocDiffusionExecutor(DiffusionExecutor):
 
         try:
             self._broadcast_mq.enqueue(rpc_request)
-            response = self._result_mq.dequeue()
+            while True:
+                response = self._result_mq.dequeue()
 
-            try:
-                unpack_diffusion_output_shm(response)
-            except Exception as e:
-                logger.warning("SHM unpack failed (data may already be inline): %s", e)
+                if isinstance(response, dict) and response.get("type") == "progress":
+                    if progress_callback is not None:
+                        progress_callback(response)
+                    continue
 
-            if isinstance(response, dict) and response.get("status") == "error":
-                raise RuntimeError(
-                    f"Worker failed with error '{response.get('error')}', "
-                    "please check the stack trace above for the root cause"
-                )
-            if not isinstance(response, DiffusionOutput):
-                raise RuntimeError(f"Unexpected response type for generate: {type(response)!r}")
-            return response
+                try:
+                    unpack_diffusion_output_shm(response)
+                except Exception as e:
+                    logger.warning("SHM unpack failed (data may already be inline): %s", e)
+
+                if isinstance(response, dict) and response.get("status") == "error":
+                    raise RuntimeError(
+                        f"Worker failed with error '{response.get('error')}', "
+                        "please check the stack trace above for the root cause"
+                    )
+                if not isinstance(response, DiffusionOutput):
+                    raise RuntimeError(f"Unexpected response type for generate: {type(response)!r}")
+                return response
         except Exception as e:
             logger.error(f"Generate call failed: {e}")
             raise

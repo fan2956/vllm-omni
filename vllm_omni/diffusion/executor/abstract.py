@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import Any
 
 from vllm.utils.import_utils import resolve_obj_by_qualname
@@ -59,7 +60,11 @@ class DiffusionExecutor(ABC):
         pass
 
     @abstractmethod
-    def add_req(self, requests: OmniDiffusionRequest) -> DiffusionOutput:
+    def add_req(
+        self,
+        requests: OmniDiffusionRequest,
+        progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> DiffusionOutput:
         """Add requests to the execution queue."""
         pass
 
