@@ -147,37 +147,38 @@ textarea {
 
 .result-panel {
   min-height: calc(100vh - 48px);
-}
-
-.status-row {
   display: grid;
-  grid-template-columns: minmax(110px, 0.8fr) minmax(160px, 1.4fr) minmax(90px, 0.8fr);
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 18px;
 }
 
-.status-row > div {
+.result-card {
   min-width: 0;
-  border: 1px solid #d8dde6;
-  border-radius: 8px;
-  padding: 12px;
-  background: #fbfcfd;
 }
 
-.status-row strong {
+.result-card + .result-card {
+  border-top: 1px solid #d8dde6;
+  padding-top: 18px;
+}
+
+.result-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.result-heading h2 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.result-heading strong {
   display: block;
-  overflow-wrap: anywhere;
   margin-top: 4px;
-  font-size: 15px;
-}
-
-#job-status[data-status="completed"] {
-  color: #067647;
-}
-
-#job-status[data-status="failed"],
-#job-status[data-status="error"] {
-  color: #b42318;
+  font-size: 16px;
+  text-align: right;
 }
 
 progress {
@@ -207,8 +208,8 @@ progress {
 video {
   display: block;
   width: 100%;
-  min-height: 360px;
-  max-height: calc(100vh - 240px);
+  min-height: 280px;
+  max-height: min(520px, calc(50vh - 80px));
   border: 1px solid #d8dde6;
   border-radius: 8px;
   background: #111827;
@@ -242,13 +243,18 @@ pre.error {
 
 @media (max-width: 560px) {
   .panel-heading,
-  .status-row,
+  .result-heading,
   .grid {
     grid-template-columns: 1fr;
   }
 
-  .panel-heading {
+  .panel-heading,
+  .result-heading {
     display: grid;
+  }
+
+  .result-heading strong {
+    text-align: left;
   }
 
   button {

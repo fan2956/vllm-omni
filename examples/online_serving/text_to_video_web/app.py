@@ -21,8 +21,19 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 DEFAULT_OMNI_SERVER_URL = "http://127.0.0.1:8099"
+DEFAULT_COMPARE_OMNI_SERVER_URL = "http://127.0.0.1:9099"
 STATIC_DIR = Path(__file__).with_name("static")
 ALLOWED_VIDEO_SIZES = {"832x480", "1280x720"}
+SERVER_TITLES = {
+    "default": "vLLM-Omni speed by MindIE SD",
+    "compare": "vLLM-Omni",
+}
+DEFAULT_NEGATIVE_PROMPT = (
+    "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，"
+    "最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，"
+    "画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，"
+    "杂乱的背景，三条腿，背景人很多，倒着走"
+)
 DEFAULT_FLOW_SHIFT = 5.0
 DEFAULT_FRAME_INTERPOLATION_MODEL_PATH = "/home/zf/vllm-omni/elfgum"
 DEFAULT_FRAME_INTERPOLATION_EXP = 1
@@ -32,8 +43,7 @@ DEFAULT_FRAME_INTERPOLATION_SCALE = 1.0
 class CreateVideoRequest(BaseModel):
     """Browser-facing request shape.
 
-    ``server_id`` is fixed to ``default`` for now. Keeping it in the API makes
-    the future two-server comparison mode additive instead of a breaking change.
+    ``server_id`` selects the vLLM-Omni backend used for this request.
     """
 
     server_id: str = "default"
@@ -44,7 +54,7 @@ class CreateVideoRequest(BaseModel):
     guidance_scale: float = Field(default=1.0, ge=0.0)
     num_inference_steps: int = Field(default=40, ge=1)
     seed: int | None = 42
-    negative_prompt: str | None = None
+    negative_prompt: str | None = DEFAULT_NEGATIVE_PROMPT
     enable_frame_interpolation: bool = True
 
     @field_validator("prompt")
@@ -58,8 +68,9 @@ class CreateVideoRequest(BaseModel):
     @field_validator("server_id")
     @classmethod
     def validate_server_id(cls, value: str) -> str:
-        if value != "default":
-            raise ValueError("Only server_id='default' is configured in this demo.")
+        if value not in SERVER_TITLES:
+            supported = ", ".join(SERVER_TITLES)
+            raise ValueError(f"server_id must be one of: {supported}")
         return value
 
     @field_validator("size")
@@ -138,15 +149,27 @@ def _json_or_raise(response: httpx.Response) -> dict[str, Any]:
     return data
 
 
-def _client_from_request(request: Request) -> OmniClient:
-    return request.app.state.omni_clients["default"]
+def _client_from_server_id(request: Request, server_id: str) -> OmniClient:
+    client = request.app.state.omni_clients.get(server_id)
+    if client is None:
+        supported = ", ".join(request.app.state.omni_clients)
+        raise HTTPException(status_code=400, detail=f"server_id must be one of: {supported}")
+    return client
 
 
-def create_app(omni_server_url: str | None = None) -> FastAPI:
+def create_app(omni_server_url: str | None = None, compare_omni_server_url: str | None = None) -> FastAPI:
     omni_server_url = omni_server_url or os.getenv("OMNI_SERVER_URL", DEFAULT_OMNI_SERVER_URL)
+    compare_omni_server_url = compare_omni_server_url or os.getenv(
+        "OMNI_COMPARE_SERVER_URL",
+        DEFAULT_COMPARE_OMNI_SERVER_URL,
+    )
 
     app = FastAPI(title="Wan2.2 Text-to-Video Web Demo")
-    app.state.omni_clients = {"default": OmniClient(omni_server_url)}
+    app.state.omni_clients = {
+        "default": OmniClient(omni_server_url),
+        "compare": OmniClient(compare_omni_server_url),
+    }
+    app.state.server_titles = SERVER_TITLES
 
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
@@ -155,13 +178,19 @@ def create_app(omni_server_url: str | None = None) -> FastAPI:
         return FileResponse(STATIC_DIR / "index.html")
 
     @app.get("/api/health")
-    async def health(request: Request) -> dict[str, Any]:
-        client = _client_from_request(request)
-        return {"web": {"ok": True}, "omni": await client.check_health()}
+    async def health(request: Request, include_compare: bool = True) -> dict[str, Any]:
+        servers = {}
+        server_ids = ["default", "compare"] if include_compare else ["default"]
+        for server_id in server_ids:
+            client = request.app.state.omni_clients[server_id]
+            health_result = await client.check_health()
+            health_result["title"] = request.app.state.server_titles.get(server_id, server_id)
+            servers[server_id] = health_result
+        return {"web": {"ok": True}, "omni": servers.get("default"), "servers": servers}
 
     @app.post("/api/videos")
     async def create_video(request_data: CreateVideoRequest, request: Request) -> dict[str, Any]:
-        client = _client_from_request(request)
+        client = _client_from_server_id(request, request_data.server_id)
         try:
             response = await client.create_video(request_data)
         except httpx.RequestError as exc:
@@ -169,8 +198,8 @@ def create_app(omni_server_url: str | None = None) -> FastAPI:
         return response
 
     @app.get("/api/videos/{video_id}")
-    async def get_video(video_id: str, request: Request) -> dict[str, Any]:
-        client = _client_from_request(request)
+    async def get_video(video_id: str, request: Request, server_id: str = "default") -> dict[str, Any]:
+        client = _client_from_server_id(request, server_id)
         try:
             response = await client.get_video(video_id)
         except httpx.RequestError as exc:
@@ -178,8 +207,8 @@ def create_app(omni_server_url: str | None = None) -> FastAPI:
         return response
 
     @app.get("/api/videos/{video_id}/content")
-    async def video_content(video_id: str, request: Request) -> Response:
-        client = _client_from_request(request)
+    async def video_content(video_id: str, request: Request, server_id: str = "default") -> Response:
+        client = _client_from_server_id(request, server_id)
         upstream_client = httpx.AsyncClient(timeout=None)
         try:
             upstream_headers = {}
@@ -238,7 +267,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--omni-server",
         default=os.getenv("OMNI_SERVER_URL", DEFAULT_OMNI_SERVER_URL),
-        help="Base URL for the vLLM-Omni server inside the container",
+        help="Base URL for the primary vLLM-Omni server inside the container",
+    )
+    parser.add_argument(
+        "--compare-omni-server",
+        default=os.getenv("OMNI_COMPARE_SERVER_URL", DEFAULT_COMPARE_OMNI_SERVER_URL),
+        help="Base URL for the comparison vLLM-Omni server inside the container",
     )
     return parser.parse_args()
 
@@ -247,7 +281,7 @@ def main() -> None:
     args = parse_args()
     import uvicorn
 
-    uvicorn.run(create_app(args.omni_server), host=args.host, port=args.port)
+    uvicorn.run(create_app(args.omni_server, args.compare_omni_server), host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

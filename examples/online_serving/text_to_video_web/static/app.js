@@ -1,26 +1,29 @@
 const form = document.querySelector("#video-form");
 const generateButton = document.querySelector("#generate-button");
 const healthStatus = document.querySelector("#health-status");
-const jobStatus = document.querySelector("#job-status");
-const jobId = document.querySelector("#job-id");
-const elapsed = document.querySelector("#elapsed");
-const progress = document.querySelector("#progress");
-const stepProgress = document.querySelector("#step-progress");
-const progressPercent = document.querySelector("#progress-percent");
-const videoPlayer = document.querySelector("#video-player");
-const message = document.querySelector("#message");
+const compareEnabled = document.querySelector("#compare-enabled");
 
-let activePoll = null;
-let startedAt = null;
+const resultViews = new Map(
+  Array.from(document.querySelectorAll(".result-card")).map((panel) => [
+    panel.dataset.serverId,
+    {
+      panel,
+      latency: panel.querySelector(".latency"),
+      progress: panel.querySelector(".progress"),
+      stepProgress: panel.querySelector(".step-progress"),
+      progressPercent: panel.querySelector(".progress-percent"),
+      videoPlayer: panel.querySelector(".video-player"),
+      message: panel.querySelector(".message"),
+    },
+  ]),
+);
 
-function setMessage(value, isError = false) {
-  message.textContent = value || "";
-  message.classList.toggle("error", isError);
-}
+const activePolls = new Map();
+const jobStates = new Map();
 
-function setStatus(status) {
-  jobStatus.textContent = status;
-  jobStatus.dataset.status = status;
+function setMessage(view, value, isError = false) {
+  view.message.textContent = value || "";
+  view.message.classList.toggle("error", isError);
 }
 
 function numberOrNull(value) {
@@ -31,10 +34,10 @@ function numberOrNull(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function payloadFromForm(formData) {
+function payloadFromForm(formData, serverId) {
   const prompt = String(formData.get("prompt") || "").trim();
   return {
-    server_id: "default",
+    server_id: serverId,
     prompt,
     size: String(formData.get("size") || "832x480").trim(),
     fps: numberOrNull(formData.get("fps")),
@@ -57,22 +60,50 @@ async function requestJson(url, options = {}) {
   return payload;
 }
 
-function updateElapsed() {
-  if (!startedAt) {
-    elapsed.textContent = "0s";
+function formatSeconds(seconds) {
+  if (!Number.isFinite(seconds)) {
+    return "0s";
+  }
+  return seconds < 10 ? `${seconds.toFixed(2)}s` : `${Math.round(seconds)}s`;
+}
+
+function stopPolling(serverId) {
+  const poll = activePolls.get(serverId);
+  if (poll) {
+    clearInterval(poll);
+    activePolls.delete(serverId);
+  }
+  const state = jobStates.get(serverId);
+  if (state?.resolve) {
+    state.resolve();
+  }
+}
+
+function stopAllPolling() {
+  for (const serverId of Array.from(activePolls.keys())) {
+    stopPolling(serverId);
+  }
+}
+
+function updateLatency(serverId, data = {}) {
+  const view = resultViews.get(serverId);
+  const state = jobStates.get(serverId);
+  if (!view || !state?.startedAt) {
     return;
   }
-  elapsed.textContent = `${Math.floor((Date.now() - startedAt) / 1000)}s`;
-}
-
-function stopPolling() {
-  if (activePoll) {
-    clearInterval(activePoll);
-    activePoll = null;
+  if (data.status === "completed" && Number.isFinite(data.inference_time_s)) {
+    view.latency.textContent = formatSeconds(data.inference_time_s);
+    return;
   }
+  view.latency.textContent = formatSeconds((Date.now() - state.startedAt) / 1000);
 }
 
-function updateProgress(data, fallbackTotalSteps = 40) {
+function updateProgress(serverId, data, fallbackTotalSteps = 40) {
+  const view = resultViews.get(serverId);
+  if (!view) {
+    return;
+  }
+
   const stepData = data.step_progress || {};
   const totalSteps = Number.isFinite(stepData.total_steps) ? stepData.total_steps : fallbackTotalSteps;
   const currentStep = Number.isFinite(stepData.current_step) ? stepData.current_step : 0;
@@ -82,93 +113,153 @@ function updateProgress(data, fallbackTotalSteps = 40) {
       ? data.progress
       : 0;
 
-  progress.value = Math.max(0, Math.min(100, percent));
-  progressPercent.textContent = `${Math.round(progress.value)}%`;
+  view.progress.value = Math.max(0, Math.min(100, percent));
+  view.progressPercent.textContent = `${Math.round(view.progress.value)}%`;
   if (currentStep >= totalSteps && data.status === "in_progress") {
-    stepProgress.textContent = `Step ${Math.max(0, currentStep)} / ${totalSteps} finalizing`;
+    view.stepProgress.textContent = `Step ${Math.max(0, currentStep)} / ${totalSteps} finalizing`;
   } else {
-    stepProgress.textContent = `Step ${Math.max(0, currentStep)} / ${totalSteps}`;
+    view.stepProgress.textContent = `Step ${Math.max(0, currentStep)} / ${totalSteps}`;
   }
 }
 
-async function pollJob(id) {
-  const data = await requestJson(`/api/videos/${id}`);
-  setStatus(data.status || "unknown");
-  updateProgress(data);
-  updateElapsed();
+function resetResult(serverId, fallbackTotalSteps = 40) {
+  const view = resultViews.get(serverId);
+  if (!view) {
+    return;
+  }
+  stopPolling(serverId);
+  jobStates.delete(serverId);
+  view.latency.textContent = "0s";
+  updateProgress(serverId, {
+    progress: 0,
+    step_progress: { current_step: 0, total_steps: fallbackTotalSteps, percent: 0 },
+  }, fallbackTotalSteps);
+  view.videoPlayer.removeAttribute("src");
+  view.videoPlayer.load();
+  setMessage(view, "");
+}
+
+async function pollJob(serverId, fallbackTotalSteps = 40) {
+  const state = jobStates.get(serverId);
+  if (!state?.id) {
+    return;
+  }
+  const view = resultViews.get(serverId);
+  const data = await requestJson(`/api/videos/${state.id}?server_id=${encodeURIComponent(serverId)}`);
+  updateProgress(serverId, data, fallbackTotalSteps);
+  updateLatency(serverId, data);
 
   if (data.status === "completed") {
-    stopPolling();
-    generateButton.disabled = false;
-    updateProgress(data);
-    videoPlayer.src = `/api/videos/${id}/content?t=${Date.now()}`;
-    videoPlayer.load();
-    setMessage(`Completed in ${data.inference_time_s ? data.inference_time_s.toFixed(2) : "unknown"} seconds.`);
+    stopPolling(serverId);
+    updateProgress(serverId, data, fallbackTotalSteps);
+    view.videoPlayer.src = `/api/videos/${state.id}/content?server_id=${encodeURIComponent(serverId)}&t=${Date.now()}`;
+    view.videoPlayer.load();
+    setMessage(view, "");
   } else if (data.status === "failed") {
-    stopPolling();
-    generateButton.disabled = false;
+    stopPolling(serverId);
     const error = data.error?.message || "Video generation failed.";
-    setMessage(error, true);
+    setMessage(view, error, true);
   }
+}
+
+async function createAndPoll(serverId, payload, fallbackTotalSteps) {
+  return new Promise(async (resolve) => {
+    const view = resultViews.get(serverId);
+    const startedAt = Date.now();
+    jobStates.set(serverId, { startedAt, id: null, resolve });
+    updateLatency(serverId);
+    setMessage(view, "Submitting...");
+
+    try {
+      const data = await requestJson("/api/videos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      jobStates.set(serverId, { startedAt, id: data.id, resolve });
+      updateProgress(serverId, data, fallbackTotalSteps);
+      updateLatency(serverId, data);
+      setMessage(view, "");
+
+      activePolls.set(
+        serverId,
+        setInterval(() => {
+          pollJob(serverId, fallbackTotalSteps).catch((error) => {
+            stopPolling(serverId);
+            updateLatency(serverId);
+            setMessage(view, error.message, true);
+          });
+        }, 1000),
+      );
+      await pollJob(serverId, fallbackTotalSteps);
+    } catch (error) {
+      stopPolling(serverId);
+      updateLatency(serverId);
+      setMessage(view, error.message, true);
+    }
+  });
 }
 
 async function checkHealth() {
   try {
-    const data = await requestJson("/api/health");
-    healthStatus.textContent = data.omni?.ok ? "Omni server connected" : "Omni server unavailable";
-    healthStatus.classList.toggle("bad", !data.omni?.ok);
+    const data = await requestJson(`/api/health?include_compare=${compareEnabled.checked ? "true" : "false"}`);
+    const servers = data.servers || {};
+    const defaultOk = servers.default?.ok || data.omni?.ok;
+    const compareOk = servers.compare?.ok;
+    if (compareEnabled.checked) {
+      healthStatus.textContent = defaultOk && compareOk
+        ? "Both omni servers connected"
+        : "One or more omni servers unavailable";
+      healthStatus.classList.toggle("bad", !(defaultOk && compareOk));
+    } else {
+      healthStatus.textContent = defaultOk ? "Primary omni server connected" : "Primary omni server unavailable";
+      healthStatus.classList.toggle("bad", !defaultOk);
+    }
   } catch (error) {
     healthStatus.textContent = "Health check failed";
     healthStatus.classList.add("bad");
   }
 }
 
+function syncCompareVisibility() {
+  const compareView = resultViews.get("compare");
+  compareView.panel.hidden = !compareEnabled.checked;
+  if (!compareEnabled.checked) {
+    resetResult("compare");
+  }
+  checkHealth();
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  stopPolling();
-  setMessage("");
-  setStatus("submitting");
-  jobId.textContent = "-";
-  updateProgress({ progress: 0, step_progress: { current_step: 0, total_steps: 40, percent: 0 } });
-  videoPlayer.removeAttribute("src");
-  videoPlayer.load();
+  stopAllPolling();
+  const formData = new FormData(form);
+  const primaryPayload = payloadFromForm(formData, "default");
+  const fallbackTotalSteps = primaryPayload.num_inference_steps || 40;
 
-  const payload = payloadFromForm(new FormData(form));
-  if (!payload.prompt) {
-    setStatus("idle");
-    setMessage("Prompt is required.", true);
+  resetResult("default", fallbackTotalSteps);
+  resetResult("compare", fallbackTotalSteps);
+  syncCompareVisibility();
+
+  if (!primaryPayload.prompt) {
+    setMessage(resultViews.get("default"), "Prompt is required.", true);
     return;
   }
 
   generateButton.disabled = true;
-  startedAt = Date.now();
-  updateElapsed();
-
-  try {
-    const data = await requestJson("/api/videos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    jobId.textContent = data.id || "-";
-    setStatus(data.status || "queued");
-    updateProgress(data, payload.num_inference_steps || 40);
-    activePoll = setInterval(() => {
-      pollJob(data.id).catch((error) => {
-        stopPolling();
-        generateButton.disabled = false;
-        setStatus("error");
-        setMessage(error.message, true);
-      });
-    }, 1000);
-    await pollJob(data.id);
-  } catch (error) {
-    generateButton.disabled = false;
-    setStatus("error");
-    setMessage(error.message, true);
+  const jobs = [createAndPoll("default", primaryPayload, fallbackTotalSteps)];
+  if (compareEnabled.checked) {
+    jobs.push(createAndPoll("compare", payloadFromForm(formData, "compare"), fallbackTotalSteps));
   }
+
+  await Promise.allSettled(jobs);
+  generateButton.disabled = false;
 });
 
-updateProgress({ progress: 0, step_progress: { current_step: 0, total_steps: 40, percent: 0 } });
-checkHealth();
+compareEnabled.addEventListener("change", syncCompareVisibility);
+
+resetResult("default");
+resetResult("compare");
+syncCompareVisibility();
 setInterval(checkHealth, 10000);
