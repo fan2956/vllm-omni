@@ -1,0 +1,13 @@
+curl -X POST http://localhost:8099/v1/videos \
+    -F "prompt='Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.'" \
+    -F "size=720x1280" \
+    -F "fps=12" \
+    -F "num_frames=61" \
+    -F "guidance_scale=1.0" \
+    -F "flow_shift=5.0" \
+    -F "num_inference_steps=40" \
+    -F "frame_interpolation_model_path=/home/zf/vllm-omni/elfgum" \
+    -F "enable_frame_interpolation=true" \
+    -F "frame_interpolation_exp=1" \
+    -F "frame_interpolation_scale=1.0" \
+    -F "seed=42"
