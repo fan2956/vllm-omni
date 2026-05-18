@@ -7,6 +7,7 @@ Provides a diffusers-compatible progress_bar() method that wraps tqdm,
 automatically disabling output on non-zero ranks in distributed settings.
 """
 
+import time
 from typing import Any, Callable
 
 import torch
@@ -50,6 +51,7 @@ class ProgressBarMixin:
 
     def set_progress_callback(self, callback: Callable[[dict[str, Any]], None] | None) -> None:
         self._progress_callback = callback
+        self._progress_started_at = None
 
     def report_step_progress(self, current_step: int, total_steps: int) -> None:
         callback = getattr(self, "_progress_callback", None)
@@ -57,12 +59,21 @@ class ProgressBarMixin:
             return
         total_steps = max(int(total_steps), 1)
         current_step = max(0, min(int(current_step), total_steps))
+        now = time.perf_counter()
+        started_at = getattr(self, "_progress_started_at", None)
+        if started_at is None:
+            started_at = now
+            self._progress_started_at = started_at
+        elapsed_s = max(0.0, now - started_at)
+        seconds_per_step = elapsed_s / current_step if current_step > 0 else None
         callback(
             {
                 "type": "progress",
                 "current_step": current_step,
                 "total_steps": total_steps,
                 "percent": int((current_step / total_steps) * 100),
+                "elapsed_s": elapsed_s,
+                "seconds_per_step": seconds_per_step,
             }
         )
 

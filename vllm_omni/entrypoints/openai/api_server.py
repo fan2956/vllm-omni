@@ -1972,6 +1972,8 @@ async def _run_video_generation_job(
         current_step = int(event.get("current_step") or 0)
         total_steps = int(event.get("total_steps") or 0)
         percent = int(event.get("percent") or 0)
+        elapsed_s = event.get("elapsed_s")
+        seconds_per_step = event.get("seconds_per_step")
         percent = max(0, min(100, percent))
         await VIDEO_STORE.update_fields(
             video_id,
@@ -1981,6 +1983,8 @@ async def _run_video_generation_job(
                     current_step=current_step,
                     total_steps=total_steps,
                     percent=percent,
+                    elapsed_s=elapsed_s if isinstance(elapsed_s, int | float) else None,
+                    seconds_per_step=seconds_per_step if isinstance(seconds_per_step, int | float) else None,
                 ),
             },
         )

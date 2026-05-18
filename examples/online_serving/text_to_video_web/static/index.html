@@ -49,14 +49,9 @@
             </label>
             <label class="field">
               <span>Seed</span>
-              <input name="seed" type="number" step="1" value="42" />
+              <input name="seed" type="number" step="1" value="-1" />
             </label>
           </div>
-
-          <label class="field wide">
-            <span>Negative Prompt</span>
-            <textarea name="negative_prompt" rows="4">色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走</textarea>
-          </label>
 
           <fieldset class="advanced">
             <legend>Frame Interpolation</legend>
@@ -87,6 +82,7 @@
             <div class="progress-block">
               <div class="progress-meta">
                 <span class="step-progress">Step 0 / 40</span>
+                <span class="step-speed">--</span>
                 <span class="progress-percent">0%</span>
               </div>
               <progress class="progress" value="0" max="100"></progress>
@@ -106,6 +102,7 @@
             <div class="progress-block">
               <div class="progress-meta">
                 <span class="step-progress">Step 0 / 40</span>
+                <span class="step-speed">--</span>
                 <span class="progress-percent">0%</span>
               </div>
               <progress class="progress" value="0" max="100"></progress>

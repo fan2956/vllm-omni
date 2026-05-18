@@ -648,7 +648,15 @@ async def test_video_job_progress_callback_updates_store(mocker: MockerFixture):
     class ProgressHandler:
         async def generate_video_bytes(self, request, reference_id, *, reference_image=None, progress_callback=None):
             assert progress_callback is not None
-            progress_callback({"current_step": 2, "total_steps": 4, "percent": 50})
+            progress_callback(
+                {
+                    "current_step": 2,
+                    "total_steps": 4,
+                    "percent": 50,
+                    "elapsed_s": 3.0,
+                    "seconds_per_step": 1.5,
+                }
+            )
             job = None
             for _ in range(10):
                 job = await api_server.VIDEO_STORE.get(reference_id)
@@ -658,6 +666,7 @@ async def test_video_job_progress_callback_updates_store(mocker: MockerFixture):
             assert job is not None
             assert job.progress == 50
             assert job.step_progress.current_step == 2
+            assert job.step_progress.seconds_per_step == 1.5
             return b"fake-video", {}, 0.0
 
     job = VideoResponse(model="test-model", prompt="track progress", id="video_gen_progress")

@@ -235,6 +235,12 @@ class VideoStepProgress(BaseModel):
     current_step: int = Field(default=0, ge=0, description="Completed diffusion denoising steps.")
     total_steps: int = Field(default=0, ge=0, description="Total diffusion denoising steps.")
     percent: int = Field(default=0, ge=0, le=100, description="Denoising progress percentage.")
+    elapsed_s: float | None = Field(default=None, ge=0.0, description="Elapsed denoising time in seconds.")
+    seconds_per_step: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Average denoising seconds per completed step.",
+    )
 
 
 class VideoResponse(BaseModel):

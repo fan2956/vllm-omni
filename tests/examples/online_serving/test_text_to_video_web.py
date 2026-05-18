@@ -33,7 +33,12 @@ class FakeOmniClient:
             "id": video_id,
             "status": "failed",
             "progress": 0,
-            "step_progress": {"current_step": 3, "total_steps": 40, "percent": 8},
+            "step_progress": {
+                "current_step": 3,
+                "total_steps": 40,
+                "percent": 8,
+                "seconds_per_step": 1.2,
+            },
             "error": {"code": "RuntimeError", "message": "boom"},
         }
 
@@ -62,7 +67,6 @@ def test_create_video_request_defaults_are_forwarded_as_omni_form():
         "guidance_scale": "1.0",
         "flow_shift": "5.0",
         "num_inference_steps": "40",
-        "seed": "42",
         "negative_prompt": DEFAULT_NEGATIVE_PROMPT,
         "enable_frame_interpolation": "true",
         "frame_interpolation_model_path": "/home/zf/vllm-omni/elfgum",
@@ -81,6 +85,12 @@ def test_create_video_request_accepts_exact_size_choices():
 def test_create_video_request_rejects_asterisk_size_without_normalizing():
     with pytest.raises(ValueError, match="size must be one of"):
         CreateVideoRequest(prompt="wide shot", size="1280*720")
+
+
+def test_create_video_request_omits_seed_when_missing_or_negative_one():
+    assert "seed" not in CreateVideoRequest(prompt="random seed").to_omni_form()
+    assert "seed" not in CreateVideoRequest(prompt="random seed", seed=-1).to_omni_form()
+    assert CreateVideoRequest(prompt="fixed seed", seed=42).to_omni_form()["seed"] == "42"
 
 
 def test_create_video_request_accepts_default_and_compare_server_ids():
@@ -131,6 +141,7 @@ def test_status_polling_passes_failed_job_payload_through():
     assert response.status_code == 200
     assert response.json()["status"] == "failed"
     assert response.json()["step_progress"]["current_step"] == 3
+    assert response.json()["step_progress"]["seconds_per_step"] == 1.2
     assert response.json()["error"]["message"] == "boom"
 
 

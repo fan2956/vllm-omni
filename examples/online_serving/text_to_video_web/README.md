@@ -71,8 +71,8 @@ The UI defaults match the local `curl.sh` example:
 | `num_frames` | `61` |
 | `guidance_scale` | `1.0` |
 | `num_inference_steps` | `40` |
-| `seed` | `42` |
-| `negative_prompt` | Chinese Wan2.2 quality/detail negative prompt |
+| `seed` | `-1`, which means no fixed seed |
+| `negative_prompt` | Hidden Chinese Wan2.2 quality/detail negative prompt |
 | `enable_frame_interpolation` | `true` |
 | `compare_enabled` | `true` |
 
@@ -80,6 +80,10 @@ The UI defaults match the local `curl.sh` example:
 enabled, the proxy forwards the local RIFE defaults from the original curl
 example: model path `/home/zf/vllm-omni/elfgum`, exp `1`, and scale `1.0`.
 The UI only exposes the enable switch.
+
+The proxy keeps a default negative prompt even though it is not shown on the
+page. Seed `-1` or an omitted seed is not forwarded to vLLM-Omni, so generation
+will not use a fixed seed unless the user enters one.
 
 The job detail response includes `step_progress` when the omni server reports
 real Wan2.2 denoising step callbacks. The page only displays server-reported

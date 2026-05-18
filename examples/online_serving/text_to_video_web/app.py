@@ -53,7 +53,7 @@ class CreateVideoRequest(BaseModel):
     num_frames: int = Field(default=61, ge=1)
     guidance_scale: float = Field(default=1.0, ge=0.0)
     num_inference_steps: int = Field(default=40, ge=1)
-    seed: int | None = 42
+    seed: int | None = None
     negative_prompt: str | None = DEFAULT_NEGATIVE_PROMPT
     enable_frame_interpolation: bool = True
 
@@ -87,6 +87,8 @@ class CreateVideoRequest(BaseModel):
         form: dict[str, str] = {}
         for key, value in data.items():
             if value is None:
+                continue
+            if key == "seed" and value == -1:
                 continue
             if isinstance(value, str) and value.strip() == "":
                 continue

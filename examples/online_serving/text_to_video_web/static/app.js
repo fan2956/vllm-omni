@@ -11,6 +11,7 @@ const resultViews = new Map(
       latency: panel.querySelector(".latency"),
       progress: panel.querySelector(".progress"),
       stepProgress: panel.querySelector(".step-progress"),
+      stepSpeed: panel.querySelector(".step-speed"),
       progressPercent: panel.querySelector(".progress-percent"),
       videoPlayer: panel.querySelector(".video-player"),
       message: panel.querySelector(".message"),
@@ -45,7 +46,6 @@ function payloadFromForm(formData, serverId) {
     guidance_scale: numberOrNull(formData.get("guidance_scale")),
     num_inference_steps: numberOrNull(formData.get("num_inference_steps")),
     seed: numberOrNull(formData.get("seed")),
-    negative_prompt: String(formData.get("negative_prompt") || "").trim() || null,
     enable_frame_interpolation: formData.get("enable_frame_interpolation") === "on",
   };
 }
@@ -65,6 +65,13 @@ function formatSeconds(seconds) {
     return "0s";
   }
   return seconds < 10 ? `${seconds.toFixed(2)}s` : `${Math.round(seconds)}s`;
+}
+
+function formatStepSpeed(secondsPerStep) {
+  if (!Number.isFinite(secondsPerStep) || secondsPerStep <= 0) {
+    return "--";
+  }
+  return `${secondsPerStep.toFixed(2)}s/it`;
 }
 
 function stopPolling(serverId) {
@@ -115,6 +122,7 @@ function updateProgress(serverId, data, fallbackTotalSteps = 40) {
 
   view.progress.value = Math.max(0, Math.min(100, percent));
   view.progressPercent.textContent = `${Math.round(view.progress.value)}%`;
+  view.stepSpeed.textContent = formatStepSpeed(stepData.seconds_per_step);
   if (currentStep >= totalSteps && data.status === "in_progress") {
     view.stepProgress.textContent = `Step ${Math.max(0, currentStep)} / ${totalSteps} finalizing`;
   } else {

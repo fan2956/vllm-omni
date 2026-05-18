@@ -194,11 +194,16 @@ progress {
 .progress-meta {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   margin-bottom: 8px;
   color: #42526b;
   font-size: 13px;
   font-weight: 650;
+}
+
+.step-speed {
+  color: #126a62;
 }
 
 .progress-block progress {
