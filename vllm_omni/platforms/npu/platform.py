@@ -34,9 +34,9 @@ class NPUOmniPlatform(OmniPlatform, NPUPlatform):
     @classmethod
     def set_device(cls, device: torch.device) -> None:
         super().set_device(device)
-        # HunyuanImage3.0 Ascend quantized MoE weights are converted from ND
-        # to FRACTAL_NZ after loading. Enable internal format so the NZ
-        # storage layout is preserved for fused NPU kernels.
+        # Ascend quantized weights are converted from ND to FRACTAL_NZ
+        # after loading. Enable internal format so the NZ storage layout
+        # is preserved for fused NPU kernels.
         torch.npu.config.allow_internal_format = True
 
     @classmethod
