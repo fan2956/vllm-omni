@@ -35,7 +35,7 @@ DEFAULT_NEGATIVE_PROMPT = (
     "杂乱的背景，三条腿，背景人很多，倒着走"
 )
 DEFAULT_FLOW_SHIFT = 5.0
-DEFAULT_FRAME_INTERPOLATION_MODEL_PATH = "/home/zf/vllm-omni/elfgum"
+DEFAULT_FRAME_INTERPOLATION_MODEL_PATH = "/root/.cache/modelscope/hub/models/elfgum"
 DEFAULT_FRAME_INTERPOLATION_EXP = 1
 DEFAULT_FRAME_INTERPOLATION_SCALE = 1.0
 
@@ -112,18 +112,18 @@ class OmniClient:
         self.timeout_s = timeout_s
 
     async def create_video(self, request: CreateVideoRequest) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self.timeout_s) as client:
+        async with httpx.AsyncClient(timeout=self.timeout_s, trust_env=False) as client:
             response = await client.post(f"{self.server_url}/v1/videos", data=request.to_omni_form())
         return _json_or_raise(response)
 
     async def get_video(self, video_id: str) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self.timeout_s) as client:
+        async with httpx.AsyncClient(timeout=self.timeout_s, trust_env=False) as client:
             response = await client.get(f"{self.server_url}/v1/videos/{video_id}")
         return _json_or_raise(response)
 
     async def check_health(self) -> dict[str, Any]:
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
+            async with httpx.AsyncClient(timeout=5.0, trust_env=False) as client:
                 response = await client.get(f"{self.server_url}/v1/videos", params={"limit": 0})
             if response.status_code >= 400:
                 return {"ok": False, "status_code": response.status_code, "detail": _response_detail(response)}
@@ -211,7 +211,7 @@ def create_app(omni_server_url: str | None = None, compare_omni_server_url: str 
     @app.get("/api/videos/{video_id}/content")
     async def video_content(video_id: str, request: Request, server_id: str = "default") -> Response:
         client = _client_from_server_id(request, server_id)
-        upstream_client = httpx.AsyncClient(timeout=None)
+        upstream_client = httpx.AsyncClient(timeout=None, trust_env=False)
         try:
             upstream_headers = {}
             range_header = request.headers.get("range")

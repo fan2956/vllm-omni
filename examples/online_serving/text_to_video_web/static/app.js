@@ -219,9 +219,16 @@ async function checkHealth() {
     const defaultOk = servers.default?.ok || data.omni?.ok;
     const compareOk = servers.compare?.ok;
     if (compareEnabled.checked) {
+      const unavailable = [];
+      if (!defaultOk) {
+        unavailable.push("Primary");
+      }
+      if (!compareOk) {
+        unavailable.push("Compare");
+      }
       healthStatus.textContent = defaultOk && compareOk
         ? "Both omni servers connected"
-        : "One or more omni servers unavailable";
+        : `${unavailable.join(" and ")} omni server unavailable`;
       healthStatus.classList.toggle("bad", !(defaultOk && compareOk));
     } else {
       healthStatus.textContent = defaultOk ? "Primary omni server connected" : "Primary omni server unavailable";
