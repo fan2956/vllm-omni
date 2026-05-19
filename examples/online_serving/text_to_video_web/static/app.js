@@ -2,9 +2,10 @@ const form = document.querySelector("#video-form");
 const generateButton = document.querySelector("#generate-button");
 const healthStatus = document.querySelector("#health-status");
 const compareEnabled = document.querySelector("#compare-enabled");
-const compareToolbar = document.querySelector("#compare-toolbar");
 const comparePlayButton = document.querySelector("#compare-play-button");
 const comparePlayMessage = document.querySelector("#compare-play-message");
+const promptInput = document.querySelector("#prompt");
+const promptExampleButtons = document.querySelectorAll("[data-prompt]");
 
 const resultViews = new Map(
   Array.from(document.querySelectorAll(".result-card")).map((panel) => [
@@ -32,7 +33,7 @@ function isVideoReady(serverId) {
 function updateComparePlaybackState(message = "") {
   const compareMode = compareEnabled.checked;
   const canCompare = compareMode && isVideoReady("default") && isVideoReady("compare");
-  compareToolbar.hidden = !compareMode;
+  comparePlayButton.hidden = !compareMode;
   comparePlayButton.disabled = !canCompare;
   comparePlayMessage.textContent = compareMode ? message : "";
 }
@@ -50,7 +51,26 @@ function numberOrNull(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function payloadFromForm(formData, serverId) {
+function randomSeed() {
+  const maxSeed = 2147483647;
+  if (window.crypto?.getRandomValues) {
+    const values = new Uint32Array(1);
+    window.crypto.getRandomValues(values);
+    return (values[0] % maxSeed) + 1;
+  }
+  return Math.floor(Math.random() * maxSeed) + 1;
+}
+
+function sharedSeedForComparison(formData) {
+  const seedValue = String(formData.get("seed") ?? "").trim();
+  if (!seedValue || seedValue === "-1") {
+    return randomSeed();
+  }
+  const parsed = Number(seedValue);
+  return Number.isInteger(parsed) ? parsed : randomSeed();
+}
+
+function payloadFromForm(formData, serverId, seedOverride) {
   const prompt = String(formData.get("prompt") || "").trim();
   return {
     server_id: serverId,
@@ -60,7 +80,7 @@ function payloadFromForm(formData, serverId) {
     num_frames: numberOrNull(formData.get("num_frames")),
     guidance_scale: numberOrNull(formData.get("guidance_scale")),
     num_inference_steps: numberOrNull(formData.get("num_inference_steps")),
-    seed: numberOrNull(formData.get("seed")),
+    seed: seedOverride ?? numberOrNull(formData.get("seed")),
     enable_frame_interpolation: formData.get("enable_frame_interpolation") === "on",
   };
 }
@@ -290,7 +310,9 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   stopAllPolling();
   const formData = new FormData(form);
-  const primaryPayload = payloadFromForm(formData, "default");
+  const compareMode = compareEnabled.checked;
+  const compareSeed = compareMode ? sharedSeedForComparison(formData) : undefined;
+  const primaryPayload = payloadFromForm(formData, "default", compareSeed);
   const fallbackTotalSteps = primaryPayload.num_inference_steps || 40;
 
   resetResult("default", fallbackTotalSteps);
@@ -304,8 +326,8 @@ form.addEventListener("submit", async (event) => {
 
   generateButton.disabled = true;
   const jobs = [createAndPoll("default", primaryPayload, fallbackTotalSteps)];
-  if (compareEnabled.checked) {
-    jobs.push(createAndPoll("compare", payloadFromForm(formData, "compare"), fallbackTotalSteps));
+  if (compareMode) {
+    jobs.push(createAndPoll("compare", payloadFromForm(formData, "compare", compareSeed), fallbackTotalSteps));
   }
 
   await Promise.allSettled(jobs);
@@ -314,6 +336,12 @@ form.addEventListener("submit", async (event) => {
 
 compareEnabled.addEventListener("change", syncCompareVisibility);
 comparePlayButton.addEventListener("click", playBothFromStart);
+for (const button of promptExampleButtons) {
+  button.addEventListener("click", () => {
+    promptInput.value = button.dataset.prompt || "";
+    promptInput.focus();
+  });
+}
 
 resetResult("default");
 resetResult("compare");

@@ -15,16 +15,17 @@
               <h1>Wan2.2 Video</h1>
               <p id="health-status" class="status-pill">Checking server...</p>
             </div>
-            <button id="generate-button" class="generate-button" type="submit">
-              <span class="generate-icon" aria-hidden="true"></span>
-              <span>Generate</span>
-            </button>
           </div>
 
           <label class="field wide">
             <span>Prompt</span>
             <textarea id="prompt" name="prompt" rows="4" required>Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.</textarea>
           </label>
+          <div class="prompt-examples" aria-label="Example prompts">
+            <button type="button" data-prompt="Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.">Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.</button>
+            <button type="button" data-prompt="A cat walks on the grass, realistic style.">A cat walks on the grass, realistic style.</button>
+            <button type="button" data-prompt="二次元动画风格，魔法阵在角色脚下旋转展开，符文如弹幕环绕，蓄力到顶点就射出彩虹光束带星形尾迹。">二次元动画风格，魔法阵在角色脚下旋转展开，符文如弹幕环绕，蓄力到顶点就射出彩虹光束带星形尾迹。</button>
+          </div>
 
           <div class="grid">
             <label class="field">
@@ -73,17 +74,21 @@
               <input id="compare-enabled" name="compare_enabled" type="checkbox" checked />
             </label>
           </div>
-        </form>
 
-        <section class="result-panel">
-          <div id="compare-toolbar" class="result-toolbar">
+          <div class="action-panel">
+            <button id="generate-button" class="generate-button" type="submit">
+              <span class="generate-icon" aria-hidden="true"></span>
+              <span>Generate</span>
+            </button>
             <button id="compare-play-button" class="secondary-button" type="button" disabled>
               <span class="compare-play-icon" aria-hidden="true"></span>
               <span>Compare Play</span>
             </button>
-            <p id="compare-play-message" class="toolbar-message"></p>
           </div>
+          <p id="compare-play-message" class="toolbar-message"></p>
+        </form>
 
+        <section class="result-panel">
           <article class="result-card" data-server-id="default">
             <div class="result-heading">
               <h2>vLLM-Omni (Speed By MindIE SD)</h2>
