@@ -21,6 +21,7 @@
             <span>Prompt</span>
             <textarea id="prompt" name="prompt" rows="4" required>Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.</textarea>
           </label>
+          <p class="examples-title">示例 Prompt</p>
           <div class="prompt-examples" aria-label="Example prompts">
             <button type="button" data-prompt="Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.">Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.</button>
             <button type="button" data-prompt="A cat walks on the grass, realistic style.">A cat walks on the grass, realistic style.</button>
@@ -61,15 +62,13 @@
             <label class="setting-row">
               <span>
                 <strong>Frame Interpolation</strong>
-                <small>Enable</small>
               </span>
               <input name="enable_frame_interpolation" type="checkbox" checked />
             </label>
 
             <label class="setting-row">
               <span>
-                <strong>Comparison</strong>
-                <small>Compare with vLLM-Omni</small>
+                <strong>Compare with vLLM-Omni</strong>
               </span>
               <input id="compare-enabled" name="compare_enabled" type="checkbox" checked />
             </label>
@@ -82,7 +81,7 @@
             </button>
             <button id="compare-play-button" class="secondary-button" type="button" disabled>
               <span class="compare-play-icon" aria-hidden="true"></span>
-              <span>Compare Play</span>
+              <span>Compare Video</span>
             </button>
           </div>
           <p id="compare-play-message" class="toolbar-message"></p>

@@ -74,8 +74,8 @@ p {
 }
 
 h1 {
-  margin-bottom: 8px;
-  font-size: 26px;
+  margin-bottom: 6px;
+  font-size: 32px;
   line-height: 1.08;
   letter-spacing: 0;
 }
@@ -210,6 +210,14 @@ textarea:focus {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
+}
+
+.examples-title {
+  margin: 0 0 8px;
+  color: #4c5b70;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .prompt-examples button {
@@ -456,11 +464,45 @@ progress::-moz-progress-bar {
   margin: 0 auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.45) 25%, transparent 25%) 0 0 / 22px 22px,
-    linear-gradient(135deg, transparent 75%, rgba(255, 255, 255, 0.45) 75%) 0 0 / 22px 22px,
-    #edf2f7;
+  background: #eef3f7;
   aspect-ratio: 16 / 9;
+}
+
+.video-shell::before,
+.video-shell::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+}
+
+.video-shell::before {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(15, 118, 110, 0.13), transparent 34%),
+    radial-gradient(circle at 35% 60%, rgba(47, 128, 216, 0.12), transparent 28%);
+}
+
+.video-shell::after {
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 34%,
+    rgba(255, 255, 255, 0.68) 50%,
+    rgba(255, 255, 255, 0.18) 66%,
+    transparent 100%
+  );
+  transform: translateX(-115%);
+}
+
+.result-card:not(.has-video) .video-shell::before {
+  opacity: 1;
+  animation: placeholderGlow 5s ease-in-out infinite;
+}
+
+.result-card:not(.has-video) .video-shell::after {
+  opacity: 1;
+  animation: placeholderSweep 3.8s ease-in-out infinite;
 }
 
 .video-player {
@@ -475,6 +517,30 @@ progress::-moz-progress-bar {
 .result-card:not(.has-video) .video-player {
   opacity: 0;
   pointer-events: none;
+}
+
+@keyframes placeholderGlow {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.95;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes placeholderSweep {
+  0% {
+    transform: translateX(-115%);
+  }
+
+  58%,
+  100% {
+    transform: translateX(115%);
+  }
 }
 
 pre {
