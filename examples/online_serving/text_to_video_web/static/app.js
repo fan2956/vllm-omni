@@ -2,6 +2,9 @@ const form = document.querySelector("#video-form");
 const generateButton = document.querySelector("#generate-button");
 const healthStatus = document.querySelector("#health-status");
 const compareEnabled = document.querySelector("#compare-enabled");
+const compareToolbar = document.querySelector("#compare-toolbar");
+const comparePlayButton = document.querySelector("#compare-play-button");
+const comparePlayMessage = document.querySelector("#compare-play-message");
 
 const resultViews = new Map(
   Array.from(document.querySelectorAll(".result-card")).map((panel) => [
@@ -21,6 +24,18 @@ const resultViews = new Map(
 
 const activePolls = new Map();
 const jobStates = new Map();
+
+function isVideoReady(serverId) {
+  return resultViews.get(serverId)?.panel.classList.contains("has-video") || false;
+}
+
+function updateComparePlaybackState(message = "") {
+  const compareMode = compareEnabled.checked;
+  const canCompare = compareMode && isVideoReady("default") && isVideoReady("compare");
+  compareToolbar.hidden = !compareMode;
+  comparePlayButton.disabled = !canCompare;
+  comparePlayMessage.textContent = compareMode ? message : "";
+}
 
 function setMessage(view, value, isError = false) {
   view.message.textContent = value || "";
@@ -146,6 +161,7 @@ function resetResult(serverId, fallbackTotalSteps = 40) {
   view.videoPlayer.removeAttribute("src");
   view.videoPlayer.load();
   setMessage(view, "");
+  updateComparePlaybackState();
 }
 
 async function pollJob(serverId, fallbackTotalSteps = 40) {
@@ -166,10 +182,12 @@ async function pollJob(serverId, fallbackTotalSteps = 40) {
     view.videoPlayer.load();
     view.videoPlayer.play().catch(() => {});
     setMessage(view, "");
+    updateComparePlaybackState();
   } else if (data.status === "failed") {
     stopPolling(serverId);
     const error = data.error?.message || "Video generation failed.";
     setMessage(view, error, true);
+    updateComparePlaybackState();
   }
 }
 
@@ -246,7 +264,26 @@ function syncCompareVisibility() {
   if (!compareEnabled.checked) {
     resetResult("compare");
   }
+  updateComparePlaybackState();
   checkHealth();
+}
+
+async function playBothFromStart() {
+  if (!isVideoReady("default") || !isVideoReady("compare")) {
+    updateComparePlaybackState("Both videos must be ready.");
+    return;
+  }
+
+  const players = [
+    resultViews.get("default").videoPlayer,
+    resultViews.get("compare").videoPlayer,
+  ];
+  comparePlayMessage.textContent = "";
+  for (const player of players) {
+    player.pause();
+    player.currentTime = 0;
+  }
+  await Promise.allSettled(players.map((player) => player.play()));
 }
 
 form.addEventListener("submit", async (event) => {
@@ -276,6 +313,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 compareEnabled.addEventListener("change", syncCompareVisibility);
+comparePlayButton.addEventListener("click", playBothFromStart);
 
 resetResult("default");
 resetResult("compare");

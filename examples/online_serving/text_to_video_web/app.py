@@ -51,7 +51,7 @@ class CreateVideoRequest(BaseModel):
     size: str = "832x480"
     fps: int = Field(default=12, ge=1)
     num_frames: int = Field(default=61, ge=1)
-    guidance_scale: float = Field(default=1.0, ge=0.0)
+    guidance_scale: float = Field(default=5.0, ge=0.0)
     num_inference_steps: int = Field(default=40, ge=1)
     seed: int | None = None
     negative_prompt: str | None = DEFAULT_NEGATIVE_PROMPT

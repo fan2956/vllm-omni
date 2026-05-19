@@ -41,7 +41,7 @@ textarea {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(330px, 440px) minmax(620px, 1fr);
+  grid-template-columns: minmax(330px, 410px) minmax(660px, 1fr);
   gap: 22px;
   width: min(100%, 1500px);
   margin: 0 auto;
@@ -102,7 +102,7 @@ h1 {
 
 button {
   min-width: 112px;
-  min-height: 42px;
+  min-height: 44px;
   border: 0;
   border-radius: 8px;
   color: #ffffff;
@@ -114,6 +114,27 @@ button {
     background 150ms ease,
     box-shadow 150ms ease,
     transform 150ms ease;
+}
+
+.generate-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 128px;
+  min-height: 50px;
+  padding: 0 18px;
+  font-size: 16px;
+}
+
+.generate-icon,
+.compare-play-icon {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 13px solid currentColor;
 }
 
 button:hover:not(:disabled) {
@@ -139,7 +160,7 @@ button:disabled {
 .field span,
 .label {
   color: #3d4b61;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 750;
   line-height: 1.2;
 }
@@ -153,6 +174,7 @@ textarea {
   padding: 10px 12px;
   color: var(--ink);
   background: #fbfcfe;
+  font-size: 16px;
   outline: none;
   transition:
     border-color 150ms ease,
@@ -162,11 +184,11 @@ textarea {
 
 input,
 select {
-  min-height: 42px;
+  min-height: 44px;
 }
 
 textarea {
-  min-height: 104px;
+  min-height: 116px;
   resize: vertical;
   line-height: 1.45;
 }
@@ -200,7 +222,7 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  min-height: 54px;
+  min-height: 58px;
   padding: 11px 12px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
@@ -215,13 +237,13 @@ textarea:focus {
 
 .setting-row strong {
   color: #253247;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.2;
 }
 
 .setting-row small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.2;
 }
 
@@ -234,13 +256,62 @@ textarea:focus {
 
 .result-panel {
   display: grid;
-  gap: 18px;
+  gap: 14px;
   min-width: 0;
+}
+
+.result-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.result-toolbar[hidden] {
+  display: none;
+}
+
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 154px;
+  min-height: 40px;
+  padding: 0 14px;
+  color: #0f766e;
+  background: #e7f4f2;
+  box-shadow: none;
+}
+
+.secondary-button:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--accent);
+  box-shadow: 0 10px 20px rgba(15, 118, 110, 0.16);
+}
+
+.secondary-button:disabled {
+  color: #7b8b99;
+  background: #edf2f6;
+  cursor: not-allowed;
+}
+
+.compare-play-icon {
+  border-top-width: 7px;
+  border-bottom-width: 7px;
+  border-left-width: 11px;
+}
+
+.toolbar-message {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .result-card {
   min-width: 0;
-  padding: 20px;
+  padding: 16px 18px 18px;
   border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.94);
@@ -256,7 +327,7 @@ textarea:focus {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
   align-items: start;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
 .result-heading h2 {
@@ -282,7 +353,7 @@ textarea:focus {
 }
 
 .progress-block {
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
 .progress-meta {
@@ -290,7 +361,7 @@ textarea:focus {
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 18px;
   align-items: end;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: #243349;
   font-size: 18px;
   font-weight: 760;
@@ -337,6 +408,8 @@ progress::-moz-progress-bar {
 .video-shell {
   position: relative;
   overflow: hidden;
+  width: min(100%, 860px, calc(42vh * 16 / 9));
+  margin: 0 auto;
   border: 1px solid var(--line);
   border-radius: 8px;
   background:

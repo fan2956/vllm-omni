@@ -15,7 +15,10 @@
               <h1>Wan2.2 Video</h1>
               <p id="health-status" class="status-pill">Checking server...</p>
             </div>
-            <button id="generate-button" type="submit">Generate</button>
+            <button id="generate-button" class="generate-button" type="submit">
+              <span class="generate-icon" aria-hidden="true"></span>
+              <span>Generate</span>
+            </button>
           </div>
 
           <label class="field wide">
@@ -45,7 +48,7 @@
             </label>
             <label class="field">
               <span>Guidance</span>
-              <input name="guidance_scale" type="number" min="0" step="0.1" value="1.0" />
+              <input name="guidance_scale" type="number" min="0" step="0.1" value="5.0" />
             </label>
             <label class="field">
               <span>Seed</span>
@@ -65,7 +68,7 @@
             <label class="setting-row">
               <span>
                 <strong>Comparison</strong>
-                <small>Enable comparison</small>
+                <small>Compare with vLLM-Omni</small>
               </span>
               <input id="compare-enabled" name="compare_enabled" type="checkbox" checked />
             </label>
@@ -73,6 +76,14 @@
         </form>
 
         <section class="result-panel">
+          <div id="compare-toolbar" class="result-toolbar">
+            <button id="compare-play-button" class="secondary-button" type="button" disabled>
+              <span class="compare-play-icon" aria-hidden="true"></span>
+              <span>Compare Play</span>
+            </button>
+            <p id="compare-play-message" class="toolbar-message"></p>
+          </div>
+
           <article class="result-card" data-server-id="default">
             <div class="result-heading">
               <h2>vLLM-Omni (Speed By MindIE SD)</h2>
