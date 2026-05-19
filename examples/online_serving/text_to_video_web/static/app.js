@@ -142,6 +142,7 @@ function resetResult(serverId, fallbackTotalSteps = 40) {
     progress: 0,
     step_progress: { current_step: 0, total_steps: fallbackTotalSteps, percent: 0 },
   }, fallbackTotalSteps);
+  view.panel.classList.remove("has-video");
   view.videoPlayer.removeAttribute("src");
   view.videoPlayer.load();
   setMessage(view, "");
@@ -160,8 +161,10 @@ async function pollJob(serverId, fallbackTotalSteps = 40) {
   if (data.status === "completed") {
     stopPolling(serverId);
     updateProgress(serverId, data, fallbackTotalSteps);
+    view.panel.classList.add("has-video");
     view.videoPlayer.src = `/api/videos/${state.id}/content?server_id=${encodeURIComponent(serverId)}&t=${Date.now()}`;
     view.videoPlayer.load();
+    view.videoPlayer.play().catch(() => {});
     setMessage(view, "");
   } else if (data.status === "failed") {
     stopPolling(serverId);

@@ -13,7 +13,7 @@
           <div class="panel-heading">
             <div>
               <h1>Wan2.2 Video</h1>
-              <p id="health-status">Checking server...</p>
+              <p id="health-status" class="status-pill">Checking server...</p>
             </div>
             <button id="generate-button" type="submit">Generate</button>
           </div>
@@ -53,27 +53,29 @@
             </label>
           </div>
 
-          <fieldset class="advanced">
-            <legend>Frame Interpolation</legend>
-            <label class="toggle">
+          <div class="settings-list">
+            <label class="setting-row">
+              <span>
+                <strong>Frame Interpolation</strong>
+                <small>Enable</small>
+              </span>
               <input name="enable_frame_interpolation" type="checkbox" checked />
-              <span>Enable</span>
             </label>
-          </fieldset>
 
-          <fieldset class="advanced">
-            <legend>Comparison</legend>
-            <label class="toggle">
+            <label class="setting-row">
+              <span>
+                <strong>Comparison</strong>
+                <small>Enable comparison</small>
+              </span>
               <input id="compare-enabled" name="compare_enabled" type="checkbox" checked />
-              <span>Enable comparison</span>
             </label>
-          </fieldset>
+          </div>
         </form>
 
         <section class="result-panel">
           <article class="result-card" data-server-id="default">
             <div class="result-heading">
-              <h2>vLLM-Omni speed by MindIE SD</h2>
+              <h2>vLLM-Omni (Speed By MindIE SD)</h2>
               <div>
                 <span class="label">Latency</span>
                 <strong class="latency">0s</strong>
@@ -87,7 +89,9 @@
               </div>
               <progress class="progress" value="0" max="100"></progress>
             </div>
-            <video class="video-player" controls playsinline></video>
+            <div class="video-shell">
+              <video class="video-player" controls playsinline></video>
+            </div>
             <pre class="message"></pre>
           </article>
 
@@ -107,7 +111,9 @@
               </div>
               <progress class="progress" value="0" max="100"></progress>
             </div>
-            <video class="video-player" controls playsinline></video>
+            <div class="video-shell">
+              <video class="video-player" controls playsinline></video>
+            </div>
             <pre class="message"></pre>
           </article>
         </section>

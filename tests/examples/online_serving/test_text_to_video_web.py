@@ -214,7 +214,7 @@ def test_health_reports_omni_status():
     assert response.status_code == 200
     assert response.json()["web"]["ok"] is True
     assert response.json()["omni"]["ok"] is True
-    assert response.json()["servers"]["default"]["title"] == "vLLM-Omni speed by MindIE SD"
+    assert response.json()["servers"]["default"]["title"] == "vLLM-Omni (Speed By MindIE SD)"
     assert response.json()["servers"]["compare"]["title"] == "vLLM-Omni"
     assert default_client.health_calls == 1
     assert compare_client.health_calls == 1

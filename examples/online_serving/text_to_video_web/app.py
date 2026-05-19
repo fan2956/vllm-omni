@@ -25,7 +25,7 @@ DEFAULT_COMPARE_OMNI_SERVER_URL = "http://127.0.0.1:9099"
 STATIC_DIR = Path(__file__).with_name("static")
 ALLOWED_VIDEO_SIZES = {"832x480", "1280x720"}
 SERVER_TITLES = {
-    "default": "vLLM-Omni speed by MindIE SD",
+    "default": "vLLM-Omni (Speed By MindIE SD)",
     "compare": "vLLM-Omni",
 }
 DEFAULT_NEGATIVE_PROMPT = (

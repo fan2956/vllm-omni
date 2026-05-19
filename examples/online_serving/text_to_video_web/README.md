@@ -100,5 +100,5 @@ The browser calls the local web backend:
 - `GET /api/videos/{video_id}/content?server_id=...`: stream the generated MP4
 
 `POST /api/videos` includes `server_id`. Use `default` for the `8099` panel
-(`vLLM-Omni speed by MindIE SD`) and `compare` for the `9099` panel
+(`vLLM-Omni (Speed By MindIE SD)`) and `compare` for the `9099` panel
 (`vLLM-Omni`).
