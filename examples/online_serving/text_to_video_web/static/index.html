@@ -85,6 +85,43 @@
             </button>
           </div>
           <p id="compare-play-message" class="toolbar-message"></p>
+
+          <section id="acceleration-card" class="acceleration-card" aria-label="MindIE SD acceleration analysis" hidden>
+            <div class="acceleration-heading">
+              <h3>MindIE SD 加速分析</h3>
+              <span>实时</span>
+            </div>
+            <div class="acceleration-summary">
+              <div>
+                <span>加速比</span>
+                <strong id="acceleration-ratio">--</strong>
+              </div>
+              <div>
+                <span>节省耗时</span>
+                <strong id="acceleration-saved">--</strong>
+              </div>
+            </div>
+            <div class="latency-chart">
+              <div class="latency-row">
+                <div class="latency-row-label">
+                  <span>vLLM-Omni</span>
+                  <strong id="baseline-latency">--</strong>
+                </div>
+                <div class="latency-track">
+                  <span id="baseline-bar" class="latency-bar baseline-bar"></span>
+                </div>
+              </div>
+              <div class="latency-row">
+                <div class="latency-row-label">
+                  <span>MindIE SD</span>
+                  <strong id="mindie-latency">--</strong>
+                </div>
+                <div class="latency-track">
+                  <span id="mindie-bar" class="latency-bar mindie-bar"></span>
+                </div>
+              </div>
+            </div>
+          </section>
         </form>
 
         <section class="result-panel">

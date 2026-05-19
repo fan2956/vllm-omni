@@ -6,6 +6,13 @@ const comparePlayButton = document.querySelector("#compare-play-button");
 const comparePlayMessage = document.querySelector("#compare-play-message");
 const promptInput = document.querySelector("#prompt");
 const promptExampleButtons = document.querySelectorAll("[data-prompt]");
+const accelerationCard = document.querySelector("#acceleration-card");
+const accelerationRatio = document.querySelector("#acceleration-ratio");
+const accelerationSaved = document.querySelector("#acceleration-saved");
+const baselineLatency = document.querySelector("#baseline-latency");
+const mindieLatency = document.querySelector("#mindie-latency");
+const baselineBar = document.querySelector("#baseline-bar");
+const mindieBar = document.querySelector("#mindie-bar");
 
 const resultViews = new Map(
   Array.from(document.querySelectorAll(".result-card")).map((panel) => [
@@ -25,6 +32,7 @@ const resultViews = new Map(
 
 const activePolls = new Map();
 const jobStates = new Map();
+const latencyState = new Map();
 
 function isVideoReady(serverId) {
   return resultViews.get(serverId)?.panel.classList.contains("has-video") || false;
@@ -36,6 +44,41 @@ function updateComparePlaybackState(message = "") {
   comparePlayButton.hidden = !compareMode;
   comparePlayButton.disabled = !canCompare;
   comparePlayMessage.textContent = compareMode ? message : "";
+}
+
+function setBarWidth(element, percent) {
+  element.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+}
+
+function updateAccelerationAnalysis() {
+  const compareMode = compareEnabled.checked;
+  accelerationCard.hidden = !compareMode;
+  if (!compareMode) {
+    return;
+  }
+
+  const acceleratedSeconds = latencyState.get("default");
+  const baselineSeconds = latencyState.get("compare");
+  const hasAccelerated = Number.isFinite(acceleratedSeconds) && acceleratedSeconds > 0;
+  const hasBaseline = Number.isFinite(baselineSeconds) && baselineSeconds > 0;
+
+  baselineLatency.textContent = hasBaseline ? formatSeconds(baselineSeconds) : "--";
+  mindieLatency.textContent = hasAccelerated ? formatSeconds(acceleratedSeconds) : "--";
+  setBarWidth(baselineBar, hasBaseline ? 100 : 0);
+
+  if (hasAccelerated && hasBaseline) {
+    const ratio = baselineSeconds / acceleratedSeconds;
+    const savedSeconds = baselineSeconds - acceleratedSeconds;
+    accelerationRatio.textContent = `${ratio.toFixed(2)}x`;
+    accelerationSaved.textContent = savedSeconds >= 0
+      ? `节省 ${formatSeconds(savedSeconds)}`
+      : `增加 ${formatSeconds(Math.abs(savedSeconds))}`;
+    setBarWidth(mindieBar, Math.max(8, (acceleratedSeconds / baselineSeconds) * 100));
+  } else {
+    accelerationRatio.textContent = "--";
+    accelerationSaved.textContent = "--";
+    setBarWidth(mindieBar, hasAccelerated ? 100 : 0);
+  }
 }
 
 function setMessage(view, value, isError = false) {
@@ -133,11 +176,18 @@ function updateLatency(serverId, data = {}) {
   if (!view || !state?.startedAt) {
     return;
   }
+  let seconds;
   if (data.status === "completed" && Number.isFinite(data.inference_time_s)) {
-    view.latency.textContent = formatSeconds(data.inference_time_s);
+    seconds = data.inference_time_s;
+    view.latency.textContent = formatSeconds(seconds);
+    latencyState.set(serverId, seconds);
+    updateAccelerationAnalysis();
     return;
   }
-  view.latency.textContent = formatSeconds((Date.now() - state.startedAt) / 1000);
+  seconds = (Date.now() - state.startedAt) / 1000;
+  view.latency.textContent = formatSeconds(seconds);
+  latencyState.set(serverId, seconds);
+  updateAccelerationAnalysis();
 }
 
 function updateProgress(serverId, data, fallbackTotalSteps = 40) {
@@ -172,6 +222,7 @@ function resetResult(serverId, fallbackTotalSteps = 40) {
   }
   stopPolling(serverId);
   jobStates.delete(serverId);
+  latencyState.delete(serverId);
   view.latency.textContent = "0s";
   updateProgress(serverId, {
     progress: 0,
@@ -182,6 +233,7 @@ function resetResult(serverId, fallbackTotalSteps = 40) {
   view.videoPlayer.load();
   setMessage(view, "");
   updateComparePlaybackState();
+  updateAccelerationAnalysis();
 }
 
 async function pollJob(serverId, fallbackTotalSteps = 40) {
@@ -285,6 +337,7 @@ function syncCompareVisibility() {
     resetResult("compare");
   }
   updateComparePlaybackState();
+  updateAccelerationAnalysis();
   checkHealth();
 }
 
