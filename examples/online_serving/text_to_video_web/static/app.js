@@ -40,6 +40,7 @@ const loopState = {
   index: 0,
   running: false,
   stopRequested: false,
+  activeGenerationToken: null,
 };
 
 function isVideoReady(serverId) {
@@ -204,6 +205,30 @@ function stopAllPolling() {
   }
 }
 
+function resetJobState(serverId, fallbackTotalSteps = 40, { clearVideo = true } = {}) {
+  const view = resultViews.get(serverId);
+  if (!view) {
+    return;
+  }
+  stopPolling(serverId);
+  jobStates.delete(serverId);
+  latencyState.delete(serverId);
+  view.latency.textContent = "0s";
+  updateProgress(serverId, {
+    progress: 0,
+    step_progress: { current_step: 0, total_steps: fallbackTotalSteps, percent: 0 },
+  }, fallbackTotalSteps);
+  if (clearVideo) {
+    view.panel.classList.remove("has-video");
+    view.videoPlayer.loop = false;
+    view.videoPlayer.removeAttribute("src");
+    view.videoPlayer.load();
+  }
+  setMessage(view, "");
+  updateComparePlaybackState();
+  updateAccelerationAnalysis();
+}
+
 function updateLatency(serverId, data = {}) {
   const view = resultViews.get(serverId);
   const state = jobStates.get(serverId);
@@ -250,24 +275,7 @@ function updateProgress(serverId, data, fallbackTotalSteps = 40) {
 }
 
 function resetResult(serverId, fallbackTotalSteps = 40) {
-  const view = resultViews.get(serverId);
-  if (!view) {
-    return;
-  }
-  stopPolling(serverId);
-  jobStates.delete(serverId);
-  latencyState.delete(serverId);
-  view.latency.textContent = "0s";
-  updateProgress(serverId, {
-    progress: 0,
-    step_progress: { current_step: 0, total_steps: fallbackTotalSteps, percent: 0 },
-  }, fallbackTotalSteps);
-  view.panel.classList.remove("has-video");
-  view.videoPlayer.removeAttribute("src");
-  view.videoPlayer.load();
-  setMessage(view, "");
-  updateComparePlaybackState();
-  updateAccelerationAnalysis();
+  resetJobState(serverId, fallbackTotalSteps, { clearVideo: true });
 }
 
 async function pollJob(serverId, fallbackTotalSteps = 40) {
@@ -334,6 +342,88 @@ async function createAndPoll(serverId, payload, fallbackTotalSteps) {
       setMessage(view, error.message, true);
     }
   });
+}
+
+async function createAndPollLoopJob(serverId, payload, fallbackTotalSteps, generationToken) {
+  const view = resultViews.get(serverId);
+  const startedAt = Date.now();
+  jobStates.set(serverId, { startedAt, id: null });
+  updateLatency(serverId);
+  setMessage(view, "Submitting...");
+
+  try {
+    const created = await requestJson("/api/videos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    jobStates.set(serverId, { startedAt, id: created.id });
+    updateProgress(serverId, created, fallbackTotalSteps);
+    updateLatency(serverId, created);
+    setMessage(view, "");
+
+    while (!loopState.stopRequested && loopState.activeGenerationToken === generationToken) {
+      const data = await requestJson(`/api/videos/${created.id}?server_id=${encodeURIComponent(serverId)}`);
+      updateProgress(serverId, data, fallbackTotalSteps);
+      updateLatency(serverId, data);
+
+      if (data.status === "completed") {
+        updateProgress(serverId, data, fallbackTotalSteps);
+        setMessage(view, "");
+        return {
+          ok: true,
+          serverId,
+          contentUrl: `/api/videos/${created.id}/content?server_id=${encodeURIComponent(serverId)}&t=${Date.now()}`,
+        };
+      }
+      if (data.status === "failed") {
+        const error = data.error?.message || "Video generation failed.";
+        setMessage(view, error, true);
+        return { ok: false, serverId, error };
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    return { ok: false, serverId, stopped: true };
+  } catch (error) {
+    updateLatency(serverId);
+    setMessage(view, error.message, true);
+    return { ok: false, serverId, error: error.message };
+  }
+}
+
+async function generateLoopRound(prompt, promptIndex, generationToken) {
+  promptInput.value = prompt;
+  const formData = new FormData(form);
+  const compareMode = compareEnabled.checked;
+  const compareSeed = compareMode ? sharedSeedForComparison(formData) : undefined;
+  const primaryPayload = payloadFromForm(formData, "default", compareSeed);
+  const fallbackTotalSteps = primaryPayload.num_inference_steps || 40;
+
+  resetJobState("default", fallbackTotalSteps, { clearVideo: !isVideoReady("default") });
+  resetJobState("compare", fallbackTotalSteps, { clearVideo: !isVideoReady("compare") });
+  syncCompareVisibility();
+
+  if (!primaryPayload.prompt) {
+    setMessage(resultViews.get("default"), "Prompt is required.", true);
+    return null;
+  }
+
+  const nextIndex = (promptIndex % loopState.prompts.length) + 1;
+  setLoopStatus(`Playing current, generating ${nextIndex}/${loopState.prompts.length}`);
+  const jobs = [createAndPollLoopJob("default", primaryPayload, fallbackTotalSteps, generationToken)];
+  if (compareMode) {
+    jobs.push(createAndPollLoopJob("compare", payloadFromForm(formData, "compare", compareSeed), fallbackTotalSteps, generationToken));
+  }
+
+  const results = await Promise.all(jobs);
+  if (loopState.stopRequested || loopState.activeGenerationToken !== generationToken) {
+    return null;
+  }
+  if (!results.every((result) => result.ok)) {
+    return null;
+  }
+  return { compareMode, results, promptIndex };
 }
 
 async function runGeneration(formData) {
@@ -418,10 +508,42 @@ async function playBothFromStart() {
   await Promise.allSettled(players.map((player) => player.play()));
 }
 
+async function swapLoopVideos(loopResult) {
+  if (!loopResult) {
+    return;
+  }
+
+  const readyPlayers = [];
+  for (const result of loopResult.results) {
+    const view = resultViews.get(result.serverId);
+    if (!view) {
+      continue;
+    }
+    view.panel.classList.add("has-video");
+    view.videoPlayer.src = result.contentUrl;
+    view.videoPlayer.load();
+    readyPlayers.push(view.videoPlayer);
+  }
+  if (readyPlayers.length === 0) {
+    return;
+  }
+
+  for (const player of readyPlayers) {
+    player.pause();
+    player.muted = true;
+    player.loop = true;
+    player.currentTime = 0;
+  }
+  await Promise.allSettled(readyPlayers.map((player) => player.play()));
+  updateComparePlaybackState();
+  const currentIndex = loopResult.promptIndex + 1;
+  setLoopStatus(`Playing ${currentIndex}/${loopState.prompts.length}`);
+}
+
 async function runPromptLoop() {
   if (loopState.running) {
     loopState.stopRequested = true;
-    setLoopStatus("STOP requested; waiting for current prompt to finish.");
+    setLoopStatus("STOP requested; current video will keep playing.");
     updateLoopButtonState();
     return;
   }
@@ -433,18 +555,25 @@ async function runPromptLoop() {
 
   loopState.running = true;
   loopState.stopRequested = false;
+  loopState.activeGenerationToken = Symbol("loop-generation");
   updateLoopButtonState();
 
   while (!loopState.stopRequested && loopState.prompts.length > 0) {
+    const generationToken = loopState.activeGenerationToken;
     const prompt = loopState.prompts[loopState.index];
-    promptInput.value = prompt;
-    setLoopStatus(`LOOP ${loopState.index + 1}/${loopState.prompts.length}`);
-    await runGeneration(new FormData(form));
+    const loopResult = await generateLoopRound(prompt, loopState.index, generationToken);
+    if (loopState.stopRequested || loopState.activeGenerationToken !== generationToken) {
+      break;
+    }
+    if (loopResult) {
+      await swapLoopVideos(loopResult);
+    }
     loopState.index = (loopState.index + 1) % loopState.prompts.length;
   }
 
   loopState.running = false;
   loopState.stopRequested = false;
+  loopState.activeGenerationToken = null;
   setLoopStatus(loopState.prompts.length > 0 ? `Stopped at ${loopState.index + 1}/${loopState.prompts.length}` : "");
   updateLoopButtonState();
 }
@@ -453,7 +582,7 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (loopState.running) {
     loopState.stopRequested = true;
-    setLoopStatus("STOP requested; waiting for current prompt to finish.");
+    setLoopStatus("STOP requested; current video will keep playing.");
     updateLoopButtonState();
     return;
   }
