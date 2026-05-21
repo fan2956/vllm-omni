@@ -43,6 +43,23 @@ python examples/online_serving/text_to_video_web/app.py \
   --compare-omni-server http://127.0.0.1:9099
 ```
 
+To enable the LOOP button, pass a UTF-8 prompt file with one prompt per line:
+
+```bash
+python examples/online_serving/text_to_video_web/app.py \
+  --host 0.0.0.0 \
+  --port 7862 \
+  --omni-server http://127.0.0.1:8099 \
+  --compare-omni-server http://127.0.0.1:9099 \
+  --prompt-file /path/to/prompt.txt
+```
+
+The helper script uses the current two-server layout:
+
+```bash
+bash examples/online_serving/text_to_video_web/web.sh /path/to/prompt.txt
+```
+
 Open the page from the host browser:
 
 ```text
@@ -57,6 +74,7 @@ You can also configure the omni servers with environment variables:
 ```bash
 OMNI_SERVER_URL=http://127.0.0.1:8099 \
 OMNI_COMPARE_SERVER_URL=http://127.0.0.1:9099 \
+WEB_DEMO_PROMPT_FILE=/path/to/prompt.txt \
 python examples/online_serving/text_to_video_web/app.py
 ```
 
@@ -69,7 +87,7 @@ The UI defaults match the local `curl.sh` example:
 | `size` | `832x480`; selectable: `832x480`, `1280x720` |
 | `fps` | `12` |
 | `num_frames` | `61` |
-| `guidance_scale` | `1.0` |
+| `guidance_scale` | `5.0` |
 | `num_inference_steps` | `40` |
 | `seed` | `-1`, which means no fixed seed |
 | `negative_prompt` | Hidden Chinese Wan2.2 quality/detail negative prompt |
@@ -78,7 +96,7 @@ The UI defaults match the local `curl.sh` example:
 
 `flow_shift` is fixed to `5.0` in the proxy. When frame interpolation is
 enabled, the proxy forwards the local RIFE defaults from the original curl
-example: model path `/home/zf/vllm-omni/elfgum`, exp `1`, and scale `1.0`.
+example: model path `/home/zf/web/vllm-omni/elfgum`, exp `1`, and scale `1.0`.
 The UI only exposes the enable switch.
 
 The proxy keeps a default negative prompt even though it is not shown on the
@@ -89,12 +107,21 @@ The job detail response includes `step_progress` when the omni server reports
 real Wan2.2 denoising step callbacks. The page only displays server-reported
 progress; it does not estimate in-flight progress locally.
 
+## LOOP Prompts
+
+When `--prompt-file` or `WEB_DEMO_PROMPT_FILE` is configured, the page loads the
+file through `GET /api/prompts`. Empty lines are skipped. Clicking `LOOP` starts
+an infinite browser-managed loop over the prompts. The button changes to `STOP`;
+clicking it lets the current prompt finish and prevents the next prompt from
+starting. LOOP uses the current UI parameters and the current comparison switch.
+
 ## API Shape
 
 The browser calls the local web backend:
 
 - `GET /api/health`: check web and omni connectivity; pass
   `include_compare=false` to check only `8099`
+- `GET /api/prompts`: load the configured prompt file for the LOOP button
 - `POST /api/videos`: create a video generation job
 - `GET /api/videos/{video_id}?server_id=...`: retrieve job status
 - `GET /api/videos/{video_id}/content?server_id=...`: stream the generated MP4

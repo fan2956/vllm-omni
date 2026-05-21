@@ -40,6 +40,36 @@ DEFAULT_FRAME_INTERPOLATION_EXP = 1
 DEFAULT_FRAME_INTERPOLATION_SCALE = 1.0
 
 
+def load_prompt_file(prompt_file: str | os.PathLike[str] | None) -> dict[str, Any]:
+    if not prompt_file:
+        return {
+            "ok": False,
+            "prompts": [],
+            "count": 0,
+            "prompt_file": None,
+            "detail": "Prompt file is not configured.",
+        }
+
+    path = Path(prompt_file).expanduser()
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        return {
+            "ok": False,
+            "prompts": [],
+            "count": 0,
+            "prompt_file": str(path),
+            "detail": f"Failed to read prompt file: {exc}",
+        }
+    prompts = [line.strip() for line in lines if line.strip()]
+    return {
+        "ok": True,
+        "prompts": prompts,
+        "count": len(prompts),
+        "prompt_file": str(path),
+    }
+
+
 class CreateVideoRequest(BaseModel):
     """Browser-facing request shape.
 
@@ -159,12 +189,17 @@ def _client_from_server_id(request: Request, server_id: str) -> OmniClient:
     return client
 
 
-def create_app(omni_server_url: str | None = None, compare_omni_server_url: str | None = None) -> FastAPI:
+def create_app(
+    omni_server_url: str | None = None,
+    compare_omni_server_url: str | None = None,
+    prompt_file: str | None = None,
+) -> FastAPI:
     omni_server_url = omni_server_url or os.getenv("OMNI_SERVER_URL", DEFAULT_OMNI_SERVER_URL)
     compare_omni_server_url = compare_omni_server_url or os.getenv(
         "OMNI_COMPARE_SERVER_URL",
         DEFAULT_COMPARE_OMNI_SERVER_URL,
     )
+    prompt_file = prompt_file or os.getenv("WEB_DEMO_PROMPT_FILE")
 
     app = FastAPI(title="Wan2.2 Text-to-Video Web Demo")
     app.state.omni_clients = {
@@ -172,6 +207,7 @@ def create_app(omni_server_url: str | None = None, compare_omni_server_url: str 
         "compare": OmniClient(compare_omni_server_url),
     }
     app.state.server_titles = SERVER_TITLES
+    app.state.prompt_file = prompt_file
 
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
@@ -189,6 +225,10 @@ def create_app(omni_server_url: str | None = None, compare_omni_server_url: str 
             health_result["title"] = request.app.state.server_titles.get(server_id, server_id)
             servers[server_id] = health_result
         return {"web": {"ok": True}, "omni": servers.get("default"), "servers": servers}
+
+    @app.get("/api/prompts")
+    async def prompts(request: Request) -> dict[str, Any]:
+        return load_prompt_file(request.app.state.prompt_file)
 
     @app.post("/api/videos")
     async def create_video(request_data: CreateVideoRequest, request: Request) -> dict[str, Any]:
@@ -276,6 +316,11 @@ def parse_args() -> argparse.Namespace:
         default=os.getenv("OMNI_COMPARE_SERVER_URL", DEFAULT_COMPARE_OMNI_SERVER_URL),
         help="Base URL for the comparison vLLM-Omni server inside the container",
     )
+    parser.add_argument(
+        "--prompt-file",
+        default=os.getenv("WEB_DEMO_PROMPT_FILE"),
+        help="UTF-8 text file with one prompt per line for the LOOP button",
+    )
     return parser.parse_args()
 
 
@@ -283,7 +328,11 @@ def main() -> None:
     args = parse_args()
     import uvicorn
 
-    uvicorn.run(create_app(args.omni_server, args.compare_omni_server), host=args.host, port=args.port)
+    uvicorn.run(
+        create_app(args.omni_server, args.compare_omni_server, args.prompt_file),
+        host=args.host,
+        port=args.port,
+    )
 
 
 if __name__ == "__main__":

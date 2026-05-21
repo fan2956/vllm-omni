@@ -1,5 +1,8 @@
 const form = document.querySelector("#video-form");
 const generateButton = document.querySelector("#generate-button");
+const loopButton = document.querySelector("#loop-button");
+const loopButtonText = loopButton.querySelector("span:last-child");
+const loopStatus = document.querySelector("#loop-status");
 const healthStatus = document.querySelector("#health-status");
 const compareEnabled = document.querySelector("#compare-enabled");
 const comparePlayButton = document.querySelector("#compare-play-button");
@@ -33,6 +36,12 @@ const resultViews = new Map(
 const activePolls = new Map();
 const jobStates = new Map();
 const latencyState = new Map();
+const loopState = {
+  prompts: [],
+  index: 0,
+  running: false,
+  stopRequested: false,
+};
 
 function isVideoReady(serverId) {
   return resultViews.get(serverId)?.panel.classList.contains("has-video") || false;
@@ -44,6 +53,16 @@ function updateComparePlaybackState(message = "") {
   comparePlayButton.hidden = !compareMode;
   comparePlayButton.disabled = !canCompare;
   comparePlayMessage.textContent = compareMode ? message : "";
+}
+
+function updateLoopButtonState() {
+  loopButton.disabled = !loopState.running && loopState.prompts.length === 0;
+  loopButton.classList.toggle("is-stopping", loopState.running && loopState.stopRequested);
+  loopButtonText.textContent = loopState.running ? "STOP" : "LOOP";
+}
+
+function setLoopStatus(value) {
+  loopStatus.textContent = value || "";
 }
 
 function setBarWidth(element, percent) {
@@ -126,6 +145,27 @@ function payloadFromForm(formData, serverId, seedOverride) {
     seed: seedOverride ?? numberOrNull(formData.get("seed")),
     enable_frame_interpolation: formData.get("enable_frame_interpolation") === "on",
   };
+}
+
+async function loadLoopPrompts() {
+  try {
+    const data = await requestJson("/api/prompts");
+    if (!data.ok) {
+      loopState.prompts = [];
+      setLoopStatus(data.detail || "Prompt file is not configured.");
+      updateLoopButtonState();
+      return;
+    }
+    loopState.prompts = Array.isArray(data.prompts) ? data.prompts : [];
+    loopState.index = 0;
+    setLoopStatus(loopState.prompts.length > 0
+      ? `Prompts ${loopState.prompts.length} lines`
+      : "Prompt file has no non-empty lines.");
+  } catch (error) {
+    loopState.prompts = [];
+    setLoopStatus(error.message);
+  }
+  updateLoopButtonState();
 }
 
 async function requestJson(url, options = {}) {
@@ -302,6 +342,31 @@ async function createAndPoll(serverId, payload, fallbackTotalSteps) {
   });
 }
 
+async function runGeneration(formData) {
+  stopAllPolling();
+  const compareMode = compareEnabled.checked;
+  const compareSeed = compareMode ? sharedSeedForComparison(formData) : undefined;
+  const primaryPayload = payloadFromForm(formData, "default", compareSeed);
+  const fallbackTotalSteps = primaryPayload.num_inference_steps || 40;
+
+  resetResult("default", fallbackTotalSteps);
+  resetResult("compare", fallbackTotalSteps);
+  syncCompareVisibility();
+
+  if (!primaryPayload.prompt) {
+    setMessage(resultViews.get("default"), "Prompt is required.", true);
+    return false;
+  }
+
+  const jobs = [createAndPoll("default", primaryPayload, fallbackTotalSteps)];
+  if (compareMode) {
+    jobs.push(createAndPoll("compare", payloadFromForm(formData, "compare", compareSeed), fallbackTotalSteps));
+  }
+
+  await Promise.allSettled(jobs);
+  return true;
+}
+
 async function checkHealth() {
   try {
     const data = await requestJson(`/api/health?include_compare=${compareEnabled.checked ? "true" : "false"}`);
@@ -359,36 +424,54 @@ async function playBothFromStart() {
   await Promise.allSettled(players.map((player) => player.play()));
 }
 
+async function runPromptLoop() {
+  if (loopState.running) {
+    loopState.stopRequested = true;
+    setLoopStatus("STOP requested; waiting for current prompt to finish.");
+    updateLoopButtonState();
+    return;
+  }
+  if (loopState.prompts.length === 0) {
+    setLoopStatus("Prompt file has no available prompts.");
+    updateLoopButtonState();
+    return;
+  }
+
+  loopState.running = true;
+  loopState.stopRequested = false;
+  updateLoopButtonState();
+
+  while (!loopState.stopRequested && loopState.prompts.length > 0) {
+    const prompt = loopState.prompts[loopState.index];
+    promptInput.value = prompt;
+    setLoopStatus(`LOOP ${loopState.index + 1}/${loopState.prompts.length}`);
+    await runGeneration(new FormData(form));
+    loopState.index = (loopState.index + 1) % loopState.prompts.length;
+  }
+
+  loopState.running = false;
+  loopState.stopRequested = false;
+  setLoopStatus(loopState.prompts.length > 0 ? `Stopped at ${loopState.index + 1}/${loopState.prompts.length}` : "");
+  updateLoopButtonState();
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  stopAllPolling();
-  const formData = new FormData(form);
-  const compareMode = compareEnabled.checked;
-  const compareSeed = compareMode ? sharedSeedForComparison(formData) : undefined;
-  const primaryPayload = payloadFromForm(formData, "default", compareSeed);
-  const fallbackTotalSteps = primaryPayload.num_inference_steps || 40;
-
-  resetResult("default", fallbackTotalSteps);
-  resetResult("compare", fallbackTotalSteps);
-  syncCompareVisibility();
-
-  if (!primaryPayload.prompt) {
-    setMessage(resultViews.get("default"), "Prompt is required.", true);
+  if (loopState.running) {
+    loopState.stopRequested = true;
+    setLoopStatus("STOP requested; waiting for current prompt to finish.");
+    updateLoopButtonState();
     return;
   }
 
   generateButton.disabled = true;
-  const jobs = [createAndPoll("default", primaryPayload, fallbackTotalSteps)];
-  if (compareMode) {
-    jobs.push(createAndPoll("compare", payloadFromForm(formData, "compare", compareSeed), fallbackTotalSteps));
-  }
-
-  await Promise.allSettled(jobs);
+  await runGeneration(new FormData(form));
   generateButton.disabled = false;
 });
 
 compareEnabled.addEventListener("change", syncCompareVisibility);
 comparePlayButton.addEventListener("click", playBothFromStart);
+loopButton.addEventListener("click", runPromptLoop);
 for (const button of promptExampleButtons) {
   button.addEventListener("click", () => {
     promptInput.value = button.dataset.prompt || "";
@@ -399,4 +482,5 @@ for (const button of promptExampleButtons) {
 resetResult("default");
 resetResult("compare");
 syncCompareVisibility();
+loadLoopPrompts();
 setInterval(checkHealth, 10000);

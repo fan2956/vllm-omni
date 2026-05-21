@@ -9,7 +9,12 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from examples.online_serving.text_to_video_web.app import DEFAULT_NEGATIVE_PROMPT, CreateVideoRequest, create_app
+from examples.online_serving.text_to_video_web.app import (
+    DEFAULT_NEGATIVE_PROMPT,
+    CreateVideoRequest,
+    create_app,
+    load_prompt_file,
+)
 
 pytestmark = [pytest.mark.core_model, pytest.mark.cpu]
 
@@ -46,8 +51,9 @@ class FakeOmniClient:
 def _test_client(
     fake_client: FakeOmniClient | None = None,
     compare_client: FakeOmniClient | None = None,
+    prompt_file: str | None = None,
 ) -> TestClient:
-    app = create_app("http://fake-omni", "http://fake-compare")
+    app = create_app("http://fake-omni", "http://fake-compare", prompt_file)
     if fake_client is not None:
         app.state.omni_clients = {
             "default": fake_client,
@@ -64,12 +70,12 @@ def test_create_video_request_defaults_are_forwarded_as_omni_form():
         "size": "832x480",
         "fps": "12",
         "num_frames": "61",
-        "guidance_scale": "1.0",
+        "guidance_scale": "5.0",
         "flow_shift": "5.0",
         "num_inference_steps": "40",
         "negative_prompt": DEFAULT_NEGATIVE_PROMPT,
         "enable_frame_interpolation": "true",
-        "frame_interpolation_model_path": "/home/zf/vllm-omni/elfgum",
+        "frame_interpolation_model_path": "/home/zf/web/vllm-omni/elfgum",
         "frame_interpolation_exp": "1",
         "frame_interpolation_scale": "1.0",
     }
@@ -230,3 +236,47 @@ def test_health_can_skip_compare_server():
     assert set(response.json()["servers"]) == {"default"}
     assert default_client.health_calls == 1
     assert compare_client.health_calls == 0
+
+
+def test_load_prompt_file_reads_utf8_lines_and_skips_empty_lines(tmp_path):
+    prompt_file = tmp_path / "prompt.txt"
+    prompt_file.write_text("  first prompt  \n\n第二个提示词\n  \nthird prompt\n", encoding="utf-8")
+
+    result = load_prompt_file(prompt_file)
+
+    assert result["ok"] is True
+    assert result["count"] == 3
+    assert result["prompts"] == ["first prompt", "第二个提示词", "third prompt"]
+    assert result["prompt_file"] == str(prompt_file)
+
+
+def test_load_prompt_file_reports_missing_configuration():
+    result = load_prompt_file(None)
+
+    assert result["ok"] is False
+    assert result["count"] == 0
+    assert result["prompts"] == []
+    assert result["prompt_file"] is None
+    assert "not configured" in result["detail"]
+
+
+def test_prompts_endpoint_returns_configured_prompt_file(tmp_path):
+    prompt_file = tmp_path / "prompt.txt"
+    prompt_file.write_text("one\n\ntwo\n", encoding="utf-8")
+
+    with _test_client(prompt_file=str(prompt_file)) as client:
+        response = client.get("/api/prompts")
+
+    assert response.status_code == 200
+    assert response.json()["ok"] is True
+    assert response.json()["count"] == 2
+    assert response.json()["prompts"] == ["one", "two"]
+
+
+def test_prompts_endpoint_reports_unconfigured_prompt_file():
+    with _test_client() as client:
+        response = client.get("/api/prompts")
+
+    assert response.status_code == 200
+    assert response.json()["ok"] is False
+    assert response.json()["count"] == 0
