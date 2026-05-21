@@ -57,6 +57,14 @@ python examples/online_serving/text_to_video_web/app.py \
 The helper script uses the current two-server layout:
 
 ```bash
+bash examples/online_serving/text_to_video_web/web.sh
+```
+
+By default, `web.sh` reads
+`examples/online_serving/text_to_video_web/prompts.txt`. You can still pass a
+custom file path as the first argument:
+
+```bash
 bash examples/online_serving/text_to_video_web/web.sh /path/to/prompt.txt
 ```
 

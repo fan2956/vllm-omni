@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROMPT_FILE="${1:-}"
-
-if [[ -z "${PROMPT_FILE}" ]]; then
-  echo "Usage: $0 /path/to/prompt.txt" >&2
-  exit 1
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROMPT_FILE="${1:-${SCRIPT_DIR}/prompts.txt}"
 
 python examples/online_serving/text_to_video_web/app.py \
   --host 0.0.0.0 \
