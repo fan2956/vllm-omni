@@ -11,7 +11,6 @@ const promptInput = document.querySelector("#prompt");
 const promptExampleButtons = document.querySelectorAll("[data-prompt]");
 const accelerationCard = document.querySelector("#acceleration-card");
 const accelerationRatio = document.querySelector("#acceleration-ratio");
-const accelerationSaved = document.querySelector("#acceleration-saved");
 const baselineLatency = document.querySelector("#baseline-latency");
 const mindieLatency = document.querySelector("#mindie-latency");
 const baselineBar = document.querySelector("#baseline-bar");
@@ -87,15 +86,10 @@ function updateAccelerationAnalysis() {
 
   if (hasAccelerated && hasBaseline) {
     const ratio = baselineSeconds / acceleratedSeconds;
-    const savedSeconds = baselineSeconds - acceleratedSeconds;
     accelerationRatio.textContent = `${ratio.toFixed(2)}x`;
-    accelerationSaved.textContent = savedSeconds >= 0
-      ? `节省 ${formatSeconds(savedSeconds)}`
-      : `增加 ${formatSeconds(Math.abs(savedSeconds))}`;
     setBarWidth(mindieBar, Math.max(8, (acceleratedSeconds / baselineSeconds) * 100));
   } else {
     accelerationRatio.textContent = "--";
-    accelerationSaved.textContent = "--";
     setBarWidth(mindieBar, hasAccelerated ? 100 : 0);
   }
 }
