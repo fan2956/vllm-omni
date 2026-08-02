@@ -71,7 +71,7 @@ class QualityTestConfig:
     prompt: str  # generation prompt
     max_lpips: float  # fail threshold — higher = more lenient
     model: str | None = None  # HF model name
-    quantization: str | None = None  # quantization method, e.g. "fp8"
+    quantization: str | dict[str, object] | None = None  # quantization method/config, e.g. "fp8"
     baseline_model: str | None = None  # explicit BF16/local baseline path
     quantized_model: str | None = None  # explicit quantized/local model path
     height: int = 1024
@@ -82,6 +82,8 @@ class QualityTestConfig:
     gpu: str = "H100"  # minimum GPU requirement
     negative_prompt: str = ""
     guidance_scale: float | None = None
+    sigmas: list[float] | None = None
+    enable_cpu_offload: bool = False
 
     def baseline_ref(self) -> str:
         return self.baseline_model or self.model or ""
@@ -118,9 +120,57 @@ QUALITY_CONFIGS = [
     QualityTestConfig(
         id="fp8_z_image",
         model="Tongyi-MAI/Z-Image-Turbo",
-        quantization="fp8",
+        quantization={
+            "method": "fp8",
+            "ignored_layers": [
+                "img_mlp",
+                *[
+                    f"layers.{layer_id}.{suffix}"
+                    for layer_id in range(15, 30)
+                    for suffix in (
+                        "attention.to_qkv",
+                        "attention.to_out.0",
+                        "feed_forward.w13",
+                        "feed_forward.w2",
+                    )
+                ],
+                *[
+                    f"model.layers.{layer_id}.{suffix}"
+                    for layer_id in range(28, 36)
+                    for suffix in (
+                        "self_attn.q_proj",
+                        "self_attn.k_proj",
+                        "self_attn.v_proj",
+                        "self_attn.o_proj",
+                        "mlp.gate_proj",
+                        "mlp.up_proj",
+                        "mlp.down_proj",
+                    )
+                ],
+            ],
+        },
         task="t2i",
-        prompt="a cup of coffee on a wooden table, morning light",
+        prompt=(
+            "A breathtaking twilight scene atop a floating archipelago of crystalline islands suspended in an "
+            "endless nebula-drenched sky, where waterfalls of liquid starlight cascade from the edges of each "
+            "island into the cosmic abyss below. The largest island hosts an ancient, overgrown observatory "
+            "crafted from pearlescent white stone and living silverwood trees whose bioluminescent leaves pulse "
+            "with soft cerulean and violet light. At the observatory's center stands a solitary figure—a young "
+            "astronomer in flowing robes woven from woven moonlight and deep-space fabric, their face illuminated "
+            "by the glow of a holographic star chart hovering above an altar of polished obsidian. The sky swirls "
+            "with the birth of a new galaxy: ribbons of magenta and gold gas clouds twist around nascent stars, "
+            "while distant supernovae bloom like cosmic flowers in the far reaches of the void. Below, the abyss "
+            "reveals faint echoes of forgotten civilizations—ghostly silhouettes of submerged cities shimmering "
+            "in layers of atmospheric haze. Cinematic volumetric lighting cuts through the scene as twin moons—one "
+            "copper-hued, one opalescent—rise on opposite horizons, casting long, intersecting shadows across "
+            "moss-covered ruins and crystalline flora that refract light into prismatic halos. Hyper-detailed, "
+            "photorealistic rendering with the atmospheric depth of Roger Deakins' cinematography, the "
+            "architectural grandeur of Zaha Hadid, and the cosmic wonder of James Jean's illustrations. Shot on "
+            "a mythical 150mm lens with shallow depth of field, 8K resolution, Unreal Engine 5 realism, subsurface "
+            "scattering on organic elements, and ray-traced reflections dancing across every water droplet in the "
+            "starlight waterfalls. Ethereal, melancholic, and transcendent mood—like a moment of quiet revelation "
+            "at the edge of existence."
+        ),
         max_lpips=0.15,
         num_inference_steps=20,
     ),
@@ -132,6 +182,18 @@ QUALITY_CONFIGS = [
         prompt="a cup of coffee on a wooden table, morning light",
         max_lpips=0.20,
         num_inference_steps=10,
+    ),
+    QualityTestConfig(
+        id="fp8_flux2_dev_text_encoder",
+        model="black-forest-labs/FLUX.2-dev",
+        quantization={"text_encoder": "fp8", "transformer": None, "vae": None},
+        task="t2i",
+        prompt="a cup of coffee on a wooden table, morning light",
+        max_lpips=0.15,
+        num_inference_steps=10,
+        enable_cpu_offload=True,
+        height=1024,
+        width=1024,
     ),
     QualityTestConfig(
         id="fp8_qwen_image",
@@ -154,6 +216,19 @@ QUALITY_CONFIGS = [
         width=256,
         num_frames=25,
         num_inference_steps=8,
+        # Preserve the final scheduler trajectory used when this FP8 quality
+        # gate was established. Explicit LTX sigmas bypass dynamic shifting.
+        sigmas=[
+            1.0,
+            0.92185378074646,
+            0.8327768445014954,
+            0.7303033471107483,
+            0.6111654043197632,
+            0.4709382653236389,
+            0.30347853899002075,
+            0.10000002384185791,
+            0.0,
+        ],
     ),
 ]
 
@@ -261,6 +336,7 @@ def _generate_video(omni, config: QualityTestConfig):
             num_inference_steps=config.num_inference_steps,
             num_frames=config.num_frames,
             guidance_scale=config.guidance_scale,
+            sigmas=config.sigmas,
         ),
     )
 
@@ -355,6 +431,8 @@ def _free_gpu_memory():
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.core_model
+@pytest.mark.cpu
 def test_benchmark_generate_image_unwraps_nested_omni_request_output(monkeypatch):
     from benchmarks.diffusion.quantization_quality import _generate_image as benchmark_generate_image
     from vllm_omni.outputs import OmniRequestOutput
@@ -385,18 +463,39 @@ def test_benchmark_generate_image_unwraps_nested_omni_request_output(monkeypatch
     assert peak_mem == 0.0
 
 
+def test_generate_video_forwards_sigmas(monkeypatch):
+    from vllm_omni.platforms import current_omni_platform
+
+    monkeypatch.setattr(current_omni_platform, "device_type", "cpu", raising=False)
+    monkeypatch.setattr(torch.accelerator, "reset_peak_memory_stats", lambda: None, raising=False)
+    monkeypatch.setattr(torch.accelerator, "max_memory_allocated", lambda: 0, raising=False)
+    captured = SimpleNamespace(sampling=None)
+
+    class DummyOmni:
+        def generate(self, _prompt, sampling):
+            captured.sampling = sampling
+            return [SimpleNamespace(images=[np.zeros((1, 2, 2, 3), dtype=np.float32)])]
+
+    config = QualityTestConfig(
+        id="ltx-sigmas",
+        model="unused",
+        quantization="fp8",
+        task="t2v",
+        prompt="test",
+        max_lpips=0.1,
+        sigmas=[1.0, 0.5],
+    )
+    _generate_video(DummyOmni(), config)
+
+    assert captured.sampling.sigmas == [1.0, 0.5]
+
+
 _marks = hardware_marks(res={"cuda": "H100"})
 _OUTPUT_DIR = Path(os.environ["VLLM_OMNI_QUALITY_OUTPUT_DIR"]) if "VLLM_OMNI_QUALITY_OUTPUT_DIR" in os.environ else None
 
 
 def _quality_param(c: QualityTestConfig):
     marks = list(_marks)
-    if c.id == "fp8_z_image":
-        marks.append(
-            pytest.mark.skip(
-                reason="Z-Image FP8 quality gate temporarily disabled: https://github.com/vllm-project/vllm-omni/issues/3531"
-            )
-        )
     if c.id == "fp8_qwen_image":
         marks.append(
             pytest.mark.skip(reason="Qwen-Image FP8 quality gate temporarily disabled (see CI / issue tracker).")
@@ -417,7 +516,10 @@ def test_quantization_quality(config: QualityTestConfig):
     generate_fn = _generate_video if config.task == "t2v" else _generate_image
 
     # --- BF16 baseline ---
-    omni_bl = Omni(model=config.baseline_ref())
+    bl_kwargs: dict = {"model": config.baseline_ref()}
+    if config.enable_cpu_offload:
+        bl_kwargs["enable_cpu_offload"] = True
+    omni_bl = Omni(**bl_kwargs)
     baseline_out, bl_mem = generate_fn(omni_bl, config)
     omni_bl.shutdown()
     del omni_bl
@@ -426,10 +528,13 @@ def test_quantization_quality(config: QualityTestConfig):
 
     # --- Quantized ---
     quantization = config.quantization_ref()
+    qt_kwargs: dict = {"model": config.quantized_ref()}
+    if config.enable_cpu_offload:
+        qt_kwargs["enable_cpu_offload"] = True
     if quantization is None:
-        omni_qt = Omni(model=config.quantized_ref())
+        omni_qt = Omni(**qt_kwargs)
     else:
-        omni_qt = Omni(model=config.quantized_ref(), quantization_config=quantization)
+        omni_qt = Omni(**qt_kwargs, quantization_config=quantization)
     quant_out, qt_mem = generate_fn(omni_qt, config)
     omni_qt.shutdown()
     del omni_qt
