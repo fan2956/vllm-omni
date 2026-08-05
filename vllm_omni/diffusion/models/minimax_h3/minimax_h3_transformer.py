@@ -170,16 +170,11 @@ def _reorder_grouped_qkv_to_qkv(
     )
 
 
-def _norm(size: int, *, eps: float, dtype: torch.dtype = _BF16_DTYPE) -> nn.RMSNorm:
+def _norm(size: int, *, eps: float, dtype: torch.dtype = _BF16_DTYPE) -> RMSNorm:
     # RMSNorm uses fp32 accumulation with bf16 inputs and outputs.
     # torch.nn.RMSNorm upcasts reduced-precision inputs for the variance
     # reduction, matching that accumulation semantic.
     return RMSNorm(size, eps=eps, dtype=dtype)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1, x2 = torch.chunk(x, 2, dim=-1)
-    return torch.cat((-x2, x1), dim=-1)
 
 
 def _modulate_scale_shift(
@@ -363,6 +358,7 @@ class MiniMaxH3Attention(nn.Module):
         sin = torch.sin(freqs).to(x.dtype)
         x_rot = self.rope(x_rot, cos, sin)
         return torch.cat((x_rot, x_pass), dim=-1)
+
     def _install_qkv_weight_loader(self, arch: MiniMaxH3DiTArchConfig) -> None:
         base_loader = self.qkv_proj.weight.weight_loader
 
