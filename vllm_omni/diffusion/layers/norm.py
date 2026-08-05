@@ -65,10 +65,11 @@ class LayerNorm(nn.LayerNorm, CustomOp):
 
 
 class RMSNorm(CustomOp):
-    def __init__(self, hidden_size: int, eps: float = 1e-6) -> None:
+    def __init__(self, hidden_size: int, eps: float = 1e-6, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.weight = nn.Parameter(torch.ones(hidden_size))
         self.variance_epsilon = eps
+        self.dtype = dtype
 
     def _forward_fused(self, x: torch.Tensor) -> torch.Tensor:
         from vllm._custom_ops import rms_norm as fused_rms_norm
@@ -128,10 +129,10 @@ class RMSNorm(CustomOp):
         x: torch.Tensor,
     ) -> torch.Tensor:
         input_dtype = x.dtype
-        x = x.to(torch.float32)
+        x = x.to(self.dtype)
         variance = x.pow(2).mean(-1, keepdim=True)
         out = x * torch.rsqrt(variance + self.variance_epsilon)
-        out = self.weight.to(torch.float32) * out
+        out = self.weight.to(self.dtype) * out
         return out.to(input_dtype)
 
 
