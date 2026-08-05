@@ -33,6 +33,8 @@ from vllm_omni.diffusion.distributed.sp_plan import (
     SequenceParallelInput,
     SequenceParallelOutput,
 )
+from vllm_omni.diffusion.layers.norm import RMSNorm
+from vllm_omni.diffusion.layers.rope import RotaryEmbedding
 
 if TYPE_CHECKING:
     from vllm.model_executor.layers.quantization.base_config import (
@@ -172,7 +174,7 @@ def _norm(size: int, *, eps: float, dtype: torch.dtype = _BF16_DTYPE) -> nn.RMSN
     # RMSNorm uses fp32 accumulation with bf16 inputs and outputs.
     # torch.nn.RMSNorm upcasts reduced-precision inputs for the variance
     # reduction, matching that accumulation semantic.
-    return nn.RMSNorm(size, eps=eps, dtype=dtype)
+    return RMSNorm(size, eps=eps, dtype=dtype)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -228,20 +230,6 @@ class MiniMaxH3Rope(nn.Module):
         t_f, h_f, w_f = per_axis.unbind(dim=1)  # each [S, 16]
         half = torch.cat((t_f, h_f, w_f), dim=-1)  # [S, 48]
         return torch.cat((half, half), dim=-1)  # [S, 96]
-
-
-def _apply_rope(x: torch.Tensor, freqs: torch.Tensor) -> torch.Tensor:
-    """Rotate the first rot_dim head dims; pass the rest through.
-
-    x: [T, heads, head_dim]; freqs: [T, rot_dim]. In the unfused path, cos/sin
-    are cast to the activation dtype before the elementwise math.
-    """
-    rot_dim = freqs.shape[-1]
-    x_rot, x_pass = x[..., :rot_dim], x[..., rot_dim:]
-    cos = torch.cos(freqs).to(x.dtype).unsqueeze(1)  # [T, 1, rot_dim]
-    sin = torch.sin(freqs).to(x.dtype).unsqueeze(1)
-    x_rot = (x_rot * cos) + (_rotate_half(x_rot) * sin)
-    return torch.cat((x_rot, x_pass), dim=-1)
 
 
 class MiniMaxH3TimeEmbedder(nn.Module):
@@ -347,8 +335,10 @@ class MiniMaxH3Attention(nn.Module):
         )
         self.num_heads = self.qkv_proj.num_heads
         self.num_kv_heads = self.qkv_proj.num_kv_heads
+        self._install_qkv_weight_loader(arch)
         self.q_norm = _norm(arch.attention_head_dim, eps=arch.qk_norm_eps)
         self.k_norm = _norm(arch.attention_head_dim, eps=arch.qk_norm_eps)
+        self.rope = RotaryEmbedding(is_neox_style=True, half_head_dim=False)
         self.out_proj = RowParallelLinear(
             inner_dim,
             arch.hidden_size,
@@ -366,6 +356,37 @@ class MiniMaxH3Attention(nn.Module):
             causal=False,
             skip_sequence_parallel=skip_sequence_parallel,
         )
+
+    def _apply_rope(self, x: torch.Tensor, freqs: torch.Tensor) -> torch.Tensor:
+        """Rotate the first rot_dim head dims; pass the rest through.
+
+        x: [T, heads, head_dim]; freqs: [T, rot_dim]. In the unfused path, cos/sin
+        are cast to the activation dtype before the elementwise math.
+        """
+        rot_dim = freqs.shape[-1]
+        x_rot, x_pass = x[..., :rot_dim], x[..., rot_dim:]
+        cos = torch.cos(freqs).to(x.dtype)  # [T, rot_dim]
+        sin = torch.sin(freqs).to(x.dtype)
+        x_rot = self.rope(x_rot, cos, sin)
+        return torch.cat((x_rot, x_pass), dim=-1)
+
+    def _install_qkv_weight_loader(self, arch: MiniMaxH3DiTArchConfig) -> None:
+        base_loader = self.qkv_proj.weight.weight_loader
+
+        def _weight_loader(param: torch.Tensor, loaded_weight: torch.Tensor) -> None:
+            # The grouped checkpoint layout is
+            # [num_query_groups, q_per_group + k + v] before splitting.
+            # MiniMax H3 uses MHA, so checkpoint rows are per-head [q, k, v],
+            # while qkv_proj expects [q_all, k_all, v_all].
+            reordered = _reorder_grouped_qkv_to_qkv(
+                loaded_weight,
+                num_query_groups=arch.num_attention_heads,
+                heads_per_group=1,
+                head_dim=arch.attention_head_dim,
+            )
+            base_loader(param, reordered)
+
+        self.qkv_proj.weight.weight_loader = _weight_loader
 
     @torch.compiler.disable
     def _run_packed_attention(
@@ -436,8 +457,8 @@ class MiniMaxH3Attention(nn.Module):
         q = self.q_norm(q)
         k = self.k_norm(k)
         if rope_freqs is not None:
-            q = _apply_rope(q, rope_freqs)
-            k = _apply_rope(k, rope_freqs)
+            q = self._apply_rope(q, rope_freqs)
+            k = self._apply_rope(k, rope_freqs)
 
         # The packed layout uses a second document for alignment padding.
         # Local/Ulysses backends unpad it, while Ring keeps aligned rows for
