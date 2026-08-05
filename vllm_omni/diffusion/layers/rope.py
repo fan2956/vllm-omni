@@ -111,6 +111,21 @@ class RotaryEmbedding(CustomOp):
         if find_spec("mindiesd") is not None:
             self.has_mindie = True
 
+    def _prepare_half_head_dim_cos_sin(
+        self,
+        cos: torch.Tensor,
+        sin: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Normalize shared cos/sin to the half-dim layout used by CUDA/native kernels."""
+        if cos.dim() == 3:
+            # All batch elements share the same rotary position encoding.
+            cos = cos[0]
+            sin = sin[0]
+        if not self.half_head_dim:
+            cos = cos[..., ::2] if self.interleaved else cos[..., : cos.shape[-1] // 2]
+            sin = sin[..., ::2] if self.interleaved else sin[..., : sin.shape[-1] // 2]
+        return cos, sin
+
     def forward_cuda(
         self,
         x: torch.Tensor,
@@ -119,9 +134,7 @@ class RotaryEmbedding(CustomOp):
     ) -> torch.Tensor:
         from vllm.vllm_flash_attn.layers.rotary import apply_rotary_emb
 
-        if cos.dim() > 2:
-            cos = cos.reshape(-1, cos.shape[-1])
-            sin = sin.reshape(-1, sin.shape[-1])
+        cos, sin = self._prepare_half_head_dim_cos_sin(cos, sin)
 
         x, squeezed = _ensure_batch_dim(x)
         output = apply_rotary_emb(
@@ -141,9 +154,7 @@ class RotaryEmbedding(CustomOp):
         if self.apply_rotary_emb_flash_attn is None:
             return self.forward_cuda(x, cos, sin)
 
-        if cos.dim() > 2:
-            cos = cos.reshape(-1, cos.shape[-1])
-            sin = sin.reshape(-1, sin.shape[-1])
+        cos, sin = self._prepare_half_head_dim_cos_sin(cos, sin)
 
         x, squeezed = _ensure_batch_dim(x)
         output = self.apply_rotary_emb_flash_attn(
@@ -190,9 +201,7 @@ class RotaryEmbedding(CustomOp):
         # All batch elements share the same rotary position encoding.
         # Strip the batch dim so the underlying op broadcasts over the batch,
         # consistent with forward_cuda / forward_hip / apply_rotary_emb_mindiesd.
-        if cos.dim() > 2:
-            cos = cos.reshape(-1, cos.shape[-1])
-            sin = sin.reshape(-1, sin.shape[-1])
+        cos, sin = self._prepare_half_head_dim_cos_sin(cos, sin)
         return apply_rotary_emb_torch(
             x,
             cos,
