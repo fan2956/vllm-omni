@@ -330,7 +330,6 @@ class MiniMaxH3Attention(nn.Module):
         )
         self.num_heads = self.qkv_proj.num_heads
         self.num_kv_heads = self.qkv_proj.num_kv_heads
-        self._install_qkv_weight_loader(arch)
         self.q_norm = _norm(arch.attention_head_dim, eps=arch.qk_norm_eps)
         self.k_norm = _norm(arch.attention_head_dim, eps=arch.qk_norm_eps)
         self.rope = RotaryEmbedding(is_neox_style=True, half_head_dim=False)
@@ -364,24 +363,6 @@ class MiniMaxH3Attention(nn.Module):
         sin = torch.sin(freqs).to(x.dtype)
         x_rot = self.rope(x_rot, cos, sin)
         return torch.cat((x_rot, x_pass), dim=-1)
-
-    def _install_qkv_weight_loader(self, arch: MiniMaxH3DiTArchConfig) -> None:
-        base_loader = self.qkv_proj.weight.weight_loader
-
-        def _weight_loader(param: torch.Tensor, loaded_weight: torch.Tensor) -> None:
-            # The grouped checkpoint layout is
-            # [num_query_groups, q_per_group + k + v] before splitting.
-            # MiniMax H3 uses MHA, so checkpoint rows are per-head [q, k, v],
-            # while qkv_proj expects [q_all, k_all, v_all].
-            reordered = _reorder_grouped_qkv_to_qkv(
-                loaded_weight,
-                num_query_groups=arch.num_attention_heads,
-                heads_per_group=1,
-                head_dim=arch.attention_head_dim,
-            )
-            base_loader(param, reordered)
-
-        self.qkv_proj.weight.weight_loader = _weight_loader
 
     @torch.compiler.disable
     def _run_packed_attention(
