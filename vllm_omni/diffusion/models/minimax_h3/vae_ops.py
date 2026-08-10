@@ -16,6 +16,7 @@ import torch.nn as nn
 
 from vllm_omni.diffusion.layers.norm import RMSNorm
 from vllm_omni.diffusion.layers.rope import RotaryEmbedding
+from vllm_omni.platforms import current_omni_platform
 
 
 def _replace_rms_norm(parent: nn.Module, name: str) -> bool:
@@ -44,6 +45,43 @@ def _replace_rms_norm(parent: nn.Module, name: str) -> bool:
     new.weight.requires_grad_(old.weight.requires_grad)
     setattr(parent, name, new)
     return True
+
+
+def _apply_h3_omni_rope(
+    rope: RotaryEmbedding,
+    tensor: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -> torch.Tensor:
+    """Apply H3's partial, full-dimension 3D RoPE with an Omni operator.
+
+    H3 uses a 48-dimensional rotary prefix in each 64-dimensional attention
+    head.  Its remote ``RotaryEmbeddingND`` returns the complete rotation
+    coefficients as ``[B, S, 1, 48]``.  Split the head locally so the NPU
+    fused operator receives matching widths, then preserve the 16-dimensional
+    non-rotary suffix exactly.
+    """
+    if cos.shape != sin.shape:
+        raise ValueError(f"H3 RoPE cos/sin shapes differ: {tuple(cos.shape)} vs {tuple(sin.shape)}")
+    if cos.dim() not in (3, 4):
+        raise ValueError(f"H3 RoPE cos/sin must be [B, S, D] or [B, S, 1, D], got {tuple(cos.shape)}")
+    if cos.dim() == 4 and cos.shape[2] != 1:
+        raise ValueError(f"H3 RoPE head axis must be singleton, got {tuple(cos.shape)}")
+
+    rotary_dim = cos.shape[-1]
+    if rotary_dim > tensor.shape[-1]:
+        raise ValueError(
+            f"H3 RoPE rotary_dim ({rotary_dim}) exceeds attention head_dim ({tensor.shape[-1]})"
+        )
+    rotary, passthrough = tensor[..., :rotary_dim], tensor[..., rotary_dim:]
+
+    # MindIE accepts the native H3 [B, S, 1, D] coefficients.  CUDA/native
+    # Omni paths consume shared [B, S, D] coefficients instead.
+    if not current_omni_platform.is_npu() and cos.dim() == 4:
+        cos = cos.squeeze(2)
+        sin = sin.squeeze(2)
+    rotary = rope(rotary, cos.to(rotary.dtype), sin.to(rotary.dtype))
+    return torch.cat((rotary, passthrough), dim=-1)
 
 
 def _patched_attention_forward(
@@ -79,8 +117,8 @@ def _patched_attention_forward(
 
     if rotary_pos_emb is not None:
         cos, sin = rotary_pos_emb
-        query = self.omni_rope(query, cos.to(query.dtype), sin.to(query.dtype))
-        key = self.omni_rope(key, cos.to(key.dtype), sin.to(key.dtype))
+        query = _apply_h3_omni_rope(self.omni_rope, query, cos, sin)
+        key = _apply_h3_omni_rope(self.omni_rope, key, cos, sin)
 
     hidden_states = self.perform_attention(query, key, value, pack_info)
 

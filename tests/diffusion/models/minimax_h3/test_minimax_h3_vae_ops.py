@@ -12,6 +12,7 @@ import torch.nn as nn
 from vllm_omni.diffusion.layers.norm import RMSNorm
 from vllm_omni.diffusion.layers.rope import RotaryEmbedding
 from vllm_omni.diffusion.models.minimax_h3.vae_ops import (
+    _apply_h3_omni_rope,
     patch_minimax_h3_video_vae,
 )
 
@@ -173,6 +174,41 @@ def test_rotary_embedding_accepts_h3_four_dimensional_full_rotary_layout() -> No
     cos, sin = _h3_rotary_embedding(batch=2, seq_len=7, dtype=x.dtype)
     rope = RotaryEmbedding(is_neox_style=True, half_head_dim=False)
 
-    actual = rope.forward_native(x, cos, sin)
+    actual = _apply_h3_omni_rope(rope, x, cos, sin)
     expected = _apply_h3_rope(x, (cos, sin))
     torch.testing.assert_close(actual, expected, atol=0, rtol=0)
+
+
+@pytest.mark.parametrize("is_npu", [False, True])
+def test_h3_rope_only_passes_the_rotary_prefix_to_omni(
+    monkeypatch: pytest.MonkeyPatch,
+    is_npu: bool,
+) -> None:
+    from vllm_omni.diffusion.models.minimax_h3 import vae_ops
+
+    class _RecordingRope(nn.Module):
+        def forward(self, tensor, cos, sin):
+            self.tensor = tensor
+            self.cos = cos
+            self.sin = sin
+            return tensor + 1
+
+    class _Platform:
+        @staticmethod
+        def is_npu() -> bool:
+            return is_npu
+
+    monkeypatch.setattr(vae_ops, "current_omni_platform", _Platform())
+    rope = _RecordingRope()
+    x = torch.randn(2, 7, 3, 64)
+    cos = torch.randn(2, 7, 1, 48)
+    sin = torch.randn(2, 7, 1, 48)
+
+    actual = _apply_h3_omni_rope(rope, x, cos, sin)
+
+    assert rope.tensor.shape == (2, 7, 3, 48)
+    expected_cos_shape = (2, 7, 1, 48) if is_npu else (2, 7, 48)
+    assert rope.cos.shape == expected_cos_shape
+    assert rope.sin.shape == expected_cos_shape
+    torch.testing.assert_close(actual[..., :48], x[..., :48] + 1, atol=0, rtol=0)
+    torch.testing.assert_close(actual[..., 48:], x[..., 48:], atol=0, rtol=0)
