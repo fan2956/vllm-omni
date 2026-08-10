@@ -119,7 +119,21 @@ class RotaryEmbedding(CustomOp):
         cos: torch.Tensor,
         sin: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Normalize shared cos/sin to the half-dim layout used by CUDA/native kernels."""
+        """Normalize shared cos/sin to the layout used by CUDA/native kernels.
+
+        MiniMax H3 VAE supplies complete rotary dimensions as ``[B, S, 1, D]``.
+        Its singleton head axis carries no data, so remove it before following
+        the normal full-dim conversion below.  The complete H3 layout is kept
+        intact until this common operator boundary.
+        """
+        if cos.dim() == 4:
+            if cos.shape[2] != 1 or sin.shape[2] != 1:
+                raise ValueError(
+                    "4D RoPE cos/sin must use a singleton head dimension, "
+                    f"got {tuple(cos.shape)} and {tuple(sin.shape)}"
+                )
+            cos = cos.squeeze(2)
+            sin = sin.squeeze(2)
         if cos.dim() == 3:
             # All batch elements share the same rotary position encoding.
             cos = cos[0]
