@@ -30,9 +30,7 @@ def _replace_rms_norm(parent: nn.Module, name: str) -> bool:
     if not isinstance(old, nn.RMSNorm) or old.weight is None:
         return False
     if old.weight.ndim != 1:
-        raise ValueError(
-            f"MiniMax H3 VAE only supports 1D RMSNorm weights, got {tuple(old.weight.shape)}"
-        )
+        raise ValueError(f"MiniMax H3 VAE only supports 1D RMSNorm weights, got {tuple(old.weight.shape)}")
 
     eps = old.eps if old.eps is not None else torch.finfo(torch.float32).eps
     new = RMSNorm(
@@ -70,9 +68,7 @@ def _apply_h3_omni_rope(
 
     rotary_dim = cos.shape[-1]
     if rotary_dim > tensor.shape[-1]:
-        raise ValueError(
-            f"H3 RoPE rotary_dim ({rotary_dim}) exceeds attention head_dim ({tensor.shape[-1]})"
-        )
+        raise ValueError(f"H3 RoPE rotary_dim ({rotary_dim}) exceeds attention head_dim ({tensor.shape[-1]})")
     rotary, passthrough = tensor[..., :rotary_dim], tensor[..., rotary_dim:]
 
     # MindIE accepts the native H3 [B, S, 1, D] coefficients.  CUDA/native
@@ -144,9 +140,7 @@ def _patch_attention(attn: nn.Module) -> None:
         get_parallel_state = forward_globals["get_parallel_state"]
         norm_input = forward_globals["_vit_norm_input"]
     except KeyError as exc:
-        raise RuntimeError(
-            "unsupported MiniMax H3 VAE attention remote code; required helper is missing"
-        ) from exc
+        raise RuntimeError("unsupported MiniMax H3 VAE attention remote code; required helper is missing") from exc
 
     # ``half_head_dim=False`` declares that H3 supplies its complete rotary
     # dimension.  RotaryEmbedding retains the full H3 [B, S, 1, D] layout.
