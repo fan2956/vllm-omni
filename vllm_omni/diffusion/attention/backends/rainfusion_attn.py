@@ -406,7 +406,7 @@ class RainFusionAttentionImpl(AttentionImpl):
         logger.info_once(
             "RAINFUSION_ATTN multi-video active: sparsity=%.2f, spans=%s, video_rows=%d, used_rows=%d.",
             self.rainfusion.sparsity,
-            [(span["start"], tuple(span["latent_shape"])) for span in spans],
+            tuple((span["start"], tuple(span["latent_shape"])) for span in spans),
             video_rows,
             int(used_len),
         )
