@@ -102,9 +102,7 @@ class MiniMaxH3DenoiseBranch:
                 )
                 for span in raw_spans
             )
-            self.static_kwargs["video_token_layout"] = VideoTokenLayout(
-                used_len=int(cu[1]), video_spans=spans
-            )
+            self.static_kwargs["video_token_layout"] = VideoTokenLayout(used_len=int(cu[1]), video_spans=spans)
         else:
             grid = packed["latent_grid"].tolist()
             self.static_kwargs["video_token_layout"] = VideoTokenLayout(

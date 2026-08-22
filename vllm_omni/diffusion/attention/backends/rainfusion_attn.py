@@ -366,9 +366,7 @@ class RainFusionAttentionImpl(AttentionImpl):
                 return None
             role = span.role
             if role not in ("reference", "target"):
-                logger.warning_once(
-                    "RAINFUSION_ATTN staying dense: unsupported multi-video span role %r.", role
-                )
+                logger.warning_once("RAINFUSION_ATTN staying dense: unsupported multi-video span role %r.", role)
                 return None
             if role == "target":
                 target_count += 1
@@ -379,9 +377,7 @@ class RainFusionAttentionImpl(AttentionImpl):
                 # clip boundary.
                 boundary_dense_seqlen += (-previous_video_length) % _BLOCK_SIZE
             spans.append({"start": start, "latent_shape": list(grid)})
-            span_summaries.append(
-                f"role={role}, start={start}, seqlen={length}, latent_shape={grid}"
-            )
+            span_summaries.append(f"role={role}, start={start}, seqlen={length}, latent_shape={grid}")
             previous_end = start + length
             video_seqlen += length
             previous_video_length = length
@@ -394,8 +390,7 @@ class RainFusionAttentionImpl(AttentionImpl):
             return None
         if video_seqlen < _MIN_VIDEO_BLOCKS * _BLOCK_SIZE:
             logger.warning_once(
-                "RAINFUSION_ATTN staying dense: multi-video seqlen=%d is under the sparse threshold "
-                "seqlen=%d.",
+                "RAINFUSION_ATTN staying dense: multi-video seqlen=%d is under the sparse threshold seqlen=%d.",
                 video_seqlen,
                 _MIN_VIDEO_BLOCKS * _BLOCK_SIZE,
             )
