@@ -341,10 +341,11 @@ class RainFusionAttentionImpl(AttentionImpl):
             return None
 
         spans: list[dict[str, object]] = []
+        span_summaries: list[str] = []
         previous_end = 0
         target_count = 0
-        video_rows = 0
-        boundary_dense_rows = 0
+        video_seqlen = 0
+        boundary_dense_seqlen = 0
         previous_video_length: int | None = None
         for span in sorted(layout.video_spans, key=lambda item: item.start):
             grid = tuple(int(dim) for dim in span.latent_grid)
@@ -376,10 +377,13 @@ class RainFusionAttentionImpl(AttentionImpl):
                 # needs these dense rows to complete its tail block before
                 # this clip begins, otherwise one sparse block would cross a
                 # clip boundary.
-                boundary_dense_rows += (-previous_video_length) % _BLOCK_SIZE
+                boundary_dense_seqlen += (-previous_video_length) % _BLOCK_SIZE
             spans.append({"start": start, "latent_shape": list(grid)})
+            span_summaries.append(
+                f"role={role}, start={start}, seqlen={length}, latent_shape={grid}"
+            )
             previous_end = start + length
-            video_rows += length
+            video_seqlen += length
             previous_video_length = length
 
         if target_count != 1:
@@ -388,26 +392,30 @@ class RainFusionAttentionImpl(AttentionImpl):
                 target_count,
             )
             return None
-        if video_rows < _MIN_VIDEO_BLOCKS * _BLOCK_SIZE:
+        if video_seqlen < _MIN_VIDEO_BLOCKS * _BLOCK_SIZE:
             logger.warning_once(
-                "RAINFUSION_ATTN staying dense: %d multi-video rows are under the %d-row sparse threshold.",
-                video_rows,
+                "RAINFUSION_ATTN staying dense: multi-video seqlen=%d is under the sparse threshold "
+                "seqlen=%d.",
+                video_seqlen,
                 _MIN_VIDEO_BLOCKS * _BLOCK_SIZE,
             )
             return None
-        if boundary_dense_rows > int(used_len) - video_rows:
+        dense_context_seqlen = int(used_len) - video_seqlen
+        if boundary_dense_seqlen > dense_context_seqlen:
             logger.warning_once(
-                "RAINFUSION_ATTN staying dense: multi-video spans need %d dense rows to isolate clip "
-                "block boundaries, but this layout has only %d.",
-                boundary_dense_rows,
-                int(used_len) - video_rows,
+                "RAINFUSION_ATTN staying dense: multi-video spans need dense_context_seqlen=%d "
+                "to isolate clip block boundaries, but this layout has only %d.",
+                boundary_dense_seqlen,
+                dense_context_seqlen,
             )
             return None
         logger.info_once(
-            "RAINFUSION_ATTN multi-video active: sparsity=%.2f, spans=%s, video_rows=%d, used_rows=%d.",
+            "RAINFUSION_ATTN multi-video active: sparsity=%.2f, spans=[%s], "
+            "video_seqlen=%d, dense_context_seqlen=%d, valid_packed_seqlen=%d.",
             self.rainfusion.sparsity,
-            tuple((span["start"], tuple(span["latent_shape"])) for span in spans),
-            video_rows,
+            "; ".join(span_summaries),
+            video_seqlen,
+            dense_context_seqlen,
             int(used_len),
         )
         return RainFusionPlan(used_len=int(used_len), video_spans=spans)
