@@ -319,15 +319,16 @@ class RainFusionAttentionImpl(AttentionImpl):
         )
 
     def _resolve_multi_span_plan(self, layout, max_seqlen_q: int) -> RainFusionPlan | None:
-        """Validate Ref2VA's non-contiguous video grids before invoking rf_v2."""
+        """Validate Ref2VA's non-contiguous video grids before sparse dispatch."""
         try:
-            from mindiesd import supports_rf_v2_multi_video_spans
+            import mindiesd
         except ImportError:
             raise ImportError(_MISSING_MINDIESD)
 
-        if not supports_rf_v2_multi_video_spans():
+        if not callable(getattr(mindiesd, "segmented_block_sparse_attention", None)):
             logger.warning_once(
-                "RAINFUSION_ATTN staying dense: installed MindIE-SD does not support rf_v2 multi-video spans."
+                "RAINFUSION_ATTN staying dense: installed MindIE-SD does not export "
+                "segmented_block_sparse_attention."
             )
             return None
 
@@ -423,7 +424,7 @@ class RainFusionAttentionImpl(AttentionImpl):
         plan: RainFusionPlan,
     ) -> torch.Tensor:
         try:
-            from mindiesd import sparse_attention
+            import mindiesd
         except ImportError:
             raise ImportError(_MISSING_MINDIESD)
 
@@ -431,29 +432,36 @@ class RainFusionAttentionImpl(AttentionImpl):
         q, k, v = (tensor[:, :used] for tensor in (query, key, value))
         # Ulysses has already gathered the full sequence onto this rank and split
         # the heads, so read the head count off the tensor rather than num_heads.
-        kwargs: dict[str, object] = {
+        common_kwargs: dict[str, object] = {
             "scale": self.softmax_scale,
             "head_num": query.shape[-2],
             "input_layout": _INPUT_LAYOUT,
             "inner_precise": _INNER_PRECISE,
-            "sparse_type": "rf_v2",
             "block_size": _BLOCK_SIZE,
             "sparsity": self.rainfusion.sparsity,
         }
         if plan.video_spans is not None:
-            kwargs.update(
+            segmented_block_sparse_attention = getattr(mindiesd, "segmented_block_sparse_attention", None)
+            if not callable(segmented_block_sparse_attention):
+                raise ImportError(_MISSING_MINDIESD)
+            out = segmented_block_sparse_attention(
+                q,
+                k,
+                v,
                 used_len=used,
                 video_spans_q=plan.video_spans,
                 video_spans_k=plan.video_spans,
+                **common_kwargs,
             )
         else:
             assert plan.prefix_len is not None and plan.latent_shape is not None
-            kwargs.update(
+            common_kwargs.update(
+                sparse_type="rf_v2",
                 txt_len=plan.prefix_len,
                 latent_shape_q=plan.latent_shape,
                 latent_shape_k=plan.latent_shape,
             )
-        out = sparse_attention(q, k, v, **kwargs)
+            out = mindiesd.sparse_attention(q, k, v, **common_kwargs)
         if used == query.shape[1]:
             return out
         padded = torch.zeros_like(query)

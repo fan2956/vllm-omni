@@ -103,7 +103,7 @@ def test_ref2va_multi_video_spans_resolve_when_mindiesd_supports_them(monkeypatc
     monkeypatch.setitem(
         sys.modules,
         "mindiesd",
-        SimpleNamespace(supports_rf_v2_multi_video_spans=lambda: True),
+        SimpleNamespace(segmented_block_sparse_attention=lambda *args, **kwargs: None),
     )
     layout = VideoTokenLayout(
         used_len=12000,
@@ -122,11 +122,25 @@ def test_ref2va_multi_video_spans_resolve_when_mindiesd_supports_them(monkeypatc
     ]
 
 
+def test_ref2va_multi_video_spans_fall_back_when_interface_is_unavailable(monkeypatch):
+    monkeypatch.setitem(sys.modules, "mindiesd", SimpleNamespace())
+    layout = VideoTokenLayout(
+        used_len=12000,
+        video_spans=(
+            VideoTokenSpan(start=128, latent_grid=(4, 16, 64), role="reference"),
+            VideoTokenSpan(start=5000, latent_grid=(4, 16, 64), role="target"),
+        ),
+    )
+    metadata = AttentionMetadata(extra={"max_seqlen_q": 12000}, video_layout=layout)
+
+    assert make_impl()._resolve_plan(metadata) is None
+
+
 def test_invalid_ref2va_video_spans_fall_back_to_dense(monkeypatch):
     monkeypatch.setitem(
         sys.modules,
         "mindiesd",
-        SimpleNamespace(supports_rf_v2_multi_video_spans=lambda: True),
+        SimpleNamespace(segmented_block_sparse_attention=lambda *args, **kwargs: None),
     )
     layout = VideoTokenLayout(
         used_len=12000,
