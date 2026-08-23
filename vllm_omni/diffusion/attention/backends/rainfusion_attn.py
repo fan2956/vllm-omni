@@ -320,18 +320,6 @@ class RainFusionAttentionImpl(AttentionImpl):
 
     def _resolve_multi_span_plan(self, layout, max_seqlen_q: int) -> RainFusionPlan | None:
         """Validate Ref2VA's non-contiguous video grids before sparse dispatch."""
-        try:
-            import mindiesd
-        except ImportError:
-            raise ImportError(_MISSING_MINDIESD)
-
-        if not callable(getattr(mindiesd, "segmented_block_sparse_attention", None)):
-            logger.warning_once(
-                "RAINFUSION_ATTN staying dense: installed MindIE-SD does not export "
-                "segmented_block_sparse_attention."
-            )
-            return None
-
         used_len = layout.used_len
         if used_len is None or int(used_len) != int(max_seqlen_q):
             logger.warning_once(
@@ -441,13 +429,11 @@ class RainFusionAttentionImpl(AttentionImpl):
             "sparsity": self.rainfusion.sparsity,
         }
         if plan.video_spans is not None:
-            segmented_block_sparse_attention = getattr(mindiesd, "segmented_block_sparse_attention", None)
-            if not callable(segmented_block_sparse_attention):
-                raise ImportError(_MISSING_MINDIESD)
-            out = segmented_block_sparse_attention(
+            out = mindiesd.sparse_attention(
                 q,
                 k,
                 v,
+                sparse_type="rf_v2",
                 video_spans=plan.video_spans,
                 **common_kwargs,
             )
