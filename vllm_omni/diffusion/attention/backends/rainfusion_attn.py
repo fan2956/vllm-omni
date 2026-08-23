@@ -448,9 +448,7 @@ class RainFusionAttentionImpl(AttentionImpl):
                 q,
                 k,
                 v,
-                used_len=used,
-                video_spans_q=plan.video_spans,
-                video_spans_k=plan.video_spans,
+                video_spans=plan.video_spans,
                 **common_kwargs,
             )
         else:
