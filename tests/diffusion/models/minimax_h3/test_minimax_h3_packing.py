@@ -74,6 +74,12 @@ def test_t2va_and_fl2va_packing_keep_update_rows_separate():
     assert fl2va["update_mask"].sum().item() == 12
     assert (~fl2va["update_mask"]).sum().item() == 6
     assert t2va["audio_pos"].numel() == fl2va["audio_pos"].numel() == 6
+    assert t2va["video_spans"] == (
+        {"start": 10, "latent_grid": (2, 2, 3), "role": "target"},
+    )
+    assert fl2va["video_spans"] == (
+        {"start": 16, "latent_grid": (2, 2, 3), "role": "target"},
+    )
 
 
 def test_ref2va_packing_tracks_video_and_audio_update_masks():

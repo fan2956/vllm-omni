@@ -412,7 +412,7 @@ class RainFusionAttentionImpl(AttentionImpl):
         plan: RainFusionPlan,
     ) -> torch.Tensor:
         try:
-            import mindiesd
+            from mindiesd import sparse_attention
         except ImportError:
             raise ImportError(_MISSING_MINDIESD)
 
@@ -429,7 +429,7 @@ class RainFusionAttentionImpl(AttentionImpl):
             "sparsity": self.rainfusion.sparsity,
         }
         if plan.video_spans is not None:
-            out = mindiesd.sparse_attention(
+            out = sparse_attention(
                 q,
                 k,
                 v,
@@ -445,7 +445,7 @@ class RainFusionAttentionImpl(AttentionImpl):
                 latent_shape_q=plan.latent_shape,
                 latent_shape_k=plan.latent_shape,
             )
-            out = mindiesd.sparse_attention(q, k, v, **common_kwargs)
+            out = sparse_attention(q, k, v, **common_kwargs)
         if used == query.shape[1]:
             return out
         padded = torch.zeros_like(query)

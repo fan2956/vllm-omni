@@ -124,7 +124,7 @@ def minimax_h3_packed_sequence(
     include_keyframe_cond: bool,
     keyframe_frame_indices: list[int] | tuple[int, ...] | None = None,
     frame_count: int | None = None,
-) -> dict[str, torch.Tensor]:
+) -> dict[str, object]:
     """Build the packed-sequence structural fields for one CFG branch.
 
     The used length is padded up to a multiple of 64.
@@ -239,6 +239,14 @@ def minimax_h3_packed_sequence(
         # Extent of the video segment within the packed sequence.
         "latent_grid": torch.tensor([latent_t, ph, pw], dtype=torch.int64),
         "video_row_start": torch.tensor(video_sl.start, dtype=torch.int64),
+        # The single target video uses the same span contract as Ref2VA.
+        "video_spans": (
+            {
+                "start": video_sl.start,
+                "latent_grid": (latent_t, ph, pw),
+                "role": "target",
+            },
+        ),
     }
 
 
