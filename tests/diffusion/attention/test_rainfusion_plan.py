@@ -11,11 +11,13 @@ to the always-kept prefix segment before generating the block mask.
 """
 
 import dataclasses
+import sys
+from types import SimpleNamespace
 
 import pytest
 import torch
 
-from vllm_omni.diffusion.attention.backends.abstract import AttentionMetadata, VideoTokenLayout
+from vllm_omni.diffusion.attention.backends.abstract import AttentionMetadata, VideoTokenLayout, VideoTokenSpan
 from vllm_omni.diffusion.attention.backends.rainfusion_attn import (
     _BLOCK_SIZE,
     RainFusionAttentionImpl,
@@ -95,6 +97,45 @@ def test_video_segment_must_be_the_tail_of_packed_document_zero():
     metadata = make_metadata(ALIGNED_GRID, max_seqlen_q=PREFIX_ROWS + 59520 + 128)
 
     assert make_impl()._resolve_plan(metadata) is None
+
+
+def test_ref2va_multi_video_spans_resolve_when_mindiesd_supports_them(monkeypatch):
+    monkeypatch.setitem(
+        sys.modules,
+        "mindiesd",
+        SimpleNamespace(supports_rf_v2_multi_video_spans=lambda: True),
+    )
+    layout = VideoTokenLayout(
+        used_len=12000,
+        video_spans=(
+            VideoTokenSpan(start=128, latent_grid=(4, 16, 64), role="reference"),
+            VideoTokenSpan(start=5000, latent_grid=(4, 16, 64), role="target"),
+        ),
+    )
+    plan = make_impl()._resolve_plan(AttentionMetadata(extra={"max_seqlen_q": 12000}, video_layout=layout))
+
+    assert plan is not None
+    assert plan.used_len == 12000
+    assert plan.video_spans == [
+        {"start": 128, "latent_shape": [4, 16, 64]},
+        {"start": 5000, "latent_shape": [4, 16, 64]},
+    ]
+
+
+def test_invalid_ref2va_video_spans_fall_back_to_dense(monkeypatch):
+    monkeypatch.setitem(
+        sys.modules,
+        "mindiesd",
+        SimpleNamespace(supports_rf_v2_multi_video_spans=lambda: True),
+    )
+    layout = VideoTokenLayout(
+        used_len=12000,
+        video_spans=(
+            VideoTokenSpan(start=128, latent_grid=(4, 16, 64), role="reference"),
+            VideoTokenSpan(start=4000, latent_grid=(4, 16, 64), role="target"),
+        ),
+    )
+    assert make_impl()._resolve_plan(AttentionMetadata(extra={"max_seqlen_q": 12000}, video_layout=layout)) is None
 
 
 @pytest.mark.parametrize("grid", [(4, 24, 40), (1, 24, 40)])

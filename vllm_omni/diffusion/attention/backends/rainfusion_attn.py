@@ -92,9 +92,10 @@ class RainFusionConfig:
 class RainFusionPlan:
     """Per-forward geometry handed to the rf_v2 kernel."""
 
-    prefix_len: int
     used_len: int
-    latent_shape: list[int]
+    prefix_len: int | None = None
+    latent_shape: list[int] | None = None
+    video_spans: list[dict[str, object]] | None = None
 
 
 class RainFusionAttentionBackend(AttentionBackend):
@@ -266,6 +267,14 @@ class RainFusionAttentionImpl(AttentionImpl):
             )
             return None
 
+        if layout.video_spans:
+            return self._resolve_multi_span_plan(layout, max_seqlen_q)
+
+        if layout.prefix_len is None or layout.latent_grid is None:
+            logger.warning_once(
+                "RAINFUSION_ATTN staying dense: video layout has neither a legacy video tail nor multi-video spans."
+            )
+            return None
         prefix_len = int(layout.prefix_len)
         latent_shape = [int(dim) for dim in layout.latent_grid]
         # rf_v2 splits the sequence as [prefix | t*h*w video rows]. Document 0 of
@@ -304,10 +313,104 @@ class RainFusionAttentionImpl(AttentionImpl):
             video_len,
         )
         return RainFusionPlan(
-            prefix_len=prefix_len,
             used_len=used_len,
+            prefix_len=prefix_len,
             latent_shape=latent_shape,
         )
+
+    def _resolve_multi_span_plan(self, layout, max_seqlen_q: int) -> RainFusionPlan | None:
+        """Validate Ref2VA's non-contiguous video grids before invoking rf_v2."""
+        try:
+            from mindiesd import supports_rf_v2_multi_video_spans
+        except ImportError:
+            raise ImportError(_MISSING_MINDIESD)
+
+        if not supports_rf_v2_multi_video_spans():
+            logger.warning_once(
+                "RAINFUSION_ATTN staying dense: installed MindIE-SD does not support rf_v2 multi-video spans."
+            )
+            return None
+
+        used_len = layout.used_len
+        if used_len is None or int(used_len) != int(max_seqlen_q):
+            logger.warning_once(
+                "RAINFUSION_ATTN staying dense: multi-video layout used_len=%r does not match packed document 0 (%d).",
+                used_len,
+                int(max_seqlen_q),
+            )
+            return None
+
+        spans: list[dict[str, object]] = []
+        previous_end = 0
+        target_count = 0
+        video_rows = 0
+        boundary_dense_rows = 0
+        previous_video_length: int | None = None
+        for span in sorted(layout.video_spans, key=lambda item: item.start):
+            grid = tuple(int(dim) for dim in span.latent_grid)
+            length = math.prod(grid)
+            start = int(span.start)
+            if (
+                len(grid) != 3
+                or any(dim <= 0 for dim in grid)
+                or start < previous_end
+                or start + length > int(used_len)
+            ):
+                logger.warning_once(
+                    "RAINFUSION_ATTN staying dense: invalid multi-video span start=%d grid=%s used_len=%d.",
+                    start,
+                    grid,
+                    int(used_len),
+                )
+                return None
+            role = span.role
+            if role not in ("reference", "target"):
+                logger.warning_once(
+                    "RAINFUSION_ATTN staying dense: unsupported multi-video span role %r.", role
+                )
+                return None
+            if role == "target":
+                target_count += 1
+            if previous_video_length is not None:
+                # rf_v2 works on fixed 128-token blocks. The preceding clip
+                # needs these dense rows to complete its tail block before
+                # this clip begins, otherwise one sparse block would cross a
+                # clip boundary.
+                boundary_dense_rows += (-previous_video_length) % _BLOCK_SIZE
+            spans.append({"start": start, "latent_shape": list(grid)})
+            previous_end = start + length
+            video_rows += length
+            previous_video_length = length
+
+        if target_count != 1:
+            logger.warning_once(
+                "RAINFUSION_ATTN staying dense: Ref2VA layout must contain exactly one target video span, got %d.",
+                target_count,
+            )
+            return None
+        if video_rows < _MIN_VIDEO_BLOCKS * _BLOCK_SIZE:
+            logger.warning_once(
+                "RAINFUSION_ATTN staying dense: %d multi-video rows are under the %d-row sparse threshold.",
+                video_rows,
+                _MIN_VIDEO_BLOCKS * _BLOCK_SIZE,
+            )
+            return None
+        if boundary_dense_rows > int(used_len) - video_rows:
+            logger.warning_once(
+                "RAINFUSION_ATTN staying dense: multi-video spans need %d dense rows to isolate clip "
+                "block boundaries, but this layout has only %d.",
+                boundary_dense_rows,
+                int(used_len) - video_rows,
+            )
+            return None
+        logger.info_once(
+            "RAINFUSION_ATTN multi-video active: sparsity=%.2f, spans=%s, video_rows=%d, used_rows=%d.",
+            self.rainfusion.sparsity,
+            [(span["start"], tuple(span["latent_shape"])) for span in spans],
+            video_rows,
+            int(used_len),
+        )
+        return RainFusionPlan(used_len=int(used_len), video_spans=spans)
 
     def _forward_sparse_npu(
         self,
@@ -325,21 +428,29 @@ class RainFusionAttentionImpl(AttentionImpl):
         q, k, v = (tensor[:, :used] for tensor in (query, key, value))
         # Ulysses has already gathered the full sequence onto this rank and split
         # the heads, so read the head count off the tensor rather than num_heads.
-        out = sparse_attention(
-            q,
-            k,
-            v,
-            scale=self.softmax_scale,
-            head_num=query.shape[-2],
-            input_layout=_INPUT_LAYOUT,
-            inner_precise=_INNER_PRECISE,
-            sparse_type="rf_v2",
-            txt_len=plan.prefix_len,
-            block_size=_BLOCK_SIZE,
-            latent_shape_q=plan.latent_shape,
-            latent_shape_k=plan.latent_shape,
-            sparsity=self.rainfusion.sparsity,
-        )
+        kwargs: dict[str, object] = {
+            "scale": self.softmax_scale,
+            "head_num": query.shape[-2],
+            "input_layout": _INPUT_LAYOUT,
+            "inner_precise": _INNER_PRECISE,
+            "sparse_type": "rf_v2",
+            "block_size": _BLOCK_SIZE,
+            "sparsity": self.rainfusion.sparsity,
+        }
+        if plan.video_spans is not None:
+            kwargs.update(
+                used_len=used,
+                video_spans_q=plan.video_spans,
+                video_spans_k=plan.video_spans,
+            )
+        else:
+            assert plan.prefix_len is not None and plan.latent_shape is not None
+            kwargs.update(
+                txt_len=plan.prefix_len,
+                latent_shape_q=plan.latent_shape,
+                latent_shape_k=plan.latent_shape,
+            )
+        out = sparse_attention(q, k, v, **kwargs)
         if used == query.shape[1]:
             return out
         padded = torch.zeros_like(query)
