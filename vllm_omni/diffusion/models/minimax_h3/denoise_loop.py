@@ -14,13 +14,11 @@ from typing import Any
 
 import torch
 
-from vllm_omni.diffusion.attention.backends.abstract import VideoTokenLayout
+from vllm_omni.diffusion.attention.backends.abstract import VideoTokenLayout, VideoTokenSpan
 from vllm_omni.diffusion.forward_context import (
     set_forward_context_denoise_step_idx,
     set_forward_context_denoise_timestep,
 )
-from vllm_omni.diffusion.attention.backends.abstract import VideoTokenLayout, VideoTokenSpan
-from vllm_omni.diffusion.forward_context import set_forward_context_denoise_step_idx
 
 from .scheduling_minimax_h3_euler_ancestral import (
     minimax_h3_euler_eta0_step,
