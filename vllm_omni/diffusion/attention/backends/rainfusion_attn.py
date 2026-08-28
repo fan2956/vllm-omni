@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import inspect
 import math
 from dataclasses import dataclass
 from typing import Any
@@ -50,6 +51,11 @@ _MISSING_MINDIESD = (
     "Otherwise, use FlashAttention by setting DIFFUSION_ATTENTION_BACKEND=FLASH_ATTN"
 )
 
+_INCOMPATIBLE_MINDIESD = (
+    "RAINFUSION_ATTN requires a MindIE-SD build whose sparse_attention supports the video_spans "
+    "argument. Please upgrade MindIE-SD or select FLASH_ATTN."
+)
+
 
 def _try_extract_layer_index(prefix: str) -> int | None:
     if not prefix:
@@ -58,6 +64,13 @@ def _try_extract_layer_index(prefix: str) -> int | None:
         return extract_layer_index(prefix)
     except (AssertionError, ValueError):
         return None
+
+
+def _supports_video_spans(sparse_attention: Any) -> bool:
+    try:
+        return "video_spans" in inspect.signature(sparse_attention).parameters
+    except (TypeError, ValueError):
+        return False
 
 
 @dataclass(frozen=True)
@@ -108,6 +121,12 @@ class RainFusionAttentionBackend(AttentionBackend):
 
         if find_spec("mindiesd") is None:
             raise ValueError(_MISSING_MINDIESD)
+        try:
+            from mindiesd import sparse_attention
+        except ImportError as exc:
+            raise ValueError(_MISSING_MINDIESD) from exc
+        if not _supports_video_spans(sparse_attention):
+            raise ValueError(_INCOMPATIBLE_MINDIESD)
 
     @staticmethod
     def get_supported_head_sizes() -> list[int]:
