@@ -1,0 +1,36 @@
+vllm_omni/diffusion/models/minimax_h3/rainfusion_cp.py
+  s_176cf91489561a::t_370b5ce3e15e81 1-32,38-39,47-61,69-116,120-135,139-143,147-162,171-189
+  s_176cf91489561a::t_2cbc0f4ea20007 33-37,40-46,62-68,117-119,136-138,144-146,163-170
+vllm_omni/diffusion/attention/backends/rainfusion_attn.py
+  s_176cf91489561a::t_8036b372f40a68 281,478,493-495,501-529,541-555,573-576
+  s_176cf91489561a::t_9037a98bad4ad9 93-99,496-500
+  s_176cf91489561a::t_9a141764fe3009 272-280
+vllm_omni/diffusion/models/minimax_h3/minimax_h3_transformer.py
+  s_176cf91489561a::t_9352d03c4d33a7 52,494,573-576,609,669,889,926
+  s_176cf91489561a::t_9c73b4f08688af 1562-1570
+  s_176cf91489561a::t_f59e792982121b 1545-1558,1561,1571-1572,1609-1618,1622,1642,1646-1652,1658
+  s_176cf91489561a::t_6142e870dc8d39 1234-1261,1264-1267,1274-1284
+  s_176cf91489561a::t_aadbfae04efed2 1262-1263,1273
+  s_176cf91489561a::t_68e6f004e154c5 1653-1656
+  s_176cf91489561a::t_2cbc0f4ea20007 1268-1272
+tests/diffusion/models/minimax_h3/test_rainfusion_cp.py
+  s_176cf91489561a::t_370b5ce3e15e81 1-3,5-6,8-19,21-27,29-41
+  s_176cf91489561a::t_7ee8ed6ff006f6 4,7
+  s_176cf91489561a::t_371113aa37cc51 20,28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "59a7ff342383ea79222e4b14b6d3d92597d675aa",
+  "prompts": {},
+  "sessions": {
+    "s_176cf91489561a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a094c3-0b46-7803-8ca1-82230a1e2b42",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
