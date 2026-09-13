@@ -1,0 +1,20 @@
+tools/compare_rainfusion_masks.py
+  s_176cf91489561a::t_f907b2f7f66c1b 71-75,79-97,100-102,107-109,126-127
+  s_176cf91489561a::t_52b92e9b2e747a 76-78,98-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6b9a54452c38fa14a7129aa68de4936cad8fd54e",
+  "prompts": {},
+  "sessions": {
+    "s_176cf91489561a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a094c3-0b46-7803-8ca1-82230a1e2b42",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
