@@ -1,0 +1,23 @@
+vllm_omni/diffusion/attention/backends/rainfusion_attn.py
+  s_176cf91489561a::t_7bec6e4560583f 9,101-107,150-170
+  s_176cf91489561a::t_f0534e815a3bb7 561-566,578-579
+  s_176cf91489561a::t_51a61db100d932 171-172
+tools/compare_rainfusion_masks.py
+  s_176cf91489561a::t_6c77c96a86bbfb 1-77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f65bc2a005d54fe6eb39d4c5ecc4616d330203de",
+  "prompts": {},
+  "sessions": {
+    "s_176cf91489561a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a094c3-0b46-7803-8ca1-82230a1e2b42",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
