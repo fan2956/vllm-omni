@@ -68,10 +68,45 @@ def _reconstruct_full_q(traces):
     return torch.cat([trace["mask"] for trace in ordered], dim=1)
 
 
+def _save_mask_plot(reference, reconstructed, key, output_dir, batch, head):
+    """Draw the full-Q, reconstructed CP, and XOR masks for one batch/head."""
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError as exc:
+        raise RuntimeError(
+            "--plot-dir requires matplotlib; install it in the trace environment"
+        ) from exc
+    if not 0 <= batch < reference.shape[0]:
+        raise ValueError(f"batch={batch} is outside [0, {reference.shape[0]})")
+    if not 0 <= head < reference.shape[1]:
+        raise ValueError(f"head={head} is outside [0, {reference.shape[1]})")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    full_q = reference[batch, head].numpy()
+    cp = reconstructed[batch, head].numpy()
+    diff = full_q != cp
+    figure, axes = plt.subplots(1, 3, figsize=(18, 6), constrained_layout=True)
+    for axis, image, title, cmap in (
+        (axes[0], full_q, "USP/full-Q mask", "Greys"),
+        (axes[1], cp, "CP reconstructed mask", "Greys"),
+        (axes[2], diff, "XOR difference", "Reds"),
+    ):
+        axis.imshow(image, interpolation="nearest", aspect="auto", cmap=cmap, vmin=0, vmax=1)
+        axis.set_title(title)
+        axis.set_xlabel("global KV block")
+        axis.set_ylabel("global Q block")
+    figure.suptitle(f"RainFusion mask: step={key[0]}, layer={key[1]}, batch={batch}, head={head}")
+    filename = f"rainfusion_mask_step{key[0]:04d}_layer{key[1]:04d}_head{head:04d}.png"
+    figure.savefig(output_dir / filename, dpi=180)
+    plt.close(figure)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--full-q-dir", type=Path, required=True, help="USP/full-Q trace directory")
     parser.add_argument("--cp-dir", type=Path, required=True, help="AllGather-KV CP trace directory")
+    parser.add_argument("--plot-dir", type=Path, help="write per-step/layer mask PNGs here")
+    parser.add_argument("--batch", type=int, default=0, help="batch index to draw, default: 0")
+    parser.add_argument("--head", type=int, default=0, help="global head index to draw, default: 0")
     args = parser.parse_args()
     full_groups = defaultdict(list)
     cp_groups = defaultdict(list)
@@ -88,6 +123,8 @@ def main():
         if reference.shape != reconstructed.shape:
             raise ValueError(f"step={key[0]} layer={key[1]} shape mismatch: {reference.shape} vs {reconstructed.shape}")
         diff = reference != reconstructed
+        if args.plot_dir is not None:
+            _save_mask_plot(reference, reconstructed, key, args.plot_dir, args.batch, args.head)
         changed_rows = torch.where(diff.any(dim=(0, 1, 3)))[0].tolist()
         print(
             f"step={key[0]} layer={key[1]} diff={int(diff.sum())}/{diff.numel()} "
