@@ -90,6 +90,13 @@ def _supports_video_spans(sparse_attention: Any) -> bool:
         return False
 
 
+def _supports_prearranged_cp(sparse_attention: Any) -> bool:
+    try:
+        return "prearranged_cp" in inspect.signature(sparse_attention).parameters
+    except (TypeError, ValueError):
+        return False
+
+
 @dataclass(frozen=True)
 class RainFusionConfig:
     """Resolved RainFusion controls for one attention layer.
@@ -262,7 +269,16 @@ class RainFusionAttentionImpl(AttentionImpl):
         plan = self._resolve_plan(attn_metadata)
         if plan is None:
             return self.dense_fallback.forward_npu(query, key, value, attn_metadata)
-        return self._forward_sparse_npu(query, key, value, plan)
+        prearranged_cp = bool(
+            attn_metadata is not None and attn_metadata.extra.get("rainfusion_prearranged_cp", False)
+        )
+        if query.shape[1] != key.shape[1] and not prearranged_cp:
+            raise ValueError(
+                "RAINFUSION_ATTN received local Q with gathered KV, but no prearranged CP layout. "
+                "Pure AllGather-KV is supported only for MiniMax-H3 T2V's single legacy video tail; "
+                "Ref2VA/video_spans and packed multi-request inputs must stay dense or use another SP mode."
+            )
+        return self._forward_sparse_npu(query, key, value, plan, attn_metadata)
 
     def _resolve_plan(self, attn_metadata: AttentionMetadata | None) -> RainFusionPlan | None:
         """Return the rf_v2 geometry, or None when this forward must stay dense."""
@@ -459,6 +475,7 @@ class RainFusionAttentionImpl(AttentionImpl):
         key: torch.Tensor,
         value: torch.Tensor,
         plan: RainFusionPlan,
+        attn_metadata: AttentionMetadata | None,
     ) -> torch.Tensor:
         try:
             from mindiesd import sparse_attention
@@ -473,7 +490,43 @@ class RainFusionAttentionImpl(AttentionImpl):
             )
 
         used = plan.used_len
-        q, k, v = (tensor[:, :used] for tensor in (query, key, value))
+        cp_extra = attn_metadata.extra if attn_metadata is not None else {}
+        prearranged_cp = bool(cp_extra.get("rainfusion_prearranged_cp", False))
+        if prearranged_cp:
+            if not _supports_prearranged_cp(sparse_attention):
+                raise RuntimeError(
+                    "RainFusion AllGather-KV CP requires MindIE-SD sparse_attention(prearranged_cp=...). "
+                    "Install the matching MindIE-SD revision or disable allgather_degree."
+                )
+            if plan.video_spans is not None:
+                raise ValueError("RainFusion prearranged CP supports the T2V legacy video tail only, not video_spans.")
+            q_valid_len = int(cp_extra.get("rainfusion_cp_q_valid_len", 0))
+            kv_valid_len = int(cp_extra.get("rainfusion_cp_kv_valid_len", used))
+            q_global_start = int(cp_extra.get("rainfusion_cp_q_global_start", 0))
+            first_frame_block_num = int(cp_extra.get("rainfusion_cp_first_frame_block_num", 0))
+            dense_block_start = int(cp_extra.get("rainfusion_cp_dense_block_start", 0))
+            if kv_valid_len != used or kv_valid_len > key.shape[1]:
+                raise ValueError(
+                    "RainFusion prearranged CP KV validity must equal the global logical sequence: "
+                    f"expected {used}, got {kv_valid_len} (physical KV={key.shape[1]})."
+                )
+            if q_valid_len < 0 or q_valid_len > query.shape[1]:
+                raise ValueError(
+                    f"RainFusion prearranged CP Q validity must be within [0, {query.shape[1]}], got {q_valid_len}."
+                )
+            if q_global_start < 0 or q_global_start + q_valid_len > used:
+                raise ValueError(
+                    "RainFusion prearranged CP local Q range exceeds the logical sequence: "
+                    f"start={q_global_start}, length={q_valid_len}, used={used}."
+                )
+            # A rank can own no logical rows when CP is larger than the packed
+            # sequence. It must still enter AllGather-KV with its physical
+            # shard, but has no sparse kernel work to launch.
+            if q_valid_len == 0:
+                return torch.zeros_like(query)
+            q, k, v = query[:, :q_valid_len], key[:, :used], value[:, :used]
+        else:
+            q, k, v = (tensor[:, :used] for tensor in (query, key, value))
         # Ulysses has already gathered the full sequence onto this rank and split
         # the heads, so read the head count off the tensor rather than num_heads.
         common_kwargs: dict[str, object] = {
@@ -485,7 +538,21 @@ class RainFusionAttentionImpl(AttentionImpl):
             "sparsity": self.rainfusion.sparsity,
             "precision": self.rainfusion.precision,
         }
-        if plan.video_spans is not None:
+        if prearranged_cp:
+            out = sparse_attention(
+                q,
+                k,
+                v,
+                sparse_type="rf_v2",
+                prearranged_cp=True,
+                q_global_start=q_global_start,
+                q_valid_len=q_valid_len,
+                kv_valid_len=used,
+                first_frame_block_num=first_frame_block_num,
+                dense_block_start=dense_block_start,
+                **common_kwargs,
+            )
+        elif plan.video_spans is not None:
             out = sparse_attention(
                 q,
                 k,
@@ -503,6 +570,10 @@ class RainFusionAttentionImpl(AttentionImpl):
                 latent_shape_k=plan.latent_shape,
             )
             out = sparse_attention(q, k, v, **common_kwargs)
+        if prearranged_cp:
+            padded = torch.zeros_like(query)
+            padded[:, :q_valid_len] = out
+            return padded
         if used == query.shape[1]:
             return out
         padded = torch.zeros_like(query)
