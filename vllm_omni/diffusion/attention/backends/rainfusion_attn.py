@@ -6,6 +6,7 @@ from __future__ import annotations
 import functools
 import inspect
 import math
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -97,6 +98,13 @@ def _supports_prearranged_cp(sparse_attention: Any) -> bool:
         return False
 
 
+def _supports_mask_trace(sparse_attention: Any) -> bool:
+    try:
+        return "mask_trace" in inspect.signature(sparse_attention).parameters
+    except (TypeError, ValueError):
+        return False
+
+
 @dataclass(frozen=True)
 class RainFusionConfig:
     """Resolved RainFusion controls for one attention layer.
@@ -137,6 +145,29 @@ class RainFusionPlan:
     prefix_len: int | None = None
     latent_shape: list[int] | None = None
     video_spans: list[dict[str, object]] | None = None
+
+
+def _make_mask_trace(prearranged_cp: bool, layer_idx: int | None) -> dict[str, object] | None:
+    """Build opt-in trace metadata; MindIE-SD writes the actual binary mask."""
+    output_dir = os.environ.get("VLLM_RAINFUSION_MASK_TRACE_DIR")
+    if not output_dir:
+        return None
+    step = -1
+    if is_forward_context_available():
+        step = int(get_forward_context().denoise_step_idx or 0)
+    rank = 0
+    world_size = 1
+    if torch.distributed.is_available() and torch.distributed.is_initialized():
+        rank = torch.distributed.get_rank()
+        world_size = torch.distributed.get_world_size()
+    return {
+        "output_dir": output_dir,
+        "mode": "cp" if prearranged_cp else "full_q",
+        "step": step,
+        "layer": -1 if layer_idx is None else layer_idx,
+        "rank": rank,
+        "world_size": world_size,
+    }
 
 
 class RainFusionAttentionBackend(AttentionBackend):
@@ -527,6 +558,12 @@ class RainFusionAttentionImpl(AttentionImpl):
             q, k, v = query[:, :q_valid_len], key[:, :used], value[:, :used]
         else:
             q, k, v = (tensor[:, :used] for tensor in (query, key, value))
+        mask_trace = _make_mask_trace(prearranged_cp, self.layer_idx)
+        if mask_trace is not None and not _supports_mask_trace(sparse_attention):
+            raise RuntimeError(
+                "RainFusion mask tracing requires MindIE-SD sparse_attention(mask_trace=...). "
+                "Install the matching MindIE-SD revision or unset VLLM_RAINFUSION_MASK_TRACE_DIR."
+            )
         # Ulysses has already gathered the full sequence onto this rank and split
         # the heads, so read the head count off the tensor rather than num_heads.
         common_kwargs: dict[str, object] = {
@@ -538,6 +575,8 @@ class RainFusionAttentionImpl(AttentionImpl):
             "sparsity": self.rainfusion.sparsity,
             "precision": self.rainfusion.precision,
         }
+        if mask_trace is not None:
+            common_kwargs["mask_trace"] = mask_trace
         if prearranged_cp:
             out = sparse_attention(
                 q,
