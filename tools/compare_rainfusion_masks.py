@@ -45,6 +45,29 @@ def _reconstruct_cp(traces):
     return mask
 
 
+def _reconstruct_full_q(traces):
+    """Restore USP's head-sharded full-Q mask to the original head order."""
+    ordered = sorted(traces, key=lambda trace: trace["rank"])
+    first = ordered[0]
+    expected_ranks = int(first["world_size"])
+    if len(ordered) != expected_ranks:
+        ranks = [trace["rank"] for trace in ordered]
+        raise ValueError(
+            f"full-Q trace is missing USP ranks: got {ranks}, expected {expected_ranks} ranks"
+        )
+    if [trace["rank"] for trace in ordered] != list(range(expected_ranks)):
+        raise ValueError("full-Q trace ranks must be contiguous and start at zero")
+    for trace in ordered[1:]:
+        if (
+            trace["block_size"] != first["block_size"]
+            or trace["kv_valid_len"] != first["kv_valid_len"]
+            or trace["mask"].shape[0] != first["mask"].shape[0]
+            or trace["mask"].shape[2:] != first["mask"].shape[2:]
+        ):
+            raise ValueError("full-Q trace group has inconsistent block geometry")
+    return torch.cat([trace["mask"] for trace in ordered], dim=1)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--full-q-dir", type=Path, required=True, help="USP/full-Q trace directory")
@@ -60,8 +83,7 @@ def main():
     if not common:
         raise ValueError("no common (step, layer) trace files")
     for key in common:
-        # USP ranks produce equivalent global masks; rank zero is the reference.
-        reference = sorted(full_groups[key], key=lambda trace: trace["rank"])[0]["mask"]
+        reference = _reconstruct_full_q(full_groups[key])
         reconstructed = _reconstruct_cp(cp_groups[key])
         if reference.shape != reconstructed.shape:
             raise ValueError(f"step={key[0]} layer={key[1]} shape mismatch: {reference.shape} vs {reconstructed.shape}")
