@@ -1,0 +1,40 @@
+tests/e2e/online_serving/test_minimax_h3_dlo_dp2_t2va.py
+  s_a4036ca3a43498::t_f1b2e70c22eaa4 30,33-67,69-74,155,159-161,164,166-167,172-174
+  s_6cae99a5d883cd::t_e4bd525c620ea2 156-158,162-163,165,168-171
+.buildkite/npu/test-npu-nightly.yml
+  s_a4036ca3a43498::t_f1b2e70c22eaa4 337-340,342-344,346-355,357-358
+  s_a4036ca3a43498::t_c1d1564a8f4394 341,345,356
+.buildkite/npu/test-npu-ready.yml
+  s_a4036ca3a43498::t_f1b2e70c22eaa4 64-67,69-75,77-78
+  s_a4036ca3a43498::t_c1d1564a8f4394 68,76
+.buildkite/common/ci_source_file_dependencies.yml
+  s_6cae99a5d883cd::t_f302e140df4238 166
+  s_a4036ca3a43498::t_86ad42a6f36e40 167,602-605,614-621
+  s_a4036ca3a43498::t_f1b2e70c22eaa4 168-169
+tests/dfx/perf/tests/test_minimax_h3_vllm_omni.json
+  s_a4036ca3a43498::t_3e27806a94d668 11-12,20,81-82,90,160-161,169,239-240,303-383
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "04e507111984fce874a20f966f56308e5c48dd3f",
+  "prompts": {},
+  "sessions": {
+    "s_6cae99a5d883cd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a16259-bf4e-7151-b284-7d5a471f7cba",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    },
+    "s_a4036ca3a43498": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a16270-be9e-75e2-a2ee-2d29c5edafdf",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
