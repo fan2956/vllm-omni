@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM-Omni project
+
 from __future__ import annotations
 
 import os
@@ -50,6 +53,9 @@ WORKSPACE_ROOT = REPO_ROOT.parent
 RUNNER_PATH = REPO_ROOT / "examples" / "offline_inference" / "image_to_video" / "image_to_video.py"
 RESULT_ROOT = Path(__file__).parent / "result"
 VIDEO_TIMEOUT_SECONDS = 60 * 60
+# A cold MI325 load can spend more than ten minutes reading the seven DiT
+# shards (AMD Buildkite #14270). Bound real hangs without failing that path.
+ENGINE_INIT_TIMEOUT_SECONDS = 30 * 60
 SERVER_CASES = [
     pytest.param(
         OmniServerParams(
@@ -61,6 +67,8 @@ SERVER_CASES = [
             ],
             env_dict={"VLLM_OMNI_STORAGE_PATH": str(RESULT_ROOT / "storage")},
             use_omni=True,
+            init_timeout=ENGINE_INIT_TIMEOUT_SECONDS,
+            stage_init_timeout=ENGINE_INIT_TIMEOUT_SECONDS,
         ),
         id="hunyuanvideo15_i2v_default",
     )
@@ -123,6 +131,10 @@ def _build_offline_command(*, image_source: str, output_path: Path) -> list[str]
         str(GUIDANCE_SCALE),
         "--flow-shift",
         str(FLOW_SHIFT),
+        "--init-timeout",
+        str(ENGINE_INIT_TIMEOUT_SECONDS),
+        "--stage-init-timeout",
+        str(ENGINE_INIT_TIMEOUT_SECONDS),
         "--fps",
         str(FPS),
         "--seed",
@@ -149,7 +161,7 @@ def _generate_offline_video(*, image_source: str) -> Path:
 def _generate_online_video(
     *,
     omni_server,
-    openai_client,
+    online_client,
     image_source: str,
     timeout_seconds: int,
 ) -> Path:
@@ -171,7 +183,7 @@ def _generate_online_video(
         "image_reference": build_online_image_reference(online_image_source),
     }
     online_video_bytes = send_video_request_with_timeout(
-        openai_client,
+        online_client,
         request_config,
         timeout_seconds=timeout_seconds,
     )
@@ -180,7 +192,7 @@ def _generate_online_video(
 
 
 @pytest.mark.benchmark
-@hardware_test(res={"cuda": "H100"}, num_cards=1)
+@hardware_test(res={"cuda": ["H100", "B200"], "rocm": "MI325"}, num_cards=1)
 def test_hunyuanvideo15_i2v_diffusers_offline_generates_video(
     hunyuanvideo15_i2v_image_source: str | None,
 ) -> None:
@@ -200,11 +212,11 @@ def test_hunyuanvideo15_i2v_diffusers_offline_generates_video(
 
 
 @pytest.mark.benchmark
-@hardware_test(res={"cuda": "H100"}, num_cards=1)
+@hardware_test(res={"cuda": ["H100", "B200"], "rocm": "MI325"}, num_cards=1)
 @pytest.mark.parametrize("omni_server", SERVER_CASES, indirect=True)
 def test_hunyuanvideo15_i2v_online_serving_generates_video(
     omni_server,
-    openai_client,
+    online_client,
     hunyuanvideo15_i2v_image_source: str | None,
     hunyuanvideo15_online_timeout_seconds: int,
 ) -> None:
@@ -216,7 +228,7 @@ def test_hunyuanvideo15_i2v_online_serving_generates_video(
     validate_image_source(image_source)
     online_path = _generate_online_video(
         omni_server=omni_server,
-        openai_client=openai_client,
+        online_client=online_client,
         image_source=image_source,
         timeout_seconds=hunyuanvideo15_online_timeout_seconds,
     )
@@ -226,7 +238,7 @@ def test_hunyuanvideo15_i2v_online_serving_generates_video(
 
 
 @pytest.mark.benchmark
-@hardware_test(res={"cuda": "H100"}, num_cards=1)
+@hardware_test(res={"cuda": ["H100", "B200"], "rocm": "MI325"}, num_cards=1)
 def test_hunyuanvideo15_i2v_serving_matches_offline_video_similarity(
     hunyuanvideo15_i2v_image_source: str | None,
 ) -> None:

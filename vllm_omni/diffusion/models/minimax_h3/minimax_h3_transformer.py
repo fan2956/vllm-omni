@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM-Omni project
 """MiniMax H3 packed-token audio/video DiT for vLLM-Omni.
 
 vLLM tensor parallel linears and the unified attention layer provide TP and
@@ -10,6 +11,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Mapping
+from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -26,15 +28,40 @@ from vllm.model_executor.layers.linear import (
 )
 from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 
-from vllm_omni.diffusion.attention.backends.abstract import AttentionMetadata, VideoTokenLayout
+from vllm_omni.diffusion.attention.backends.abstract import (
+    AttentionMetadata,
+    PackedPaddingMetadata,
+    VideoTokenLayout,
+)
+from vllm_omni.diffusion.attention.backends.vdnh3_attn import VDNLayout
 from vllm_omni.diffusion.attention.layer import Attention
 from vllm_omni.diffusion.cache.cachedit import CacheDiTAdapterConfig
 from vllm_omni.diffusion.distributed.sp_plan import (
     SequenceParallelInput,
     SequenceParallelOutput,
 )
+from vllm_omni.diffusion.forward_context import (
+    get_forward_context,
+    is_forward_context_available,
+)
+from vllm_omni.diffusion.layers.activation import SiluAndMul
+from vllm_omni.diffusion.layers.fused_qk_norm_rope import fused_qk_norm_rope
+from vllm_omni.diffusion.layers.indexed_modulation import (
+    indexed_gate,
+    indexed_gate_rms_norm_scale_shift,
+    indexed_scale_shift_,
+    rms_norm_indexed_scale_shift,
+)
 from vllm_omni.diffusion.layers.norm import RMSNorm
 from vllm_omni.diffusion.layers.rope import RotaryEmbedding
+from vllm_omni.diffusion.models.host_weight_contract import FinalLayoutModelContract
+from vllm_omni.diffusion.offloader.config import DIT_COMPONENT, OffloadStrategy, resolve_offload
+from vllm_omni.diffusion.offloader.module_residency import BoundedAllocatorCache, PinnedModuleStager
+from vllm_omni.platforms import current_omni_platform
+
+from .adaln_cache import MiniMaxH3RuntimeAdalnCache
+from .fasth3 import _resolve_native_target
+from .vdnh3 import VDNConfig, VDNH3HybridAttention
 
 if TYPE_CHECKING:
     from vllm.model_executor.layers.quantization.base_config import (
@@ -44,6 +71,35 @@ if TYPE_CHECKING:
     from vllm_omni.diffusion.data import OmniDiffusionConfig
 
 logger = init_logger(__name__)
+
+
+# Packed multi-request forwards require the attention backend to actually
+# consume cu_seqlens as a block-diagonal plan (not a padding-mask rebuild that
+# spans the full packed row). The pipeline gates on this capability before
+# packing, and ``_run_packed_attention`` re-checks it per forward; a name-only
+# gate would let FLASH_ATTN's NPU/XPU code paths through even though those
+# variants would silently attend across request boundaries.
+def _ring_sequence_parallel_is_active(attention_layer: Attention) -> bool:
+    """Match :meth:`Attention._get_active_parallel_strategy` for Ring."""
+    if not getattr(attention_layer, "use_ring", False) or getattr(attention_layer, "skip_sequence_parallel", False):
+        return False
+    if is_forward_context_available() and not get_forward_context().sp_active:
+        return False
+    return True
+
+
+def _attention_isolates_packed_requests(attention_layer: Any) -> bool:
+    """True if this attention layer keeps N-document packed boundaries.
+
+    Requires a backend advertising ``supports_multi_doc_packed_varlen`` *and*
+    that the layer is not running under ring sequence parallelism (the ring
+    kernel dispatches through its own attention that ignores the packed
+    cu_seqlens regardless of the configured backend).
+    """
+    backend = getattr(attention_layer, "attn_backend", None)
+    if backend is None or not backend.supports_multi_doc_packed_varlen():
+        return False
+    return not _ring_sequence_parallel_is_active(attention_layer)
 
 
 @dataclass
@@ -67,9 +123,22 @@ class MiniMaxH3DiTArchConfig:
     norm_eps: float = 1e-5
     qk_norm_eps: float = 1e-5
     final_norm_eps: float = 1e-5
+    pdd_steps: int | None = None
 
     @classmethod
     def from_mapping(cls, config: Mapping[str, Any]) -> MiniMaxH3DiTArchConfig:
+        # The modular Diffusers checkpoint uses these spellings for the same
+        # architecture. Normalize before constructing the existing native DiT.
+        aliases = {
+            "num_refiner_layers": "token_refiner_num_layers",
+            "ffn_dim": "ffn_hidden_size",
+            "in_channels": "latents_dim",
+            "audio_in_channels": "audio_latents_dim",
+            "freq_dim": "timestep_input_dim",
+            "time_embed_hidden_dim": "time_embed_hidden_size",
+            "rope_freq_dim": "rope_inv_freq_len",
+        }
+        config = {aliases.get(name, name): value for name, value in config.items()}
         fields = cls.__dataclass_fields__
         values = {name: config[name] for name in fields if name in config}
         if "patch_size" in values:
@@ -100,12 +169,15 @@ MINIMAX_H3_FP32_PARAM_NAMES = frozenset(
         "final_layer.audio_out.bias",
     }
 )
-MINIMAX_H3_FP32_BUFFER_NAMES = frozenset({"rope.inv_freq"})
+MINIMAX_H3_FP32_BUFFER_NAMES = frozenset(
+    {"rope.inv_freq", "final_layer.video_out.coefficients", "final_layer.audio_out.coefficients"}
+)
 
 # AdaLN modality count: token tags carry -1 for padding and 0/1/2 for
 # video/text/audio tokens (padding is clamped to 0 before the embedding
 # lookup and masked out afterwards).
 MINIMAX_H3_ADALN_MODALITY_NUM = 3
+_LOCAL_SP_PREPARE_HOOK = "sp_input---local_sp_prepare"
 
 # Opt-in fp16-range protection for the NPU ascend_laser_attention kernel
 # (consumed only via the "laser_input_scale" extra key; other backends and
@@ -144,6 +216,7 @@ _FORWARD_SUPPORTED_KWARGS = frozenset(
         "packed_seq_params",
         "refiner_packed_seq_params",
         "video_token_layout",
+        "rope_table",
     }
 )
 
@@ -187,28 +260,49 @@ def _norm(size: int, *, eps: float, dtype: torch.dtype = _BF16_DTYPE) -> RMSNorm
     return RMSNorm(size, eps=eps, dtype=dtype)
 
 
-def _modulate_scale_shift(
-    x: torch.Tensor,
-    shift: torch.Tensor,
-    scale: torch.Tensor,
-    indices: torch.Tensor,
+def _sequence_parallel_local_span(
+    seq_len: int,
     *,
-    dtype: torch.dtype,
-) -> torch.Tensor:
-    # Apply per-index affine modulation: x * (1 + scale[idx]) + shift[idx].
-    return (x * (1.0 + scale.index_select(0, indices)) + shift.index_select(0, indices)).to(dtype)
+    hooks_applied: bool,
+) -> tuple[int, int]:
+    """Return the packed-row span owned by this sequence-parallel rank."""
+    from vllm_omni.diffusion.forward_context import (
+        get_ulysses_mode,
+        is_forward_context_available,
+    )
 
+    if not hooks_applied or not is_forward_context_available():
+        return 0, seq_len
+    if get_ulysses_mode(default="strict") != "strict":
+        return 0, seq_len
 
-def _modulate_gate(
-    x: torch.Tensor,
-    gate: torch.Tensor,
-    other: torch.Tensor,
-    indices: torch.Tensor,
-    *,
-    dtype: torch.dtype,
-) -> torch.Tensor:
-    # Apply the per-index gated residual: x + gate[idx] * other.
-    return (x + gate.index_select(0, indices) * other).to(dtype)
+    try:
+        from vllm_omni.diffusion.distributed.parallel_state import (
+            get_allgather_parallel_world_size,
+            get_ring_parallel_world_size,
+            get_sequence_parallel_rank,
+            get_sequence_parallel_world_size,
+            get_ulysses_parallel_world_size,
+        )
+
+        world_size = int(get_sequence_parallel_world_size())
+        rank = int(get_sequence_parallel_rank())
+        ulysses_world_size = int(get_ulysses_parallel_world_size())
+        ring_world_size = int(get_ring_parallel_world_size())
+        allgather_world_size = int(get_allgather_parallel_world_size())
+    except AssertionError:
+        return 0, seq_len
+
+    if world_size <= 1 or ulysses_world_size != world_size:
+        return 0, seq_len
+    if ring_world_size != 1 or allgather_world_size != 1:
+        return 0, seq_len
+    if seq_len < world_size or seq_len % world_size:
+        return 0, seq_len
+
+    chunk_size = seq_len // world_size
+    start = rank * chunk_size
+    return start, chunk_size
 
 
 class MiniMaxH3Rope(nn.Module):
@@ -235,6 +329,15 @@ class MiniMaxH3Rope(nn.Module):
         t_f, h_f, w_f = per_axis.unbind(dim=1)  # each [S, 16]
         half = torch.cat((t_f, h_f, w_f), dim=-1)  # [S, 48]
         return torch.cat((half, half), dim=-1)  # [S, 96]
+
+
+def _build_rope_table(freqs: torch.Tensor) -> torch.Tensor:
+    """Materialize H3's packed ``[cos(freqs[:48]), sin(freqs[:48])]`` table."""
+    half = freqs.shape[-1] // 2
+    return torch.cat(
+        (torch.cos(freqs[..., :half]), torch.sin(freqs[..., :half])),
+        dim=-1,
+    ).to(_BF16_DTYPE)
 
 
 class MiniMaxH3TimeEmbedder(nn.Module):
@@ -314,6 +417,12 @@ def _sdpa_varlen_attention(
 
 
 class MiniMaxH3Attention(nn.Module):
+    # Full sparse checkpoints pin a ratio; legacy adapters use backend top-k.
+    vsa_sparsity: float | None = None
+    vsa_tile_size: int = 64
+    vsa_ref_policy: str | None = None
+    vsa_ref_keep_rate: float | None = None
+
     def __init__(
         self,
         arch: MiniMaxH3DiTArchConfig,
@@ -355,6 +464,18 @@ class MiniMaxH3Attention(nn.Module):
             quant_config=quant_config,
             prefix=f"{prefix}.out_proj",
         )
+        # VSA compression gate. A FastH3 VSA artifact assigns this projection
+        # with ``.set_weight``; the dense path never builds it, so the module is
+        # created only once the loader knows a VSA artifact is coming.
+        self.to_gate_compress: ColumnParallelLinear | None = None
+        self._gate_hidden_size = arch.hidden_size
+        self._gate_quant_config = quant_config
+        self._gate_prefix = f"{prefix}.to_gate_compress"
+        # VDN-H3 hybrid attention; built by enable_vdn for a VDN checkpoint.
+        self.vdn: VDNH3HybridAttention | None = None
+        self._prefix = prefix
+        from .attention.fastvideo_h3 import MiniMaxH3VSAImpl
+
         self.attention = Attention(
             num_heads=self.num_heads,
             num_kv_heads=self.num_kv_heads,
@@ -367,6 +488,42 @@ class MiniMaxH3Attention(nn.Module):
             role_category=role_category,
             skip_sequence_parallel=skip_sequence_parallel,
             prefix=prefix,
+            impl_overrides={"FASTVIDEO_VSA": MiniMaxH3VSAImpl},
+        )
+
+    def enable_vsa_gate(self) -> None:
+        """Build the VSA compression gate this attention would otherwise lack.
+
+        Called before ``load_weights`` so the artifact's ``.set_weight`` tensor
+        has a parameter to land on. Zero-initialized like the Wan VSA layers, so
+        a gate that never receives weights degrades to sparse-only selection
+        rather than to garbage.
+        """
+        if self.to_gate_compress is not None:
+            return
+        self.to_gate_compress = ColumnParallelLinear(
+            self._gate_hidden_size,
+            self.total_num_heads * self.head_dim,
+            bias=False,
+            params_dtype=_BF16_DTYPE,
+            quant_config=self._gate_quant_config,
+            prefix=self._gate_prefix,
+        )
+        if hasattr(self.to_gate_compress, "weight"):
+            nn.init.zeros_(self.to_gate_compress.weight)
+
+    def enable_vdn(self, config: VDNConfig) -> None:
+        """Attach the learned half of VDN-H3 hybrid attention (see ``vdnh3.py``)."""
+        backend = self.attention.attn_backend.get_name()
+        if backend != "VDNH3_ATTN":
+            raise ValueError(f"VDN-H3 attention needs the VDNH3_ATTN backend, but {self._prefix} resolved {backend}")
+        self.vdn = VDNH3HybridAttention(
+            self._gate_hidden_size,
+            self.total_num_heads,
+            self.head_dim,
+            config,
+            quant_config=self._gate_quant_config,
+            prefix=f"{self._prefix}.vdn",
         )
 
     def _apply_rope(self, x: torch.Tensor, freqs: torch.Tensor) -> torch.Tensor:
@@ -392,7 +549,11 @@ class MiniMaxH3Attention(nn.Module):
         cu_seqlens: torch.Tensor,
         max_seqlen: int,
         packed_total: int,
+        num_requests: int = 1,
         video_layout: VideoTokenLayout | None = None,
+        vsa_prefix_segments: tuple[int, ...] = (),
+        gate_compress: torch.Tensor | None = None,
+        vdn_window: VDNLayout | None = None,
     ) -> torch.Tensor:
         """Run packed attention as a small eager island.
 
@@ -401,29 +562,65 @@ class MiniMaxH3Attention(nn.Module):
         narrow lets regional compile fuse projections, norms, RoPE, and the
         surrounding DiT block without repeated graph breaks.
         """
-        # max_seqlen is already the first (real) packed document length. Do
-        # not read the CUDA cu_seqlens scalars here: this function runs once
-        # per layer and .item() would serialize every attention launch.
+        # max_seqlen is already the longest packed document length. Do not read
+        # the CUDA cu_seqlens scalars here: this function runs once per layer
+        # and .item() would serialize every attention launch. ``num_requests``
+        # is carried as a Python int for the same reason.
         if not 0 < max_seqlen <= packed_total:
             raise ValueError(
                 f"max_seqlen must be within the packed sequence, got {max_seqlen} for length {packed_total}"
             )
-        used = min(max_seqlen, packed_total)
         attn_mask = None
-        # Ring attention can dispatch to a different implementation from the
-        # configured backend, so the no-mask fast paths are local-only.
-        # supports_prefix_kv_slicing: backend slices K/V itself (cuDNN).
-        # supports_packed_mask_free: backend consumes the packed metadata
-        # without ever reading attn_mask (CUDA packed varlen, NPU
-        # npu_attn_varlen opt-in with its own fallback rebuild).
-        no_mask = not getattr(self.attention, "use_ring", False) and (
-            self.attention.attn_backend.supports_prefix_kv_slicing
-            or self.attention.attn_backend.supports_packed_mask_free()
-        )
-        if used < packed_total and not no_mask:
-            attn_mask = torch.arange(packed_total, device=q.device)[None] < used
+        mask_free_packed_padding = False
+        use_ring = _ring_sequence_parallel_is_active(self.attention)
+        if num_requests > 1:
+            # A step-mode batch packs one document per request, so its valid
+            # rows are block-diagonal rather than a prefix: neither a KV prefix
+            # length nor a 1-D key mask can describe them. Such a layout is
+            # only correct on a backend that actually attends by cu_seqlens as
+            # a block-diagonal plan. Check the capability (not the backend
+            # name): FLASH_ATTN's NPU/XPU variants would otherwise silently
+            # fall back to a padding-mask rebuild that spans the whole packed
+            # row and attend across request boundaries.
+            if not _attention_isolates_packed_requests(self.attention):
+                backend_name = self.attention.attn_backend.get_name()
+                raise ValueError(
+                    f"MiniMax H3 packed a {num_requests}-request batch, but the resolved "
+                    f"attention ({backend_name}, use_ring={getattr(self.attention, 'use_ring', False)}) "
+                    "does not isolate multi-document packed cu_seqlens. Run one request "
+                    "per forward on this backend."
+                )
+            used = packed_total
+        else:
+            used = min(max_seqlen, packed_total)
+            # Ring attention can dispatch to a different implementation from the
+            # configured backend, so the no-mask fast paths are local-only.
+            # supports_prefix_kv_slicing: backend slices K/V itself (cuDNN).
+            # supports_packed_mask_free: backend consumes the packed metadata
+            # without ever reading attn_mask (CUDA packed varlen, NPU
+            # npu_attn_varlen opt-in with its own fallback rebuild).
+            mask_free_packed_padding = not use_ring and self.attention.attn_backend.supports_packed_mask_free()
+            no_mask = not use_ring and (
+                self.attention.attn_backend.supports_prefix_kv_slicing or mask_free_packed_padding
+            )
+            # Hybrid Ulysses reshards Q to one ring partition before the ring
+            # kernel runs, so a global [packed_total] mask cannot pass its
+            # query-length check. Ring consumes valid_kv_length directly and
+            # trims the circulated K/V blocks instead.
+            if used < packed_total and not no_mask and not use_ring:
+                attn_mask = torch.arange(packed_total, device=q.device)[None] < used
         metadata = AttentionMetadata(
             attn_mask=attn_mask,
+            packed_padding=(
+                PackedPaddingMetadata(
+                    q_length=used,
+                    kv_length=used,
+                    cu_seqlens_q=cu_seqlens[:2],
+                    cu_seqlens_k=cu_seqlens[:2],
+                )
+                if mask_free_packed_padding
+                else None
+            ),
             extra={
                 "cu_seqlens_q": cu_seqlens,
                 "cu_seqlens_k": cu_seqlens,
@@ -434,11 +631,27 @@ class MiniMaxH3Attention(nn.Module):
                 # quadratic full_qk mask is never materialized. Ring attention
                 # is excluded: it keeps the aligned padding rows for its
                 # fixed-size P2P buffers and still needs the mask.
-                "npu_attn_varlen": not getattr(self.attention, "use_ring", False),
+                "npu_attn_varlen": not use_ring,
                 # fp16-range protection for the ascend_laser_attention kernel
                 # (see MINIMAX_H3_LASER_INPUT_SCALE). Ignored by every other
                 # backend/path.
                 "laser_input_scale": MINIMAX_H3_LASER_INPUT_SCALE,
+                **({"vsa_h3_sparsity": self.vsa_sparsity} if self.vsa_sparsity is not None else {}),
+                "vsa_h3_tile_size": self.vsa_tile_size,
+                "vsa_h3_ref_policy": self.vsa_ref_policy,
+                "vsa_h3_ref_keep_rate": self.vsa_ref_keep_rate,
+                # Present only for a VSA artifact; the VSA backend reads it as
+                # the learned compression gate and every other backend ignores it.
+                **({"gate_compress": gate_compress.unsqueeze(0)} if gate_compress is not None else {}),
+                # FastH3 uses segment-pure prefix chunks. The target video and
+                # its true 3-D shape remain in the shared typed video layout.
+                **(
+                    {"vsa_h3_prefix_segments": vsa_prefix_segments}
+                    if gate_compress is not None and video_layout is not None and video_layout.video_spans
+                    else {}
+                ),
+                # The VDNH3_ATTN frame window; every other backend ignores it.
+                **({"vdn_window": vdn_window} if vdn_window is not None else {}),
             },
             video_layout=video_layout,
         )
@@ -449,16 +662,49 @@ class MiniMaxH3Attention(nn.Module):
             metadata,
         ).squeeze(0)
 
+    def _project_qkv(
+        self, x: torch.Tensor, rope_table: torch.Tensor | None, vdn_window: VDNLayout | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Project/normalize/rotate QKV, retaining raw Q/K for the VDN branch."""
+        total = x.shape[0]
+        qkv, _ = self.qkv_proj(x)
+        q_size = self.num_heads * self.head_dim
+        kv_size = self.num_kv_heads * self.head_dim
+        q, k, v = qkv.split([q_size, kv_size, kv_size], dim=-1)
+        q = q.view(total, self.num_heads, self.head_dim)
+        k = k.view(total, self.num_kv_heads, self.head_dim)
+        v = v.view(total, self.num_kv_heads, self.head_dim)
+        if self.vdn is not None and vdn_window is None:
+            raise ValueError(f"{self._prefix} is VDN-H3 hybrid attention but received no VDN window")
+        # The VDN linear branch reads the raw projections; norm/RoPE are out of place.
+        q_raw, k_raw = q, k
+        if rope_table is None:
+            q = self.q_norm(q)
+            k = self.k_norm(k)
+        else:
+            q, k = fused_qk_norm_rope(
+                q,
+                k,
+                self.q_norm.weight,
+                self.k_norm.weight,
+                rope_table,
+                self.q_norm.variance_epsilon,
+            )
+        return q, k, v, q_raw, k_raw
+
     def forward(
         self,
         x: torch.Tensor,
         *,
-        rope_freqs: torch.Tensor | None,
+        rope_table: torch.Tensor | None,
         cu_seqlens: torch.Tensor,
         max_seqlen: int,
         packed_total: int | None = None,
+        num_requests: int = 1,
         sp_seq_lens: list[int] | None = None,
         video_layout: VideoTokenLayout | None = None,
+        vsa_prefix_segments: tuple[int, ...] = (),
+        vdn_window: VDNLayout | None = None,
     ) -> torch.Tensor:
         """x: [T, hidden] packed thd rows -> [T, hidden].
 
@@ -472,22 +718,20 @@ class MiniMaxH3Attention(nn.Module):
         all-to-all restores the row shard before the output projection.
         """
         total = x.shape[0]
-        qkv, _ = self.qkv_proj(x)
-        q_size = self.num_heads * self.head_dim
-        kv_size = self.num_kv_heads * self.head_dim
-        q, k, v = qkv.split([q_size, kv_size, kv_size], dim=-1)
-        q = q.view(total, self.num_heads, self.head_dim)
-        k = k.view(total, self.num_kv_heads, self.head_dim)
-        v = v.view(total, self.num_kv_heads, self.head_dim)
-        q = self.q_norm(q)
-        k = self.k_norm(k)
-        if rope_freqs is not None:
-            q = self._apply_rope(q, rope_freqs)
-            k = self._apply_rope(k, rope_freqs)
+        q, k, v, q_raw, k_raw = self._project_qkv(x, rope_table, vdn_window)
 
-        # The packed layout uses a second document for alignment padding.
-        # Local/Ulysses backends unpad it, while Ring keeps aligned rows for
-        # fixed-size P2P buffers.
+        # The gate is projected from the same local rows as Q. Pure Ulysses
+        # reshards it alongside Q/K/V in UlyssesParallelAttention so each VSA
+        # rank receives the full sequence for its local head shard.
+        gate_compress = None
+        if self.to_gate_compress is not None:
+            gate_result = self.to_gate_compress(x)
+            gate_compress = gate_result[0] if isinstance(gate_result, tuple) else gate_result
+            gate_compress = gate_compress.view(total, self.num_heads, self.head_dim)
+
+        # Each request contributes a document for its rows plus one for any
+        # nonempty alignment padding. Local/Ulysses backends unpad it, while
+        # Ring keeps aligned rows for fixed-size P2P buffers.
         out = self._run_packed_attention(
             q,
             k,
@@ -498,10 +742,18 @@ class MiniMaxH3Attention(nn.Module):
             # backend receives the global sequence after all-to-all, so carry
             # its Python length explicitly instead of inferring it from q.
             packed_total=packed_total if packed_total is not None else q.shape[0],
+            num_requests=num_requests,
             video_layout=video_layout,
+            vsa_prefix_segments=vsa_prefix_segments,
+            gate_compress=gate_compress,
+            vdn_window=vdn_window,
         )
+        if self.vdn is not None:
+            out = self.vdn.gate_softmax(out, x)
         out = out.reshape(total, self.num_heads * self.head_dim)
         out, _ = self.out_proj(out)
+        if self.vdn is not None:
+            out = self.vdn.add_linear(out, x, q_raw, k_raw, v, vdn_window)
         return out
 
 
@@ -523,6 +775,7 @@ class MiniMaxH3MLP(nn.Module):
             quant_config=quant_config,
             prefix=f"{prefix}.fc1",
         )
+        self.act_fn = SiluAndMul()
         # Chunk the fused fc1 output as [gate, up], then compute
         # silu(gate) * up.
         self.fc2 = RowParallelLinear(
@@ -537,8 +790,7 @@ class MiniMaxH3MLP(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         hidden, _ = self.fc1(x)
-        gate, up = hidden.chunk(2, dim=-1)
-        hidden = nn.functional.silu(gate) * up
+        hidden = self.act_fn(hidden)
         out, _ = self.fc2(hidden)
         return out
 
@@ -561,29 +813,112 @@ class MiniMaxH3AdalnProj(nn.Module):
         expand_ratio: int,
         modality_num: int,
         prefix: str,
+        adaln_cache: MiniMaxH3RuntimeAdalnCache | None = None,
     ) -> None:
         super().__init__()
         if out_features != expand_ratio * arch.hidden_size * modality_num:
             raise ValueError(
                 f"adaln out_features mismatch: {out_features} != {expand_ratio}*{arch.hidden_size}*{modality_num}"
             )
+        self._adaln_cache = adaln_cache
+        self._offload_weights = adaln_cache is not None and adaln_cache.offload_weights
+        self._weight_stager: PinnedModuleStager | None = None
+        self._host_signature: tuple[Any, ...] | None = None
+        if self._offload_weights and quant_config is not None:
+            raise ValueError("MiniMax H3 AdaLN offload requires unquantized BF16 weights")
+        self._cache_name = prefix + ".linear"
         self.expand_ratio = expand_ratio
         self.modality_num = modality_num
         self.hidden_size = arch.hidden_size
-        self.linear = ColumnParallelLinear(
-            arch.time_embed_dim,
-            out_features,
-            bias=True,
-            gather_output=True,
-            params_dtype=_BF16_DTYPE,
-            quant_config=quant_config,
-            prefix=f"{prefix}.linear",
+        # Allocate host weights from the start: moving them after construction
+        # would still require enough VRAM for the complete resident model.
+        with torch.device("cpu") if self._offload_weights else nullcontext():
+            self.linear = ColumnParallelLinear(
+                arch.time_embed_dim,
+                out_features,
+                bias=True,
+                gather_output=True,
+                params_dtype=_BF16_DTYPE,
+                quant_config=quant_config,
+                prefix=f"{prefix}.linear",
+            )
+
+    def _apply(self, fn, recurse=True):
+        self._weight_stager = None
+        self._host_signature = None
+        if self._adaln_cache is not None:
+            self._adaln_cache.clear()
+        if not self._offload_weights:
+            return super()._apply(fn, recurse=recurse)
+
+        def keep_on_host(tensor):
+            result = fn(tensor)
+            return result if result.is_meta else result.cpu()
+
+        return super()._apply(keep_on_host, recurse=recurse)
+
+    def _offload_signature(self) -> tuple[Any, ...] | None:
+        assert self._adaln_cache is not None
+        try:
+            return self._adaln_cache._signature(self.linear)
+        except RuntimeError:
+            # Weights created in inference_mode have no version counter.
+            # Re-snapshot on every miss instead of trusting an immutable master.
+            return None
+
+    def _prepare_weight_stager(self, device: torch.device) -> None:
+        if not self._offload_weights:
+            return
+        if device.type != "cuda" or torch.is_grad_enabled() or torch.compiler.is_compiling():
+            raise RuntimeError("MiniMax H3 AdaLN offload requires eager CUDA inference")
+        assert self._adaln_cache is not None
+        if self._adaln_cache._has_forward_hooks(self.linear):
+            raise RuntimeError("MiniMax H3 AdaLN offload does not support projection forward hooks")
+        signature = self._offload_signature()
+        if (
+            signature is None
+            or self._weight_stager is None
+            or self._weight_stager.device != device
+            or self._host_signature != signature
+        ):
+            # Re-snapshot on parameter replacement, in-place edits or moves.
+            # The CPU master remains the registered parameter storage between
+            # calls, so normal cache version checks and weight loaders apply.
+            self._weight_stager = PinnedModuleStager(self.linear, device, cache_retention=BoundedAllocatorCache(device))
+            self._host_signature = self._offload_signature()
+
+    def _project(self, t_emb: torch.Tensor) -> torch.Tensor:
+        self._prepare_weight_stager(t_emb.device)
+
+        def project() -> torch.Tensor:
+            x = nn.functional.silu(t_emb)
+            if self._weight_stager is None:
+                return self.linear(x.to(_BF16_DTYPE))[0]
+            self._weight_stager.load()
+            try:
+                return self.linear(x.to(_BF16_DTYPE))[0]
+            finally:
+                self._weight_stager.offload()
+
+        return (
+            project()
+            if self._adaln_cache is None
+            else self._adaln_cache.project(self._cache_name, self.linear, t_emb, project)
         )
+
+    @torch.compiler.disable
+    def _project_cached(self, t_emb: torch.Tensor) -> torch.Tensor:
+        # Cache decisions, TP hit voting and CPU storage rebinding are host
+        # control flow. Keep this small boundary eager while the surrounding
+        # norms, attention projections and MLP remain eligible for compilation.
+        return self._project(t_emb)
 
     def forward(self, t_emb: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """t_emb: [M, t_dim] -> expand_ratio tensors of [M*modality_num, H]."""
-        x = nn.functional.silu(t_emb)
-        x, _ = self.linear(x.to(_BF16_DTYPE))
+        use_cache_boundary = self._adaln_cache is not None and (
+            self._adaln_cache.max_bytes > 0 or self._offload_weights
+        )
+        x = self._project_cached(t_emb) if use_cache_boundary else self._project(t_emb)
         m = x.shape[0]
         x = x.view(m * self.modality_num, self.expand_ratio * self.hidden_size)
         return tuple(x.chunk(self.expand_ratio, dim=-1))
@@ -625,12 +960,14 @@ class MiniMaxH3TokenRefinerBlock(nn.Module):
         *,
         cu_seqlens: torch.Tensor,
         max_seqlen: int,
+        num_requests: int = 1,
     ) -> torch.Tensor:
         x = x + self.attn(
             self.norm1(x),
-            rope_freqs=None,
+            rope_table=None,
             cu_seqlens=cu_seqlens,
             max_seqlen=max_seqlen,
+            num_requests=num_requests,
         )
         x = x + self.mlp(self.norm2(x))
         return x
@@ -663,9 +1000,10 @@ class MiniMaxH3TokenRefiner(nn.Module):
         *,
         cu_seqlens: torch.Tensor,
         max_seqlen: int,
+        num_requests: int = 1,
     ) -> torch.Tensor:
         for block in self.blocks:
-            x = block(x, cu_seqlens=cu_seqlens, max_seqlen=max_seqlen)
+            x = block(x, cu_seqlens=cu_seqlens, max_seqlen=max_seqlen, num_requests=num_requests)
         return self.final_norm(x)
 
 
@@ -676,13 +1014,18 @@ class MiniMaxH3DiTBlock(nn.Module):
         quant_config: QuantizationConfig | None,
         *,
         prefix: str,
+        adaln_cache: MiniMaxH3RuntimeAdalnCache | None = None,
+        attention_cls: type[MiniMaxH3Attention] = MiniMaxH3Attention,
     ) -> None:
         super().__init__()
         self.norm1 = _norm(arch.hidden_size, eps=arch.norm_eps)
         self.norm2 = _norm(arch.hidden_size, eps=arch.norm_eps)
         # The prefix also carries the block index that block-sparse attention
         # backends match against their skip_layers selector.
-        self.attn = MiniMaxH3Attention(
+        # ``attention_cls`` lets a derived model (for example the TaoMate-H3
+        # streaming variant) swap in a subclass of ``MiniMaxH3Attention`` that
+        # keeps the checkpoint layout but changes the attention kernel path.
+        self.attn = attention_cls(
             arch,
             quant_config,
             prefix=f"{prefix}.attn",
@@ -699,6 +1042,7 @@ class MiniMaxH3DiTBlock(nn.Module):
             expand_ratio=6,
             modality_num=MINIMAX_H3_ADALN_MODALITY_NUM,
             prefix=f"{prefix}.adaln_proj",
+            adaln_cache=adaln_cache,
         )
 
     def forward(
@@ -707,12 +1051,15 @@ class MiniMaxH3DiTBlock(nn.Module):
         *,
         t_emb: torch.Tensor,
         combined_indices: torch.Tensor,
-        rope_freqs: torch.Tensor,
+        rope_table: torch.Tensor,
         cu_seqlens: torch.Tensor,
         max_seqlen: int,
         packed_total: int,
+        num_requests: int = 1,
         sp_seq_lens: list[int] | None = None,
         video_layout: VideoTokenLayout | None = None,
+        vsa_prefix_segments: tuple[int, ...] = (),
+        vdn_window: VDNLayout | None = None,
     ) -> torch.Tensor:
         """x: [T, H]; t_emb: [M, t_dim]; combined_indices: [T]
         (= inverse_indices * modality_num + token_tags.clamp(min=0)).
@@ -731,24 +1078,39 @@ class MiniMaxH3DiTBlock(nn.Module):
         ) = self.adaln_proj(t_emb)
 
         residual = x
-        h = self.norm1(x)
-        h = _modulate_scale_shift(h, shift_msa, scale_msa, combined_indices, dtype=_BF16_DTYPE)
+        h = rms_norm_indexed_scale_shift(
+            x,
+            self.norm1.weight,
+            shift_msa,
+            scale_msa,
+            combined_indices,
+            self.norm1.variance_epsilon,
+        )
         h = self.attn(
             h,
-            rope_freqs=rope_freqs,
+            rope_table=rope_table,
             cu_seqlens=cu_seqlens,
             max_seqlen=max_seqlen,
             packed_total=packed_total,
+            num_requests=num_requests,
             sp_seq_lens=sp_seq_lens,
             video_layout=video_layout,
+            vsa_prefix_segments=vsa_prefix_segments,
+            vdn_window=vdn_window,
         )
-        x = _modulate_gate(residual, gate_msa, h, combined_indices, dtype=_BF16_DTYPE)
-
+        x, h = indexed_gate_rms_norm_scale_shift(
+            residual,
+            gate_msa,
+            h,
+            self.norm2.weight,
+            shift_mlp,
+            scale_mlp,
+            combined_indices,
+            self.norm2.variance_epsilon,
+        )
         residual = x
-        h = self.norm2(x)
-        h = _modulate_scale_shift(h, shift_mlp, scale_mlp, combined_indices, dtype=_BF16_DTYPE)
         h = self.mlp(h)
-        return _modulate_gate(residual, gate_mlp, h, combined_indices, dtype=_BF16_DTYPE)
+        return indexed_gate(residual, gate_mlp, h, combined_indices)
 
 
 class MiniMaxH3FinalLayer(nn.Module):
@@ -758,6 +1120,7 @@ class MiniMaxH3FinalLayer(nn.Module):
         quant_config: QuantizationConfig | None,
         *,
         prefix: str,
+        adaln_cache: MiniMaxH3RuntimeAdalnCache | None = None,
     ) -> None:
         super().__init__()
         video_patch_dim = arch.latents_dim * arch.patch_size[0] * arch.patch_size[1] * arch.patch_size[2]
@@ -769,25 +1132,35 @@ class MiniMaxH3FinalLayer(nn.Module):
             expand_ratio=2,
             modality_num=1,
             prefix=f"{prefix}.adaln_proj",
+            adaln_cache=adaln_cache,
         )
-        self.video_out = ColumnParallelLinear(
-            arch.hidden_size,
-            video_patch_dim,
-            bias=True,
-            gather_output=True,
-            params_dtype=_FP32_DTYPE,
-            quant_config=None,
-            prefix=f"{prefix}.video_out",
-        )
-        self.audio_out = ColumnParallelLinear(
-            arch.hidden_size,
-            arch.audio_latents_dim,
-            bias=True,
-            gather_output=True,
-            params_dtype=_FP32_DTYPE,
-            quant_config=None,
-            prefix=f"{prefix}.audio_out",
-        )
+        self.pdd_steps = arch.pdd_steps
+        if arch.pdd_steps is not None:
+            from .pdd import PDD_STEPS, MiniMaxH3PDDOutput
+
+            if type(arch.pdd_steps) is not int or arch.pdd_steps != PDD_STEPS:
+                raise ValueError("FastH3 Omni requires pdd_steps=32")
+            self.video_out = MiniMaxH3PDDOutput(arch.hidden_size, video_patch_dim, shift=12.0)
+            self.audio_out = MiniMaxH3PDDOutput(arch.hidden_size, arch.audio_latents_dim, shift=3.0)
+        else:
+            self.video_out = ColumnParallelLinear(
+                arch.hidden_size,
+                video_patch_dim,
+                bias=True,
+                gather_output=True,
+                params_dtype=_FP32_DTYPE,
+                quant_config=None,
+                prefix=f"{prefix}.video_out",
+            )
+            self.audio_out = ColumnParallelLinear(
+                arch.hidden_size,
+                arch.audio_latents_dim,
+                bias=True,
+                gather_output=True,
+                params_dtype=_FP32_DTYPE,
+                quant_config=None,
+                prefix=f"{prefix}.audio_out",
+            )
 
     def forward(
         self,
@@ -795,6 +1168,7 @@ class MiniMaxH3FinalLayer(nn.Module):
         *,
         t_emb: torch.Tensor,
         inverse_indices: torch.Tensor,
+        pdd_step: int | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """x: [T, H] -> (video_logits [T, 96] fp32, audio_logits [T, 32] fp32).
 
@@ -803,9 +1177,11 @@ class MiniMaxH3FinalLayer(nn.Module):
         """
         shift, scale = self.adaln_proj(t_emb)
         h = self.norm(x)
-        h = _modulate_scale_shift(h, shift, scale, inverse_indices, dtype=_BF16_DTYPE)
+        h = indexed_scale_shift_(h, shift, scale, inverse_indices)
         # Preserve full precision through both final output projections.
         h = h.to(_FP32_DTYPE)
+        if self.pdd_steps is not None:
+            return self.video_out(h, pdd_step), self.audio_out(h, pdd_step)
         video, _ = self.video_out(h)
         audio, _ = self.audio_out(h)
         return video, audio
@@ -817,10 +1193,10 @@ class MiniMaxH3SPPrepare(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        rope_freqs: torch.Tensor,
+        rope_table: torch.Tensor,
         combined_indices: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        return hidden_states, rope_freqs, combined_indices
+        return hidden_states, rope_table, combined_indices
 
 
 class MiniMaxH3SPGather(nn.Module):
@@ -831,6 +1207,15 @@ class MiniMaxH3SPGather(nn.Module):
 
 
 class MiniMaxH3DiTModel(nn.Module):
+    # Loading is tensor-complete: constructor state plus final-layout
+    # parameters and persistent buffers is sufficient to reconstruct a ready
+    # inference model. The model-specific validator below checks the preserved
+    # FP32 portion after a lease-backed restore commits.
+    host_weight_restore_contract = FinalLayoutModelContract(
+        implementation_id="minimax-h3-dit",
+        version="1",
+    )
+
     _cache_dit_adapter_config = CacheDiTAdapterConfig(
         block_forward_patterns={"blocks": ForwardPattern.Pattern_3},
         # H3 is CFG-distilled and performs one transformer forward per step.
@@ -839,6 +1224,8 @@ class MiniMaxH3DiTModel(nn.Module):
     )
     _repeated_blocks = ["MiniMaxH3DiTBlock"]
     _layerwise_offload_blocks_attrs = ["blocks"]
+    # Set by enable_vdn for a VDN-H3 checkpoint.
+    vdn_config: VDNConfig | None = None
 
     @staticmethod
     def _is_transformer_block(name: str, module: nn.Module) -> bool:
@@ -871,6 +1258,13 @@ class MiniMaxH3DiTModel(nn.Module):
                 split_output=True,
             ),
         },
+        "local_sp_prepare": {
+            2: SequenceParallelInput(
+                split_dim=0,
+                expected_dims=1,
+                split_output=True,
+            ),
+        },
         "sp_gather": SequenceParallelOutput(gather_dim=0, expected_dims=2),
     }
     # The checkpoint already stores qkv and the MLP gate/up as single tensors
@@ -878,6 +1272,14 @@ class MiniMaxH3DiTModel(nn.Module):
     # quantization or LoRA to map onto. Address the fused layers directly, e.g.
     # ignored_layers=["blocks.0.attn.qkv_proj"].
     packed_modules_mapping = {}
+    # Turbo LoRA checkpoints publish separate Q/K/V adapters. This declaration
+    # lets the legacy diffusion LoRA manager bind them to the packed QKV layer;
+    # it does not change the fused base-checkpoint loading path above.
+    stacked_params_mapping = (
+        (".attn.qkv_proj", ".attn.to_q", "q"),
+        (".attn.qkv_proj", ".attn.to_k", "k"),
+        (".attn.qkv_proj", ".attn.to_v", "v"),
+    )
 
     def _validate_tp_config(self, *, arch: MiniMaxH3DiTArchConfig, tp_size: int) -> None:
         if tp_size < 1:
@@ -904,12 +1306,69 @@ class MiniMaxH3DiTModel(nn.Module):
         self,
         od_config: OmniDiffusionConfig,
         quant_config: QuantizationConfig | None = None,
+        *,
+        diffusers_weights: bool | None = None,
+        attention_cls: type[MiniMaxH3Attention] = MiniMaxH3Attention,
     ) -> None:
         super().__init__()
         tf_config = od_config.tf_model_config
         config_mapping = tf_config.to_dict() if hasattr(tf_config, "to_dict") else dict(tf_config)
+        # The native MiniMax-H3 Hub snapshot advertises the Diffusers
+        # transformer class in its root config, while its FL2VA/Ref2VA
+        # components still contain native weights.  The pipeline has already
+        # resolved the actual source format, so let it override the
+        # class-name heuristic.  Keep the heuristic for standalone callers.
+        self._diffusers_weights = (
+            config_mapping.get("_class_name") == "MiniMaxH3Transformer3DModel"
+            if diffusers_weights is None
+            else diffusers_weights
+        )
+        from .checkpoint_quantization import FastH3NVFP4Config
+
+        self._serialized_weight_map = quant_config.weight_map if isinstance(quant_config, FastH3NVFP4Config) else {}
+        self._rope_theta = float(config_mapping.get("rope_theta", 10000.0))
         arch = MiniMaxH3DiTArchConfig.from_mapping(config_mapping)
         self.arch = arch
+        cache_config = getattr(od_config, "cache_config", {})
+        enabled = (
+            cache_config.get("minimax_h3_adaln_cache", True)
+            if isinstance(cache_config, Mapping)
+            else getattr(cache_config, "minimax_h3_adaln_cache", True)
+        )
+        if type(enabled) is not bool:
+            raise ValueError("minimax_h3_adaln_cache must be a boolean")
+        offload = resolve_offload(od_config)
+        conflicting_offload = (
+            offload.strategy is not OffloadStrategy.NONE and offload.offloads(DIT_COMPONENT)
+        ) or getattr(od_config.parallel_config, "use_hsdp", False)
+        # Limit automatic offload to the validated SM120 deployment. Other
+        # CUDA architectures keep their resident weights unless opted in.
+        # Use the worker's current device, not logical device zero.
+        default_offload_adaln = (
+            enabled
+            and current_omni_platform.is_cuda()
+            and quant_config is None
+            and not conflicting_offload
+            and current_omni_platform.get_device_capability(torch.accelerator.current_device_index()) == (12, 0)
+        )
+        offload_adaln = (
+            cache_config.get("minimax_h3_adaln_offload", default_offload_adaln)
+            if isinstance(cache_config, Mapping)
+            else getattr(cache_config, "minimax_h3_adaln_offload", default_offload_adaln)
+        )
+        if type(offload_adaln) is not bool:
+            raise ValueError("minimax_h3_adaln_offload must be a boolean")
+        if offload_adaln:
+            if not current_omni_platform.is_cuda():
+                raise ValueError("MiniMax H3 AdaLN offload requires CUDA")
+            if quant_config is not None:
+                raise ValueError("MiniMax H3 AdaLN offload requires unquantized BF16 weights")
+            if conflicting_offload:
+                raise ValueError("MiniMax H3 AdaLN offload cannot be combined with DiT offload or HSDP")
+            logger.info("MiniMax H3 AdaLN weights remain on CPU; projections stage on cache misses only")
+        self.adaln_cache = MiniMaxH3RuntimeAdalnCache(
+            max_bytes=256 * 1024**2 if enabled else 0, offload_weights=offload_adaln
+        )
         self.od_config = od_config
         self.parallel_config = od_config.parallel_config
         self.hidden_size = arch.hidden_size
@@ -973,22 +1432,131 @@ class MiniMaxH3DiTModel(nn.Module):
                     arch,
                     quant_config,
                     prefix=f"blocks.{i}",
+                    adaln_cache=self.adaln_cache,
+                    attention_cls=attention_cls,
                 )
                 for i in range(arch.num_layers)
             ]
         )
         self.sp_prepare = MiniMaxH3SPPrepare()
+        self.local_sp_prepare = MiniMaxH3SPPrepare()
         self.sp_gather = MiniMaxH3SPGather()
+        self.vsa_gates_enabled = False
         self.final_layer = MiniMaxH3FinalLayer(
             arch,
             quant_config,
             prefix="final_layer",
+            adaln_cache=self.adaln_cache,
         )
         self._mark_missing_params_required()
+
+    def enable_vsa_gates(
+        self,
+        *,
+        sparsity: float | None = None,
+        tile_size: int = 64,
+        ref_policy: str | None = None,
+        ref_keep_rate: float | None = None,
+    ) -> None:
+        """Give every DiT block's attention a VSA compression gate.
+
+        A FastH3 VSA artifact assigns these projections rather than adding to
+        them, so they have to exist before the weight stream reaches them. The
+        token refiner is left alone: the artifact carries gates for the 50 DiT
+        blocks only.
+        """
+        if self.vsa_gates_enabled:
+            return
+        for block in self.blocks:
+            block.attn.enable_vsa_gate()
+            block.attn.vsa_sparsity = sparsity
+            block.attn.vsa_tile_size = tile_size
+            block.attn.vsa_ref_policy = ref_policy
+            block.attn.vsa_ref_keep_rate = ref_keep_rate
+            if sparsity is not None:
+                for parameter in block.attn.to_gate_compress.parameters():
+                    parameter.missing_param_init = "error"
+        self.vsa_gates_enabled = True
+
+    def enable_vdn(self, config: VDNConfig) -> None:
+        """Convert every DiT block to VDN-H3 hybrid attention before loading.
+
+        The token refiner attends over text only and stays dense.
+        """
+        for block in self.blocks:
+            block.attn.enable_vdn(config)
+        self.vdn_config = config
+        self._mark_missing_params_required()
+
+    def vdn_parameter_names(self) -> set[str]:
+        """VDN parameters the checkpoint supplies; quantization fills its scales after loading."""
+        return {name for name, _ in self.named_parameters() if ".attn.vdn." in name and not name.endswith("_scale")}
+
+    def _vdn_window(self, layout: VideoTokenLayout | None, *, text_len: int, num_requests: int) -> VDNLayout:
+        if num_requests != 1 or layout is None or layout.used_len is None:
+            raise ValueError("VDN-H3 attention needs one packed request with its video layout per forward")
+        target = next(span for span in reversed(layout.video_spans) if span.role == "target")
+        return self.vdn_config.window(
+            used=layout.used_len, text_len=text_len, video_start=target.start, grid=target.latent_grid
+        )
 
     def _mark_missing_params_required(self) -> None:
         for _, param in self.named_parameters():
             param.missing_param_init = "error"
+
+    def _rope_local_span(self, seq_len: int) -> tuple[int, int]:
+        """Return the sequence-parallel rows owned by this DiT rank."""
+        local_sp_registry = getattr(self.local_sp_prepare, "_hook_registry", None)
+        hooks_applied = local_sp_registry is not None
+        if local_sp_registry is not None:
+            local_sp_hook = local_sp_registry.get_hook(_LOCAL_SP_PREPARE_HOOK)
+            hooks_applied = local_sp_hook is not None
+        return _sequence_parallel_local_span(
+            seq_len,
+            hooks_applied=hooks_applied,
+        )
+
+    def prepare_rope_table(
+        self,
+        img_position_ids: torch.Tensor,
+        *,
+        seq_len: int,
+    ) -> torch.Tensor:
+        """Build the static local RoPE table once for one denoise branch.
+
+        A MiniMax-H3 denoise branch reuses its packed position IDs at every
+        scheduler step. The returned table is local to the current sequence-
+        parallel rank, and therefore must be built by the model that will
+        consume it rather than cached globally across requests or ranks.
+        """
+        local_start, local_len = self._rope_local_span(seq_len)
+        rope_position_ids = img_position_ids.narrow(1, local_start, local_len)
+        return _build_rope_table(self.rope(rope_position_ids).to(img_position_ids.device))
+
+    def _validate_prepared_rope_table(
+        self,
+        rope_table: torch.Tensor,
+        *,
+        local_len: int,
+        device: torch.device,
+    ) -> None:
+        expected_width = 6 * self.arch.rope_inv_freq_len
+        if rope_table.dim() != 2 or tuple(rope_table.shape) != (local_len, expected_width):
+            raise ValueError(
+                "rope_table must be [local_seq_len, rotary_dim] for the current "
+                f"sequence-parallel rank, got {list(rope_table.shape)}; expected "
+                f"[{local_len}, {expected_width}]."
+            )
+        if rope_table.device != device:
+            raise ValueError(f"rope_table device {rope_table.device} must match x device {device}.")
+        if rope_table.dtype != _BF16_DTYPE:
+            raise ValueError(f"rope_table must be {_BF16_DTYPE}, got {rope_table.dtype}.")
+
+    def _apply(self, fn, recurse=True):
+        # Derived outputs must not keep the old device alive after offload/move.
+        if getattr(self, "adaln_cache", None) is not None:
+            self.adaln_cache.clear()
+        return super()._apply(fn, recurse=recurse)
 
     def post_load_weights(self) -> None:
         for name, param in self.named_parameters():
@@ -998,21 +1566,57 @@ class MiniMaxH3DiTModel(nn.Module):
             if name in MINIMAX_H3_FP32_BUFFER_NAMES and buffer.dtype != _FP32_DTYPE:
                 raise ValueError(f"{name} must stay fp32 after load, got {buffer.dtype}.")
 
+    def validate_restored_host_weights(self) -> None:
+        """Validate mixed-precision invariants after lease-backed restore."""
+        self.post_load_weights()
+
     def load_weights(
         self,
         weights: Iterable[tuple[str, torch.Tensor]],
     ) -> set[str]:
-        """Load exact H3 checkpoint names with logical TP-aware loaders."""
+        """Load native or Diffusers H3 weights with the existing TP-aware loaders."""
+        if getattr(self, "adaln_cache", None) is not None:
+            self.adaln_cache.clear()
         params = dict(self.named_parameters())
         params.update(dict(self.named_buffers()))
         loaded: set[str] = set()
+        diffusers_weights = getattr(self, "_diffusers_weights", False)
+        qkv_parts: dict[str, set[str]] = {}
+        source_names: set[str] = set()
         for name, loaded_weight in weights:
+            layout = "plain"
+            if diffusers_weights:
+                if name in source_names:
+                    raise ValueError(f"duplicate Diffusers H3 weight: {name}")
+                source_names.add(name)
+                serialized_target = self._serialized_weight_map.get(name)
+                if serialized_target is not None:
+                    param = params[serialized_target]
+                    param.weight_loader(param, loaded_weight)
+                    loaded.add(serialized_target)
+                    continue
+                module, _, kind = name.rpartition(".")
+                target = _resolve_native_target(module)
+                if target is None or kind not in {"weight", "bias", "weight_scale"}:
+                    raise ValueError(f"unsupported Diffusers H3 weight: {name}")
+                if kind == "weight_scale":
+                    # FastVideo stores per-channel scales as [N, 1]; vLLM's
+                    # channel-scale parameter and TP loaders consume [N].
+                    loaded_weight = loaded_weight.squeeze(-1)
+                name, layout = f"{target[0]}.{kind}", target[1]
             param = params.get(name)
             if param is None:
+                if diffusers_weights:
+                    raise ValueError(f"Diffusers H3 weight has no model parameter: {name}")
                 logger.warning("Skipping MiniMax H3 weight not present in model: %s", name)
                 continue
             weight_loader = getattr(param, "weight_loader", default_weight_loader)
-            if name.endswith(".attn.qkv_proj.weight"):
+            if layout in {"q", "k", "v"}:
+                # vLLM can load each projection directly into its packed QKV
+                # parameter, including TP slicing and online quantization.
+                weight_loader(param, loaded_weight, layout)
+                qkv_parts.setdefault(name, set()).add(layout)
+            elif name.endswith(".attn.qkv_proj.weight"):
                 # Transform checkpoint layout before entering vLLM's loader so
                 # online FP8 can keep ``online_process_loader`` outermost.
                 loaded_weight = _reorder_grouped_qkv_to_qkv(
@@ -1022,18 +1626,32 @@ class MiniMaxH3DiTModel(nn.Module):
                     head_dim=self.arch.attention_head_dim,
                 )
                 weight_loader(param, loaded_weight)
-            elif name.endswith(".mlp.fc1.weight"):
+            elif name.endswith((".mlp.fc1.weight", ".mlp.fc1.weight_scale")):
                 if loaded_weight.shape[0] % 2:
                     raise ValueError(
                         "MiniMax H3 fc1 checkpoint rows must split evenly into "
                         f"gate/up matrices, got {tuple(loaded_weight.shape)}"
                     )
-                gate, up = loaded_weight.chunk(2, dim=0)
+                first, second = loaded_weight.chunk(2, dim=0)
+                gate, up = (second, first) if layout == "swap_halves" else (first, second)
                 weight_loader(param, gate, 0)
                 weight_loader(param, up, 1)
             else:
                 weight_loader(param, loaded_weight)
             loaded.add(name)
+        if diffusers_weights:
+            for name, parts in qkv_parts.items():
+                if parts != {"q", "k", "v"}:
+                    raise ValueError(f"incomplete Diffusers H3 QKV group {name}: {sorted(parts)}")
+            # Diffusers reconstructs RoPE from config instead of storing this
+            # native checkpoint buffer. Compute on CPU for identical values.
+            freq_dim = self.arch.rope_inv_freq_len
+            rope = 1.0 / (
+                self._rope_theta
+                ** (torch.arange(0, 2 * freq_dim, 2, dtype=torch.float32, device="cpu") / (2 * freq_dim))
+            )
+            default_weight_loader(params["rope.inv_freq"], rope)
+            loaded.add("rope.inv_freq")
         return loaded
 
     @staticmethod
@@ -1056,6 +1674,39 @@ class MiniMaxH3DiTModel(nn.Module):
             raise ValueError(f"{key}.{field} is required")
         return value
 
+    @staticmethod
+    def _psp_optional(psp: Any, field: str, default: Any) -> Any:
+        value = psp.get(field) if isinstance(psp, dict) else getattr(psp, field, None)
+        return default if value is None else value
+
+    def _embed_row_indices(
+        self,
+        *,
+        img_pos: torch.Tensor,
+        audio_pos: torch.Tensor,
+        text_pos: torch.Tensor,
+        seq_len: int,
+        local_span: tuple[int, int],
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor | None]:
+        """Select this rank's rows; derived models may reuse a prepared selection."""
+        local_start, local_len = local_span
+        if local_len == seq_len:
+            return img_pos, audio_pos, img_pos, audio_pos, text_pos, None
+        local_end = local_start + local_len
+        img_mask = (img_pos >= local_start) & (img_pos < local_end)
+        audio_mask = (audio_pos >= local_start) & (audio_pos < local_end)
+        text_mask = (text_pos >= local_start) & (text_pos < local_end)
+        img_global_pos = img_pos[img_mask]
+        audio_global_pos = audio_pos[audio_mask]
+        return (
+            img_global_pos,
+            audio_global_pos,
+            img_global_pos - local_start,
+            audio_global_pos - local_start,
+            text_pos[text_mask] - local_start,
+            torch.nonzero(text_mask, as_tuple=False).view(-1),
+        )
+
     def _embed(
         self,
         *,
@@ -1070,16 +1721,31 @@ class MiniMaxH3DiTModel(nn.Module):
         refiner_max_seqlen: int,
         seq_len: int,
         device: torch.device,
+        local_span: tuple[int, int],
+        num_requests: int = 1,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Build packed multimodal embeddings for the TP=1/SP=1 inference path.
+        """Build this rank's packed multimodal embedding rows.
 
-        Returns (decoder_input [S, H] bf16, t_emb [M, t_dim] fp32).
+        Returns (decoder_input [S_local, H] bf16, t_emb [M, t_dim] fp32).
+
+        ``num_requests`` defaults to a single packed request so callers that
+        pre-date the continuous-batching change (e.g. TeaCache's extractor
+        contract) do not silently miss the kwarg. ``forward()`` reads the real
+        value from ``packed_seq_params["num_requests"]``.
         """
+        local_len = local_span[1]
+        img_global_pos, audio_global_pos, img_local_pos, audio_local_pos, text_local_pos, text_local_indices = (
+            self._embed_row_indices(
+                img_pos=img_pos, audio_pos=audio_pos, text_pos=text_pos, seq_len=seq_len, local_span=local_span
+            )
+        )
+
         # Latent embedders stay fp32 in and out; their outputs are cast to the
         # bf16 sequence dtype only during indexed scattering.
-        x_rows = x.view(-1, x.shape[-1]).index_select(0, img_pos).to(_FP32_DTYPE)
+        x_rows = x.view(-1, x.shape[-1]).index_select(0, img_global_pos).to(_FP32_DTYPE)
         video_embed, _ = self.video_patch_proj(x_rows)
-        audio_rows = audio_x.view(-1, audio_x.shape[-1]).index_select(0, audio_pos).to(_FP32_DTYPE)
+        audio_rows = audio_x.view(-1, audio_x.shape[-1])
+        audio_rows = audio_rows.index_select(0, audio_global_pos).to(_FP32_DTYPE)
         audio_embed, _ = self.audio_patch_proj(audio_rows)
 
         text_rows = text_embeddings_selected.to(device=device, dtype=_BF16_DTYPE)
@@ -1088,17 +1754,36 @@ class MiniMaxH3DiTModel(nn.Module):
             text_embed,
             cu_seqlens=refiner_cu_seqlens,
             max_seqlen=refiner_max_seqlen,
+            num_requests=num_requests,
         )
+        if text_local_indices is not None:
+            text_embed = text_embed.index_select(0, text_local_indices)
 
-        embeddings = torch.zeros((seq_len, self.hidden_size), device=device, dtype=_BF16_DTYPE)
-        embeddings.index_add_(0, text_pos, text_embed.to(_BF16_DTYPE)[: text_pos.shape[0]])
-        embeddings.index_add_(0, img_pos, video_embed.to(_BF16_DTYPE)[: img_pos.shape[0]])
-        embeddings.index_add_(0, audio_pos, audio_embed.to(_BF16_DTYPE)[: audio_pos.shape[0]])
+        embeddings = torch.zeros(
+            (local_len, self.hidden_size),
+            device=device,
+            dtype=_BF16_DTYPE,
+        )
+        embeddings.index_add_(
+            0,
+            text_local_pos,
+            text_embed.to(_BF16_DTYPE)[: text_local_pos.shape[0]],
+        )
+        embeddings.index_add_(
+            0,
+            img_local_pos,
+            video_embed.to(_BF16_DTYPE)[: img_local_pos.shape[0]],
+        )
+        embeddings.index_add_(
+            0,
+            audio_local_pos,
+            audio_embed.to(_BF16_DTYPE)[: audio_local_pos.shape[0]],
+        )
 
         t_emb = self.time_embedder(unique_timesteps)
         return embeddings, t_emb
 
-    def forward(self, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, *, pdd_step: int | None = None, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor]:
         """Packed inference forward.
 
         Keyword names follow the checkpoint's serving contract.
@@ -1123,7 +1808,6 @@ class MiniMaxH3DiTModel(nn.Module):
         update_mask = _required_kwarg(kwargs, "update_mask")
         token_tags = _required_kwarg(kwargs, "token_tags").view(-1).to(torch.long)
         skip_mask_out_condition = bool(kwargs.get("skip_mask_out_condition", False))
-
         text_selected = _required_kwarg(kwargs, "prompt_embeds")
 
         img_pos = self._pos_ids(_required_kwarg(kwargs, "img_pos_info"), "img_pos_info")
@@ -1140,10 +1824,19 @@ class MiniMaxH3DiTModel(nn.Module):
         psp = _required_kwarg(kwargs, "packed_seq_params")
         cu_seqlens = self._psp_field(psp, "packed_seq_params", "cu_seqlens_q").to(torch.int32)
         max_seqlen = int(self._psp_field(psp, "packed_seq_params", "max_seqlen_q"))
+        # How many requests share this packed sequence. Carried as a host int so
+        # attention never reads cu_seqlens scalars off the device; a producer
+        # that omits it is packing a single request.
+        num_requests = int(self._psp_optional(psp, "num_requests", 1))
+        vsa_prefix_segments = tuple(int(length) for length in self._psp_optional(psp, "vsa_prefix_segments", ()))
         refiner_psp = _required_kwarg(kwargs, "refiner_packed_seq_params")
         refiner_cu = self._psp_field(refiner_psp, "refiner_packed_seq_params", "cu_seqlens_q").to(torch.int32)
         refiner_max = int(self._psp_field(refiner_psp, "refiner_packed_seq_params", "max_seqlen_q"))
         video_layout = kwargs.get("video_token_layout")
+        vdn_window = None
+        if self.vdn_config is not None:
+            # Text rows lead the packed document.
+            vdn_window = self._vdn_window(video_layout, text_len=int(text_pos.shape[0]), num_requests=num_requests)
 
         if x.dim() != 3 or x.shape[0] != 1:
             raise ValueError(f"x must be [1, S, C], got {list(x.shape)}")
@@ -1153,8 +1846,26 @@ class MiniMaxH3DiTModel(nn.Module):
         if inverse_indices.shape[0] != seq_len:
             raise ValueError(f"inverse_indices must be [{seq_len}], got {list(inverse_indices.shape)}")
         device = x.device
-        # Compute RoPE frequencies over the full packed sequence.
-        rope_freqs = self.rope(img_position_ids).to(device)
+        local_span = self._rope_local_span(seq_len)
+        local_start, local_len = local_span
+        rope_table = kwargs.get("rope_table")
+        if rope_table is None:
+            if current_omni_platform.is_npu():
+                rope_table = self.prepare_rope_table(
+                    img_position_ids,
+                    seq_len=seq_len,
+                )
+            else:
+                # Keep CUDA/CPU numerically and structurally identical to the
+                # main-branch reference path used by the H100 accuracy suite.
+                rope_position_ids = img_position_ids.narrow(1, local_start, local_len)
+                rope_table = _build_rope_table(self.rope(rope_position_ids).to(device))
+        else:
+            self._validate_prepared_rope_table(
+                rope_table,
+                local_len=local_len,
+                device=device,
+            )
 
         decoder_input, t_emb = self._embed(
             x=x,
@@ -1166,41 +1877,74 @@ class MiniMaxH3DiTModel(nn.Module):
             text_pos=text_pos.to(device),
             refiner_cu_seqlens=refiner_cu.to(device),
             refiner_max_seqlen=refiner_max,
+            num_requests=num_requests,
             seq_len=seq_len,
             device=device,
+            local_span=local_span,
         )
+
+        if getattr(self, "adaln_cache", None) is not None:
+            self.adaln_cache.prepare(t_emb)
 
         combined_indices = (inverse_indices * MINIMAX_H3_ADALN_MODALITY_NUM + token_tags.clamp(min=0)).to(device)
         inverse_indices = inverse_indices.to(device)
 
         hidden = decoder_input
         cu_seqlens = cu_seqlens.to(device)
-        block_rope = rope_freqs
+        block_rope = rope_table
         block_combined = combined_indices
 
-        hidden, block_rope, block_combined = self.sp_prepare(
-            hidden,
-            block_rope,
-            block_combined,
-        )
+        if local_len == seq_len:
+            hidden, block_rope, block_combined = self.sp_prepare(
+                hidden,
+                block_rope,
+                block_combined,
+            )
+        else:
+            hidden, block_rope, block_combined = self.local_sp_prepare(
+                hidden,
+                block_rope,
+                block_combined,
+            )
         for block in self.blocks:
             hidden = block(
                 hidden,
                 t_emb=t_emb,
                 combined_indices=block_combined,
-                rope_freqs=block_rope,
+                rope_table=block_rope,
                 cu_seqlens=cu_seqlens,
                 max_seqlen=max_seqlen,
                 packed_total=seq_len,
+                num_requests=num_requests,
                 video_layout=video_layout,
+                vsa_prefix_segments=vsa_prefix_segments,
+                vdn_window=vdn_window,
             )
-        hidden = self.sp_gather(hidden)
-
-        video_logits, audio_logits = self.final_layer(
-            hidden,
-            t_emb=t_emb,
-            inverse_indices=inverse_indices,
-        )
+        if local_len == seq_len:
+            hidden = self.sp_gather(hidden)
+            video_logits, audio_logits = self.final_layer(
+                hidden,
+                t_emb=t_emb,
+                inverse_indices=inverse_indices,
+                pdd_step=pdd_step,
+            )
+        else:
+            local_inverse_indices = inverse_indices.narrow(
+                0,
+                local_start,
+                local_len,
+            )
+            video_logits, audio_logits = self.final_layer(
+                hidden,
+                t_emb=t_emb,
+                inverse_indices=local_inverse_indices,
+                pdd_step=pdd_step,
+            )
+            compact_logits = torch.cat((video_logits, audio_logits), dim=-1)
+            compact_logits = self.sp_gather(compact_logits)
+            video_width = self.arch.latents_dim * math.prod(self.arch.patch_size)
+            video_logits = compact_logits[..., :video_width]
+            audio_logits = compact_logits[..., video_width:]
 
         # Select target and condition rows at inference-output positions, then
         # zero the condition rows.

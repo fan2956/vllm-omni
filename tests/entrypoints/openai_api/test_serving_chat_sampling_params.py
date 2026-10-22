@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM-Omni project
 """
 Unit tests for OmniOpenAIServingChat sampling params handling.
 
@@ -8,11 +9,15 @@ are correctly applied to the comprehension stage while preserving YAML defaults.
 
 import asyncio
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 from pytest_mock import MockerFixture
 from vllm.entrypoints.openai.chat_completion.protocol import ChatCompletionRequest
+from vllm.exceptions import VLLMValidationError
 from vllm.sampling_params import SamplingParams
+
+from tests.helpers.serving_chat import build_serving_chat
 
 pytestmark = [pytest.mark.core_model, pytest.mark.cpu]
 
@@ -77,18 +82,8 @@ def mock_engine_client(
     return engine_client
 
 
-@pytest.fixture
-def serving_chat(mock_engine_client):
-    """Create OmniOpenAIServingChat instance with mocked dependencies."""
-    from vllm_omni.entrypoints.openai.serving_chat import OmniOpenAIServingChat
-
-    # Create instance without calling __init__
-    instance = object.__new__(OmniOpenAIServingChat)
-    instance.engine_client = mock_engine_client
-    return instance
-
-
-def test_serving_boundary_normalizes_declared_root_and_nested_extras(serving_chat):
+def test_serving_boundary_normalizes_declared_root_and_nested_extras(mock_engine_client):
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     serving_chat._diffusion_extra_body_params = frozenset({"cfg_text_scale", "negative_prompt"})
     request = ChatCompletionRequest(
         model="test",
@@ -118,7 +113,8 @@ def test_serving_boundary_normalizes_declared_root_and_nested_extras(serving_cha
     assert diffusion_request_args["modalities"] == ["image"]
 
 
-def test_unknown_root_extra_does_not_claim_canonical_extra(serving_chat):
+def test_unknown_root_extra_does_not_claim_canonical_extra(mock_engine_client):
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     serving_chat._diffusion_extra_body_params = frozenset()
     request = ChatCompletionRequest(
         model="test",
@@ -135,7 +131,8 @@ def test_unknown_root_extra_does_not_claim_canonical_extra(serving_chat):
     assert "pipeline_option" not in diffusion_request_args
 
 
-def test_serving_boundary_rejects_invalid_quality(serving_chat):
+def test_serving_boundary_rejects_invalid_quality(mock_engine_client):
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     serving_chat._diffusion_extra_body_params = frozenset()
     request = ChatCompletionRequest(
         model="test",
@@ -148,7 +145,8 @@ def test_serving_boundary_rejects_invalid_quality(serving_chat):
         serving_chat._normalize_diffusion_request_args(request)
 
 
-def test_unregistered_cfg_scale_aliases_common_true_cfg_scale(serving_chat):
+def test_unregistered_cfg_scale_aliases_common_true_cfg_scale(mock_engine_client):
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     serving_chat._diffusion_extra_body_params = frozenset()
     request = ChatCompletionRequest(
         model="test",
@@ -170,7 +168,8 @@ def test_unregistered_cfg_scale_aliases_common_true_cfg_scale(serving_chat):
     ],
     ids=["registered-model-extra", "unregistered-common-alias"],
 )
-def test_cfg_scale_owner_conflicts_are_rejected(serving_chat, registered, request_kwargs):
+def test_cfg_scale_owner_conflicts_are_rejected(mock_engine_client, registered, request_kwargs):
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     serving_chat._diffusion_extra_body_params = frozenset(registered)
     request = ChatCompletionRequest(model="test", messages=[], **request_kwargs)
 
@@ -180,10 +179,11 @@ def test_cfg_scale_owner_conflicts_are_rejected(serving_chat, registered, reques
 
 @pytest.mark.parametrize("diffusion_mode", [True, False], ids=["pure", "mixed"])
 def test_duplicate_extras_return_the_same_bad_request_before_dispatch(
-    serving_chat,
+    mock_engine_client,
     mocker: MockerFixture,
     diffusion_mode: bool,
 ):
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     serving_chat._diffusion_mode = diffusion_mode
     serving_chat._diffusion_extra_body_params = frozenset({"sample_solver"})
     serving_chat.engine_client.stage_configs = [SimpleNamespace(stage_type="diffusion")]
@@ -211,9 +211,10 @@ def test_duplicate_extras_return_the_same_bad_request_before_dispatch(
     pure_dispatch.assert_not_awaited()
 
 
-def test_pure_consumer_preserves_defaults_and_separate_cfg_owners(serving_chat, mocker: MockerFixture):
+def test_pure_consumer_preserves_defaults_and_separate_cfg_owners(mock_engine_client, mocker: MockerFixture):
     from vllm_omni.inputs.data import OmniDiffusionSamplingParams
 
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     captured: dict[str, object] = {}
 
     async def generate(**kwargs):
@@ -261,19 +262,22 @@ def test_pure_consumer_preserves_defaults_and_separate_cfg_owners(serving_chat, 
     assert response.error.message == "No output generated from AsyncOmni"
 
 
-def test_mixed_consumer_keeps_root_common_args_with_nested_extras(serving_chat, mocker: MockerFixture):
+def test_mixed_consumer_keeps_root_common_args_with_nested_extras(mock_engine_client, mocker: MockerFixture):
     from vllm_omni.inputs.data import OmniDiffusionSamplingParams
 
-    serving_chat.engine_client.stage_configs = [
+    mock_engine_client.stage_configs = [
         SimpleNamespace(stage_type="llm", is_comprehension=True),
         SimpleNamespace(stage_type="diffusion", is_comprehension=False),
     ]
-    serving_chat.engine_client.default_sampling_params_list = [
+    mock_engine_client.default_sampling_params_list = [
         SamplingParams(),
         OmniDiffusionSamplingParams(),
     ]
-    serving_chat.engine_client.output_modalities = ["image"]
-    serving_chat.engine_client.errored = False
+    mock_engine_client.output_modalities = ["image"]
+    mock_engine_client.errored = False
+    # Upstream's OpenAIServingChat.__init__ reads renderer.tokenizer when
+    # composing the tool/reasoning parser; None is its skip-validation value.
+    mock_engine_client.renderer = SimpleNamespace(get_tokenizer=lambda: object(), tokenizer=None)
 
     captured: dict[str, object] = {}
 
@@ -285,21 +289,15 @@ def test_mixed_consumer_keeps_root_common_args_with_nested_extras(serving_chat, 
         captured.update(kwargs)
         return results()
 
-    serving_chat.engine_client.generate = generate
-    serving_chat.__dict__.update(
-        _diffusion_mode=False,
-        _diffusion_extra_body_params=frozenset(),
+    mock_engine_client.generate = generate
+    serving_chat = build_serving_chat(
+        engine_client=mock_engine_client,
         models=SimpleNamespace(model_name=lambda _: "test"),
-        renderer=SimpleNamespace(get_tokenizer=lambda: object()),
         online_renderer=SimpleNamespace(validate_chat_template=lambda **_: None),
-        parser_cls=None,
-        use_harmony=False,
-        enable_auto_tools=False,
-        exclude_tools_when_tool_choice_none=False,
         trust_request_chat_template=True,
-        chat_template=None,
-        chat_template_content_format="auto",
     )
+    serving_chat._diffusion_mode = False
+    serving_chat._diffusion_extra_body_params = frozenset()
     mocker.patch.multiple(
         serving_chat,
         _check_model=mocker.AsyncMock(return_value=None),
@@ -331,6 +329,66 @@ def test_mixed_consumer_keeps_root_common_args_with_nested_extras(serving_chat, 
     assert (diffusion_params.height, diffusion_params.width) == (512, 768)
     assert diffusion_params.extra_args == {"solver": "euler"}
     assert captured["prompt"]["negative_prompt"] == "avoid blur"
+
+
+def test_text_only_request_reaches_engine_with_comprehension_task_mode(mock_engine_client, mocker: MockerFixture):
+    """Exercise the production chat path, not only the tagging helper."""
+    from vllm_omni.inputs.data import OmniDiffusionSamplingParams
+
+    mock_engine_client.stage_configs = [
+        SimpleNamespace(stage_type="llm", is_comprehension=True),
+        SimpleNamespace(stage_type="diffusion", is_comprehension=False),
+    ]
+    mock_engine_client.default_sampling_params_list = [
+        SamplingParams(),
+        OmniDiffusionSamplingParams(),
+    ]
+    mock_engine_client.output_modalities = ["text", "image"]
+    mock_engine_client.errored = False
+    # Upstream's OpenAIServingChat.__init__ reads renderer.tokenizer when
+    # composing the tool/reasoning parser; None is its skip-validation value.
+    mock_engine_client.renderer = SimpleNamespace(get_tokenizer=lambda: object(), tokenizer=None)
+    captured: dict[str, object] = {}
+
+    async def results():
+        if False:
+            yield None
+
+    def generate(**kwargs):
+        captured.update(kwargs)
+        return results()
+
+    mock_engine_client.generate = generate
+    serving_chat = build_serving_chat(
+        engine_client=mock_engine_client,
+        models=SimpleNamespace(model_name=lambda _: "test"),
+        online_renderer=SimpleNamespace(validate_chat_template=lambda **_: None),
+        trust_request_chat_template=True,
+    )
+    serving_chat._diffusion_mode = False
+    serving_chat._diffusion_extra_body_params = frozenset()
+    mocker.patch.multiple(
+        serving_chat,
+        _check_model=mocker.AsyncMock(return_value=None),
+        _maybe_get_adapters=mocker.Mock(return_value=None),
+        _effective_chat_template_kwargs=mocker.Mock(return_value={}),
+        _preprocess_chat=mocker.AsyncMock(return_value=([], [{"prompt": "raw"}])),
+        _base_request_id=mocker.Mock(return_value="test"),
+        _log_inputs=mocker.Mock(),
+        chat_completion_full_generator=mocker.AsyncMock(return_value="done"),
+    )
+    request = ChatCompletionRequest(
+        model="test",
+        messages=[{"role": "user", "content": "describe this image"}],
+        modalities=["text"],
+    )
+
+    assert asyncio.run(serving_chat._create_chat_completion(request)) == "done"
+
+    sampling_params_list = cast(list[Any], captured["sampling_params_list"])
+    assert sampling_params_list[0].extra_args == {"ar_task_mode": "comprehension"}
+    assert sampling_params_list[1].extra_args == {}
+    assert captured["output_modalities"] == ["text"]
 
 
 @pytest.fixture
@@ -386,8 +444,9 @@ def test_openai_sampling_fields_contains_expected_fields():
 # =============================================================================
 
 
-def test_preserves_yaml_defaults_when_no_request_params(serving_chat, mock_request):
+def test_preserves_yaml_defaults_when_no_request_params(mock_engine_client, mock_request):
     """Test that YAML defaults are preserved when request has no params."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     result = serving_chat._build_sampling_params_list_from_request(mock_request)
 
     assert len(result) == 2
@@ -400,8 +459,9 @@ def test_preserves_yaml_defaults_when_no_request_params(serving_chat, mock_reque
     assert comprehension_params.repetition_penalty == 1.05  # YAML custom param preserved
 
 
-def test_request_temperature_overrides_yaml_default(serving_chat, mock_request):
+def test_request_temperature_overrides_yaml_default(mock_engine_client, mock_request):
     """Test that request temperature overrides YAML default."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.temperature = 0.8
     mock_request.model_fields_set = {"temperature"}
 
@@ -413,8 +473,9 @@ def test_request_temperature_overrides_yaml_default(serving_chat, mock_request):
     assert comprehension_params.top_k == 1  # YAML custom param preserved
 
 
-def test_request_top_p_overrides_yaml_default(serving_chat, mock_request):
+def test_request_top_p_overrides_yaml_default(mock_engine_client, mock_request):
     """Test that request top_p overrides YAML default."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.top_p = 0.95
     mock_request.model_fields_set = {"top_p"}
 
@@ -425,8 +486,9 @@ def test_request_top_p_overrides_yaml_default(serving_chat, mock_request):
     assert comprehension_params.temperature == 0.4  # Preserved from YAML
 
 
-def test_request_max_tokens_overrides_yaml_default(serving_chat, mock_request):
+def test_request_max_tokens_overrides_yaml_default(mock_engine_client, mock_request):
     """Test that request max_tokens overrides YAML default."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.max_tokens = 100
     mock_request.model_fields_set = {"max_tokens"}
 
@@ -435,15 +497,17 @@ def test_request_max_tokens_overrides_yaml_default(serving_chat, mock_request):
     assert result[0].max_tokens == 100
 
 
-def test_max_tokens_uses_yaml_default_when_not_specified(serving_chat, mock_request):
+def test_max_tokens_uses_yaml_default_when_not_specified(mock_engine_client, mock_request):
     """Test that max_tokens falls back to YAML default when not in request."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     result = serving_chat._build_sampling_params_list_from_request(mock_request)
 
     assert result[0].max_tokens == 4353
 
 
-def test_request_seed_overrides_yaml_default(serving_chat, mock_request):
+def test_request_seed_overrides_yaml_default(mock_engine_client, mock_request):
     """Test that request seed overrides YAML default."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.seed = 123
     mock_request.model_fields_set = {"seed"}
 
@@ -454,8 +518,9 @@ def test_request_seed_overrides_yaml_default(serving_chat, mock_request):
     assert comprehension_params.temperature == 0.4  # Preserved from YAML
 
 
-def test_request_frequency_penalty_overrides(serving_chat, mock_request):
+def test_request_frequency_penalty_overrides(mock_engine_client, mock_request):
     """Test that request frequency_penalty is applied."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.frequency_penalty = 0.5
     mock_request.model_fields_set = {"frequency_penalty"}
 
@@ -464,8 +529,9 @@ def test_request_frequency_penalty_overrides(serving_chat, mock_request):
     assert result[0].frequency_penalty == 0.5
 
 
-def test_request_presence_penalty_overrides(serving_chat, mock_request):
+def test_request_presence_penalty_overrides(mock_engine_client, mock_request):
     """Test that request presence_penalty is applied."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.presence_penalty = 0.3
     mock_request.model_fields_set = {"presence_penalty"}
 
@@ -474,8 +540,9 @@ def test_request_presence_penalty_overrides(serving_chat, mock_request):
     assert result[0].presence_penalty == 0.3
 
 
-def test_non_comprehension_stages_use_cloned_defaults(serving_chat, mock_request):
+def test_non_comprehension_stages_use_cloned_defaults(mock_engine_client, mock_request):
     """Test that non-comprehension stages always use cloned YAML defaults."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.max_tokens = 50
     mock_request.temperature = 0.1
 
@@ -488,8 +555,9 @@ def test_non_comprehension_stages_use_cloned_defaults(serving_chat, mock_request
     assert other_params.seed == 42  # YAML default
 
 
-def test_multiple_params_override_together(serving_chat, mock_request):
+def test_multiple_params_override_together(mock_engine_client, mock_request):
     """Test that multiple request params can override together."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.max_tokens = 200
     mock_request.temperature = 0.7
     mock_request.top_p = 0.85
@@ -514,15 +582,17 @@ def test_multiple_params_override_together(serving_chat, mock_request):
 # =============================================================================
 
 
-def test_apply_request_overrides_clones_params(serving_chat, mock_request, default_comprehension_params):
+def test_apply_request_overrides_clones_params(mock_engine_client, mock_request, default_comprehension_params):
     """Test that _apply_request_overrides returns a cloned object."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     result = serving_chat._apply_request_overrides(default_comprehension_params, mock_request)
 
     assert result is not default_comprehension_params  # Different object
 
 
-def test_apply_request_overrides_preserves_defaults(serving_chat, mock_request, default_comprehension_params):
+def test_apply_request_overrides_preserves_defaults(mock_engine_client, mock_request, default_comprehension_params):
     """Test that _apply_request_overrides preserves defaults when request has None."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     result = serving_chat._apply_request_overrides(default_comprehension_params, mock_request)
 
     assert result.temperature == 0.4
@@ -531,8 +601,9 @@ def test_apply_request_overrides_preserves_defaults(serving_chat, mock_request, 
     assert result.top_k == 1  # YAML custom param
 
 
-def test_apply_request_overrides_applies_values(serving_chat, mock_request, default_comprehension_params):
+def test_apply_request_overrides_applies_values(mock_engine_client, mock_request, default_comprehension_params):
     """Test that _apply_request_overrides applies non-None request values."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.temperature = 0.8
     mock_request.seed = 123
     mock_request.model_fields_set = {"temperature", "seed"}
@@ -550,8 +621,9 @@ def test_apply_request_overrides_applies_values(serving_chat, mock_request, defa
 # =============================================================================
 
 
-def test_apply_overrides_empty_stop_list_preserves_default(serving_chat, mocker):
+def test_apply_overrides_empty_stop_list_preserves_default(mock_engine_client, mocker):
     """Test that request.stop=[] does NOT override YAML default stop words."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     default_params = SamplingParams(temperature=0.5, stop=["<|im_end|>"])
     request = mocker.MagicMock()
     request.temperature = None
@@ -573,8 +645,9 @@ def test_apply_overrides_empty_stop_list_preserves_default(serving_chat, mocker)
     assert result.stop == ["<|im_end|>"]  # YAML default preserved
 
 
-def test_apply_overrides_nonempty_stop_list_overrides_default(serving_chat, mocker):
+def test_apply_overrides_nonempty_stop_list_overrides_default(mock_engine_client, mocker):
     """Test that request.stop=["\\n"] overrides YAML default stop words."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     default_params = SamplingParams(temperature=0.5, stop=["<|im_end|>"])
     request = mocker.MagicMock()
     request.temperature = None
@@ -596,8 +669,9 @@ def test_apply_overrides_nonempty_stop_list_overrides_default(serving_chat, mock
     assert result.stop == ["\n"]  # Overridden by request
 
 
-def test_apply_overrides_empty_stop_token_ids_preserves_default(serving_chat, mocker):
+def test_apply_overrides_empty_stop_token_ids_preserves_default(mock_engine_client, mocker):
     """Test that request.stop_token_ids=[] does NOT override YAML default."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     default_params = SamplingParams(temperature=0.5, stop_token_ids=[2, 3])
     request = mocker.MagicMock()
     request.temperature = None
@@ -617,8 +691,9 @@ def test_apply_overrides_empty_stop_token_ids_preserves_default(serving_chat, mo
     assert result.stop_token_ids == [2, 3]  # YAML default preserved
 
 
-def test_apply_overrides_nonempty_stop_token_ids_overrides_default(serving_chat, mocker):
+def test_apply_overrides_nonempty_stop_token_ids_overrides_default(mock_engine_client, mocker):
     """Test that request.stop_token_ids=[100] overrides YAML default."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     default_params = SamplingParams(temperature=0.5, stop_token_ids=[2, 3])
     request = mocker.MagicMock()
     request.temperature = None
@@ -640,8 +715,9 @@ def test_apply_overrides_nonempty_stop_token_ids_overrides_default(serving_chat,
     assert result.stop_token_ids == [100]  # Overridden by request
 
 
-def test_apply_overrides_mixed_empty_and_nonempty_lists(serving_chat, mocker):
+def test_apply_overrides_mixed_empty_and_nonempty_lists(mock_engine_client, mocker):
     """Test mixing empty and non-empty list fields with scalar fields."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     default_params = SamplingParams(
         temperature=0.4,
         stop=["<|end|>"],
@@ -669,8 +745,9 @@ def test_apply_overrides_mixed_empty_and_nonempty_lists(serving_chat, mocker):
     assert result.stop_token_ids == [100, 200]  # Non-empty list DID override
 
 
-def test_apply_overrides_none_scalar_still_preserves_default(serving_chat, mocker):
+def test_apply_overrides_none_scalar_still_preserves_default(mock_engine_client, mocker):
     """Regression: ensure None scalar values still don't override defaults."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     default_params = SamplingParams(temperature=0.5, max_tokens=100, seed=42)
     request = mocker.MagicMock()
     request.temperature = None
@@ -694,8 +771,9 @@ def test_apply_overrides_none_scalar_still_preserves_default(serving_chat, mocke
     assert result.seed == 42
 
 
-def test_apply_overrides_both_lists_empty_preserves_defaults(serving_chat, mocker):
+def test_apply_overrides_both_lists_empty_preserves_defaults(mock_engine_client, mocker):
     """Test that both stop=[] and stop_token_ids=[] preserve YAML defaults."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     default_params = SamplingParams(
         temperature=0.5,
         stop=["<|end|>", "\\n"],
@@ -722,9 +800,10 @@ def test_apply_overrides_both_lists_empty_preserves_defaults(serving_chat, mocke
     assert result.stop_token_ids == [2, 32000]
 
 
-def test_build_sampling_params_list_empty_stop_preserves_yaml(serving_chat, mock_request):
+def test_build_sampling_params_list_empty_stop_preserves_yaml(mock_engine_client, mock_request):
     """Test that empty stop list in request preserves YAML defaults via
     _build_sampling_params_list_from_request."""
+    serving_chat = build_serving_chat(engine_client=mock_engine_client)
     mock_request.stop = []
     mock_request.stop_token_ids = []
 
@@ -736,21 +815,18 @@ def test_build_sampling_params_list_empty_stop_preserves_yaml(serving_chat, mock
     assert comprehension_params.stop_token_ids == []
 
 
-def test_to_sampling_params_list_pads_missing_tail_stage_with_defaults():
+def test_to_sampling_params_list_pads_missing_tail_stage_with_defaults(mocker: MockerFixture):
     """AURA callers may pass 3 semantic model params for a 4-stage engine pipeline."""
-    from vllm_omni.entrypoints.openai.serving_chat import OmniOpenAIServingChat
-
-    instance = object.__new__(OmniOpenAIServingChat)
     default_params = [
         SamplingParams(max_tokens=10),
         SamplingParams(max_tokens=20),
         SamplingParams(max_tokens=30),
         SamplingParams(max_tokens=40),
     ]
-    instance.engine_client = SimpleNamespace(
-        stage_configs=[SimpleNamespace(stage_type="llm") for _ in range(4)],
-        default_sampling_params_list=default_params,
-    )
+    engine_client = mocker.MagicMock()
+    engine_client.stage_configs = [SimpleNamespace(stage_type="llm") for _ in range(4)]
+    engine_client.default_sampling_params_list = default_params
+    instance = build_serving_chat(engine_client=engine_client)
 
     result = instance._to_sampling_params_list(
         [
@@ -772,44 +848,35 @@ def test_to_sampling_params_list_pads_missing_tail_stage_with_defaults():
 
 def test_get_comprehension_stage_index_finds_first_stage(mock_engine_client):
     """Test finding comprehension stage when it's at index 0."""
-    from vllm_omni.entrypoints.openai.serving_chat import OmniOpenAIServingChat
-
-    instance = object.__new__(OmniOpenAIServingChat)
-    instance.engine_client = mock_engine_client
+    instance = build_serving_chat(engine_client=mock_engine_client)
 
     assert instance._get_comprehension_stage_index() == 0
 
 
 def test_get_comprehension_stage_index_finds_second_stage(mocker: MockerFixture):
     """Test finding comprehension stage when it's at index 1."""
-    from vllm_omni.entrypoints.openai.serving_chat import OmniOpenAIServingChat
-
-    instance = object.__new__(OmniOpenAIServingChat)
-
     other = mocker.MagicMock()
     other.is_comprehension = False
     comprehension = mocker.MagicMock()
     comprehension.is_comprehension = True
 
-    instance.engine_client = mocker.MagicMock()
-    instance.engine_client.stage_configs = [other, comprehension]
+    engine_client = mocker.MagicMock()
+    engine_client.stage_configs = [other, comprehension]
+    instance = build_serving_chat(engine_client=engine_client)
 
     assert instance._get_comprehension_stage_index() == 1
 
 
 def test_get_comprehension_stage_index_raises_when_not_found(mocker: MockerFixture):
     """Test that ValueError is raised when no comprehension stage exists."""
-    from vllm_omni.entrypoints.openai.serving_chat import OmniOpenAIServingChat
-
-    instance = object.__new__(OmniOpenAIServingChat)
-
     stage1 = mocker.MagicMock()
     stage1.is_comprehension = False
     stage2 = mocker.MagicMock()
     stage2.is_comprehension = False
 
-    instance.engine_client = mocker.MagicMock()
-    instance.engine_client.stage_configs = [stage1, stage2]
+    engine_client = mocker.MagicMock()
+    engine_client.stage_configs = [stage1, stage2]
+    instance = build_serving_chat(engine_client=engine_client)
 
     with pytest.raises(ValueError, match="No comprehension stage"):
         instance._get_comprehension_stage_index()
@@ -863,3 +930,217 @@ class TestResolveHeightWidth:
         h, w = OmniOpenAIServingChat._resolve_height_width_from_extra_body({"size": "invalid"})
         assert h is None
         assert w is None
+
+
+# Tests for _apply_text_chat_ar_task_mode (#6088)
+
+
+def _tag_request(modalities):
+    return SimpleNamespace(modalities=modalities)
+
+
+def _apply_tag(params, modalities):
+    from vllm_omni.entrypoints.openai.serving_chat import OmniOpenAIServingChat
+
+    OmniOpenAIServingChat._apply_text_chat_ar_task_mode(params, _tag_request(modalities))
+    return params
+
+
+@pytest.mark.parametrize("modalities", [[], ["text"]])
+def test_text_only_chat_tags_ar_stage_as_comprehension(modalities):
+    ar = SamplingParams()
+    params = _apply_tag([ar], modalities)
+    assert params[0].extra_args == {"ar_task_mode": "comprehension"}
+
+
+@pytest.mark.parametrize("modalities", [["image"], ["text", "audio"], ["video"]])
+def test_non_text_output_request_is_untouched(modalities):
+    ar = SamplingParams()
+    _apply_tag([ar], modalities)
+    assert ar.extra_args is None
+
+
+def test_diffusion_stage_params_are_untouched():
+    from vllm_omni.inputs.data import OmniDiffusionSamplingParams
+
+    ar = SamplingParams()
+    dit = OmniDiffusionSamplingParams()
+    dit_extra_before = getattr(dit, "extra_args", None)
+    _apply_tag([ar, dit], ["text"])
+    assert ar.extra_args == {"ar_task_mode": "comprehension"}
+    assert getattr(dit, "extra_args", None) == dit_extra_before
+
+
+def test_explicit_caller_ar_task_mode_is_preserved():
+    ar = SamplingParams(extra_args={"ar_task_mode": "generation"})
+    _apply_tag([ar], ["text"])
+    assert ar.extra_args["ar_task_mode"] == "generation"
+
+
+def test_existing_extra_args_are_merged_not_replaced():
+    ar = SamplingParams(extra_args={"custom": 1})
+    _apply_tag([ar], None)
+    assert ar.extra_args == {"custom": 1, "ar_task_mode": "comprehension"}
+
+
+@pytest.mark.parametrize("token_field", ["max_tokens", "max_completion_tokens"])
+def test_partial_stage_params_inherit_request_and_deploy_defaults(mock_engine_client, token_field):
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    defaults = mock_engine_client.default_sampling_params_list
+    defaults[0].extra_args = {"deploy_option": True}
+    request = ChatCompletionRequest(model="test", messages=[], temperature=0, **{token_field: 256})
+
+    result = instance._to_sampling_params_list([{"extra_args": {"no_repeat_ngram_size": 10}}], request=request)
+
+    assert result[0].max_tokens == 256
+    assert result[0].temperature == 0
+    assert result[0].repetition_penalty == defaults[0].repetition_penalty
+    assert result[0].extra_args == {"deploy_option": True, "no_repeat_ngram_size": 10}
+    assert result[1].max_tokens == defaults[1].max_tokens
+    assert defaults[0].max_tokens == 4353
+    assert defaults[0].extra_args == {"deploy_option": True}
+
+
+def test_explicit_stage_params_override_top_level_request(mock_engine_client):
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    request = ChatCompletionRequest(model="test", messages=[], max_tokens=256, temperature=0)
+    result = instance._to_sampling_params_list([{"max_tokens": 64, "temperature": 0.7}], request=request)
+    assert result[0].max_tokens == 64
+    assert result[0].temperature == 0.7
+
+
+def test_partial_stage_params_validate_max_tokens(mock_engine_client):
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    with pytest.raises(VLLMValidationError):
+        instance._to_sampling_params_list([{"max_tokens": 0}])
+
+
+def test_partial_stage_params_without_request_preserve_yaml_defaults(mock_engine_client):
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    result = instance._to_sampling_params_list([{"extra_args": {"no_repeat_ngram_size": 10}}])
+    assert result[0].max_tokens == 4353
+    assert result[0].temperature == 0.4
+
+
+def test_max_completion_tokens_takes_precedence(mock_engine_client):
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    request = ChatCompletionRequest(model="test", messages=[], max_tokens=256, max_completion_tokens=512)
+    assert instance._build_sampling_params_list_from_request(request)[0].max_tokens == 512
+
+
+def _set_raw_sampling_defaults(engine, values, layout="typed"):
+    stage: Any = SimpleNamespace(stage_type="llm", is_comprehension=True)
+    if layout == "typed":
+        stage.model_config = SimpleNamespace(default_sampling_params=values)
+    elif layout == "legacy":
+        stage.default_sampling_params = values
+    else:
+        stage = {"stage_type": "llm", "is_comprehension": True, "default_sampling_params": values}
+    engine.stage_configs[0] = stage
+    engine.default_sampling_params_list[0] = SamplingParams(**values)
+
+
+@pytest.mark.parametrize("layout", ["typed", "legacy", "mapping"])
+@pytest.mark.parametrize("prompt_logprobs", [None, 0, 1])
+def test_partial_stage_params_recompute_prompt_logprobs_cache_policy(mock_engine_client, layout, prompt_logprobs):
+    defaults = {"prompt_logprobs": 1 if prompt_logprobs is None else None}
+    _set_raw_sampling_defaults(mock_engine_client, defaults, layout)
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    result = instance._to_sampling_params_list([{"prompt_logprobs": prompt_logprobs}])
+    assert result[0].skip_reading_prefix_cache is (prompt_logprobs is not None)
+    assert mock_engine_client.default_sampling_params_list[0].prompt_logprobs == defaults["prompt_logprobs"]
+
+
+@pytest.mark.parametrize(
+    "deploy_policy,stage_overrides,expected",
+    [
+        (False, {"prompt_logprobs": 1}, False),
+        (True, {"prompt_logprobs": None}, True),
+        (False, {"prompt_logprobs": 1, "skip_reading_prefix_cache": None}, True),
+        (True, {"prompt_logprobs": 1, "skip_reading_prefix_cache": False}, False),
+    ],
+)
+def test_partial_stage_params_preserve_explicit_cache_policy(
+    mock_engine_client, deploy_policy, stage_overrides, expected
+):
+    defaults = {"skip_reading_prefix_cache": deploy_policy, "extra_args": {"deploy": True}}
+    _set_raw_sampling_defaults(mock_engine_client, defaults)
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    result = instance._to_sampling_params_list([stage_overrides])
+    assert result[0].skip_reading_prefix_cache is expected
+    result[0].extra_args["request_only"] = True
+    assert defaults == {"skip_reading_prefix_cache": deploy_policy, "extra_args": {"deploy": True}}
+    assert mock_engine_client.default_sampling_params_list[0].extra_args == {"deploy": True}
+
+
+@pytest.mark.parametrize("partial", [[], [{}]])
+def test_empty_stage_params_inherit_explicit_request(mock_engine_client, partial):
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    request = ChatCompletionRequest(model="test", messages=[], max_tokens=256, temperature=0)
+    result = instance._to_sampling_params_list(partial, request=request)
+    assert result[0].max_tokens == 256
+    assert result[0].temperature == 0
+    assert result[1].max_tokens == 4096
+
+
+def test_omitted_comprehension_stage_inherits_explicit_request(mock_engine_client):
+    mock_engine_client.stage_configs.reverse()
+    mock_engine_client.default_sampling_params_list.reverse()
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    request = ChatCompletionRequest(model="test", messages=[], max_tokens=256)
+    result = instance._to_sampling_params_list([{}], request=request)
+    assert result[0].max_tokens == 4096
+    assert result[1].max_tokens == 256
+
+
+@pytest.mark.parametrize("with_stage_params", [False, True])
+def test_request_sampling_preserves_raw_deploy_filters(mock_engine_client, with_stage_params):
+    _set_raw_sampling_defaults(mock_engine_client, {"temperature": 0, "top_p": 0.8, "top_k": 20})
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    request = ChatCompletionRequest(model="test", messages=[], temperature=0.7)
+    result = (
+        instance._to_sampling_params_list([{}], request=request)
+        if with_stage_params
+        else instance._build_sampling_params_list_from_request(request)
+    )
+    assert result[0].temperature == 0.7
+    assert result[0].top_p == 0.8
+    assert result[0].top_k == 20
+
+
+def test_stage_sampling_preserves_diffusion_and_constructed_params(mock_engine_client):
+    from vllm_omni.inputs.data import OmniDiffusionSamplingParams
+
+    mock_engine_client.stage_configs[1] = SimpleNamespace(stage_type="diffusion", is_comprehension=False)
+    default = OmniDiffusionSamplingParams(height=1024, width=1024, num_inference_steps=9)
+    mock_engine_client.default_sampling_params_list[1] = default
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    explicit = SamplingParams(max_tokens=64)
+    request = ChatCompletionRequest(model="test", messages=[], max_tokens=256, seed=99)
+    result = instance._to_sampling_params_list([explicit, {"height": 512}], request=request)
+    assert result[0] is explicit
+    assert result[0].max_tokens == 64
+    assert result[1].height == 512
+    assert result[1].width == OmniDiffusionSamplingParams().width
+    assert result[1].seed == OmniDiffusionSamplingParams().seed
+    omitted = instance._to_sampling_params_list([explicit], request=request)
+    assert omitted[1] is not default
+    assert omitted[1].height == 1024
+    assert omitted[1].num_inference_steps == 9
+
+
+def test_omitted_pooling_stage_keeps_parameter_type(mock_engine_client):
+    from vllm.pooling_params import PoolingParams
+
+    default = PoolingParams(task="token_classify", requires_token_ids=True)
+    mock_engine_client.stage_configs[1] = SimpleNamespace(
+        stage_type="llm", is_comprehension=False, model_config=SimpleNamespace(default_sampling_params=None)
+    )
+    mock_engine_client.default_sampling_params_list[1] = default
+    instance = build_serving_chat(engine_client=mock_engine_client)
+    request = ChatCompletionRequest(model="test", messages=[], max_tokens=256)
+    result = instance._to_sampling_params_list([{}], request=request)
+    assert isinstance(result[1], PoolingParams)
+    assert result[1] is not default
+    assert result[1].task == "token_classify"
+    assert result[1].requires_token_ids is True
