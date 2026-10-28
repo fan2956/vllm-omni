@@ -1,0 +1,25 @@
+.buildkite/common/ci_source_file_dependencies.yml
+  s_7498757b3af84c::t_852861f45eea22 742
+tests/buildkite/test_upload_pipeline.py
+  s_7498757b3af84c::t_ec5618a85da270 687
+tests/e2e/online_serving/minimax_h3/_common.py
+  s_7498757b3af84c::t_131a347da670ae 144-145,153,202-222
+tests/e2e/online_serving/minimax_h3/test_minimax_h3_ref2va_rainfusion_npu.py
+  s_7498757b3af84c::t_935389eec593dd 4,6,17-19,21,23,26-31,34-52,54-62,77,81-84,86-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bdd90aad841a7fda90d5086003c201fbaeff8a7a",
+  "prompts": {},
+  "sessions": {
+    "s_7498757b3af84c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18137-b369-7fc3-befb-f811c87bef71",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
