@@ -396,7 +396,7 @@ steps:
             [ -z "$${VLLM_TEST_MINIMAX_H3_FL2VA_MODEL:-}" ] && [ -d "$${VLLM_TEST_MINIMAX_H3_MODEL:-}/FL2VA" ] && export VLLM_TEST_MINIMAX_H3_FL2VA_MODEL="$$VLLM_TEST_MINIMAX_H3_MODEL/FL2VA" || true
             export BENCHMARK_DIR=tests/dfx/perf/results
             set +e
-            pytest -s -v tests/dfx/perf/scripts/run_benchmark.py -k test_minimax_h3_t2v_dlo_4gpu_npu -m "full_model and npu and A3 and diffusion and cards_4" --test-config-file tests/dfx/perf/tests/test_minimax_h3_vllm_omni.json
+            pytest -s -v tests/dfx/perf/scripts/run_benchmark.py -k "not test_minimax_h3_ref2va_rainfusion_laser_4npu_a3" -m "full_model and npu and A3 and diffusion and cards_4" --test-config-file tests/dfx/perf/tests/test_minimax_h3_vllm_omni.json
             exit $$?
       - label: ":full_moon: Diffusion X2V · MiniMax-H3 Ref2VA RainFusion Laser Test"
         key: nightly-diffusion-x2v-minimax-h3-ref2va-rainfusion
