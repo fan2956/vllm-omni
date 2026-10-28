@@ -1,0 +1,19 @@
+.buildkite/npu/test-npu-nightly.yml
+  s_7498757b3af84c::t_be1034cbdaab32 415,418-421
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "be78b7340f394c87f5247d9cf9ffa6ff0f611716",
+  "prompts": {},
+  "sessions": {
+    "s_7498757b3af84c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18137-b369-7fc3-befb-f811c87bef71",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
