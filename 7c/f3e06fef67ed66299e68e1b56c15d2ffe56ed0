@@ -1,0 +1,1751 @@
+.buildkite/amd/scripts/aiter_mha_cache.py
+  s_7498757b3af84c::t_a287a5c5dc3f5f 16-19,23-28,72-73,122-123,535-546,561-563,566,569-570,586-632,644-726,739,765-781,873-875,891-897,901-905,922-933,936
+.buildkite/amd/scripts/assert-pytest-collection.sh
+  s_7498757b3af84c::t_f6113721671145 1-26
+.buildkite/amd/scripts/bootstrap-amd-omni.sh
+  s_7498757b3af84c::t_d818d9eafcfe7d 139-144,191,196-221,241-245
+.buildkite/amd/scripts/filter_test_suite.py
+  s_7498757b3af84c::t_13d5844e894437 1-131
+.buildkite/amd/scripts/run-qwen3-omni-rocm-nightly.sh
+  s_7498757b3af84c::t_dba4076e879099 1-274
+.buildkite/amd/test-amd-merge.yml
+  s_7498757b3af84c::t_1d402cc60725cf 185-193,313-317,321,330-334,338,383-455,506-517
+.buildkite/amd/test-amd-nightly.yml
+  s_7498757b3af84c::t_25a5c013e8ea3d 22,33,56,67,72-159,171,227,242,272,297,312,331,360,378,398,486,527,561,587-589,625-797,805,850,907-2261
+.buildkite/amd/test-amd-ready.yml
+  s_7498757b3af84c::t_0faca44fd639d1 153-157,182,192-194,196-206,208,243-247,326-328,331-340,347,383,385,389-390,404-412,417,421-424,426-428,460-461,464-469,474,513-591
+.buildkite/amd/test-amd-weekly.yml
+  s_7498757b3af84c::t_bbdf19c03a24bb 1-5,48-52,54-106,120-362
+.buildkite/amd/test-template-amd-omni.j2
+  s_7498757b3af84c::t_46d4244004c93d 107-112,114,191-196,198
+.buildkite/common/ci_source_file_dependencies.yml
+  s_7498757b3af84c::t_6c45d354336c6b 1,137-157,284-285,295-325,344-345,394-427,483-486,529-534,544-572,712,739-743,769-776
+.buildkite/common/scripts/upload_pipeline.py
+  s_7498757b3af84c::t_9979b43c3ab3be 624-625,641-645,655-657,711-715,743-748,756,763-820
+.buildkite/cuda/test-merge.yml
+  s_7498757b3af84c::t_9aae2122e7298f 76
+.buildkite/cuda/test-nightly.yml
+  s_7498757b3af84c::t_9011766d9b9aee 24,37-38,40
+.buildkite/cuda/test-weekly.yml
+  s_7498757b3af84c::t_59d31ac04a3287 476-477,479-505
+.buildkite/npu/test-npu-nightly.yml
+  s_7498757b3af84c::t_0fd34d8d2212ca 99-120,178-187,381-382,384-405,410,416,418-448,460-472
+.buildkite/npu/test-npu-ready.yml
+  s_7498757b3af84c::t_609e62dda734a7 99-110,171-184
+.gitignore
+  s_7498757b3af84c::t_dce82695c9159c 253
+apps/ComfyUI-vLLM-Omni/README.md
+  s_7498757b3af84c::t_3940e36e5853e1 52-53,55,70,184-186,237-244,295-373
+apps/ComfyUI-vLLM-Omni/__init__.py
+  s_7498757b3af84c::t_013e4fb39074bf 25,30,45,53,71,79
+apps/ComfyUI-vLLM-Omni/comfyui_vllm_omni/nodes.py
+  s_7498757b3af84c::t_7415ba93e7677f 4,6,9,12,20,25,45-47,72-74,76,227-228,246,258-259,285,298-299,377,382-429,1098-1107,1219-1285
+apps/ComfyUI-vLLM-Omni/comfyui_vllm_omni/utils/api_client.py
+  s_7498757b3af84c::t_4a99110ca90523 14,28,42-43,45,51-163,406,415-418,428-429,432-453,467-469,589-595,618-659,663-666,671-675,678-681,685-695
+apps/ComfyUI-vLLM-Omni/comfyui_vllm_omni/utils/format.py
+  s_7498757b3af84c::t_52217eb3888305 132-137,140-143,157-185
+apps/ComfyUI-vLLM-Omni/comfyui_vllm_omni/utils/models.py
+  s_7498757b3af84c::t_abf10ee9644dab 74-77
+apps/ComfyUI-vLLM-Omni/comfyui_vllm_omni/utils/types.py
+  s_7498757b3af84c::t_916bd3249945d1 51-65
+apps/ComfyUI-vLLM-Omni/docs/h3-03-music-video.md
+  s_7498757b3af84c::t_5a76bc4ee7f645 1-128
+apps/ComfyUI-vLLM-Omni/docs/h3-06-all-in-one.md
+  s_7498757b3af84c::t_1b5d196099e961 1-123
+apps/ComfyUI-vLLM-Omni/docs/seedvr2-restoration.md
+  s_7498757b3af84c::t_1e6190c7ee8542 1-232
+apps/ComfyUI-vLLM-Omni/example_workflows/MiniMax_H3_Text_to_Video.json
+  s_7498757b3af84c::t_1eb24f3d46da25 75-76,296-297
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni MiniMax H3 Image to Video.json"
+  s_7498757b3af84c::t_454f4e56bb1278 97-98,105
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni MiniMax H3 Remote SeedVR2.json"
+  s_7498757b3af84c::t_497618879a296f 1-556
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni MiniMax H3 Video Upscale.json"
+  s_7498757b3af84c::t_ddc6bde8e3dc8c 396-397
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni MiniMax-H3 All-in-One.json"
+  s_7498757b3af84c::t_6995d94b7e954f 1-1682
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni MiniMax-H3 Latent Mask Editing.json"
+  s_7498757b3af84c::t_0c2e96dd71320f 39-47,65-66,218-226,244-245,426-434,452-453,634-642,660-661
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni MiniMax-H3 Music Video.json"
+  s_7498757b3af84c::t_03233423f74e60 1-2173
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni MiniMax-H3 Reference to Video.json"
+  s_7498757b3af84c::t_407be39a28f4a0 415-423,441-442
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni MiniMax-H3 Timeline Guides.json"
+  s_7498757b3af84c::t_1dad96fd1923b4 1-947
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni SeedVR2 Video Restoration.json"
+  s_7498757b3af84c::t_d33f09ad4125d5 1-250
+"apps/ComfyUI-vLLM-Omni/example_workflows/vLLM-Omni Video Generation.json"
+  s_7498757b3af84c::t_9ae7729667c400 1
+benchmarks/diffusion/bench_wan_vae_decode.py
+  s_7498757b3af84c::t_ad7c4ee59f02fb 84,136-137,254-255,361-365,373,411,413-415,430
+benchmarks/fish-speech/bench_dac_encode.py
+  s_7498757b3af84c::t_158cfb90d9ece4 1-155
+benchmarks/kernels/bench_sparge_attn.py
+  s_7498757b3af84c::t_44ec56aeeb5868 1-398
+benchmarks/kernels/benchmark_magi2_bf16_moe.py
+  s_7498757b3af84c::t_33546d55f7465e 140-144,148,160-161,167-170,199-203,207,209,218,222-224,256-257,264,270,295-298
+benchmarks/kernels/benchmark_magi2_moe_routing.py
+  s_7498757b3af84c::t_b96ec5ccd03c35 6,38-39
+benchmarks/kernels/group_norm_silu_benchmarks.py
+  s_7498757b3af84c::t_fe2e2ffa6cf2c0 1-278
+benchmarks/tts/bench_cosyvoice3_concurrency_matrix.py
+  s_7498757b3af84c::t_29c41134fa9318 268,271-278,281,356,358,361-362,364,434-441,481-484
+docs/.nav.yml
+  s_7498757b3af84c::t_4eefbbb297d9a1 41,57-58,65
+docs/cli/bench/serve.md
+  s_7498757b3af84c::t_d437de0f94de9d 80-85,391-393,419-422,461-472,522-528,777-781
+docs/configuration/environment_variables.md
+  s_7498757b3af84c::t_20e531cb50a9e9 97
+docs/configuration/gpu_memory_utilization.md
+  s_7498757b3af84c::t_2542c8506181c0 22,33-39,125,128-131,179-180
+docs/contributing/ci/test_examples/l4_performance_tests.inc.md
+  s_7498757b3af84c::t_27158e561c99df 175-181
+docs/contributing/ci/test_writing_guide.md
+  s_7498757b3af84c::t_829416063e0654 99-131,164,166-174,226,245,342,518
+docs/contributing/model/adding_diffusion_model.md
+  s_7498757b3af84c::t_10b7b2bd7ebad3 359
+docs/contributing/profiling.md
+  s_7498757b3af84c::t_cd31931bb15bf8 254-255
+docs/design/feature/async_chunk.md
+  s_7498757b3af84c::t_9ac8e104f9889c 42-52,94-95,97-99,195,199-202,204
+docs/design/feature/attention_backend_selection.md
+  s_7498757b3af84c::t_8435a7dbdee86b 68-69
+docs/design/feature/offloader/distributed_layerwise_offload.md
+  s_7498757b3af84c::t_e0dc9490885acf 120-131
+docs/design/feature/omni_connectors/shared_memory_connector.md
+  s_7498757b3af84c::t_1e30b3cbc95c42 150,152,154-155,158-159
+docs/design/feature/prefix_caching.md
+  s_7498757b3af84c::t_e8ac97f05bc374 294-295,308-323
+docs/design/fullduplex-personaplex.md
+  s_7498757b3af84c::t_d4eb8d89b94443 18,74-78,187-199,256-257
+docs/design/fullduplex.md
+  s_7498757b3af84c::t_6d07477eff83ac 305,464-498,511-514,693-709,737-755
+docs/design/metrics.md
+  s_7498757b3af84c::t_62464bc74a3107 107-118,154-160,174,182,278-342
+docs/design/module/ar_runtime.md
+  s_7498757b3af84c::t_a8ad865e3dcca1 34-50
+docs/design/module/error_contracts.md
+  s_7498757b3af84c::t_70eae82a371e5a 78-82
+docs/design/module/execution_platforms.md
+  s_7498757b3af84c::t_91d0f77486c1e3 35-38
+docs/design/module/input_output_modality_contracts.md
+  s_7498757b3af84c::t_6acb2ce6c5f398 35,56-58,103-122
+docs/design/module/model_integration.md
+  s_7498757b3af84c::t_d11a774404a12a 60-67
+docs/design/module/stage_runtime.md
+  s_7498757b3af84c::t_4cf9c9dd4e6f3e 147-154
+docs/features/README.md
+  s_7498757b3af84c::t_0674259db10e31 22
+docs/features/comfyui.md
+  s_7498757b3af84c::t_7a67d3e6421a10 52-54,100-117
+docs/features/hf_numerics.md
+  s_7498757b3af84c::t_210ff4c4cb1a39 1-52
+docs/features/watermarking.md
+  s_7498757b3af84c::t_5beba4a0aeee6b 1-101
+docs/mkdocs/hooks/generate_argparse.py
+  s_7498757b3af84c::t_eb65c6d52b1568 63-66,135-136
+docs/models/seedvr2.md
+  s_7498757b3af84c::t_1b6b7f9b3fbbbd 50,111,281-297
+docs/models/supported_models.md
+  s_7498757b3af84c::t_beab5eef840c26 63,69,86,112
+docs/serving/openpi_api.md
+  s_7498757b3af84c::t_a6c0d2bf85eed4 31-57,138-139
+docs/serving/realtime_duplex_api.md
+  s_7498757b3af84c::t_e78fc8332ba37c 288-398,431-468
+docs/serving/speech_api.md
+  s_7498757b3af84c::t_c42c7cb71929bb 151,154,187-188,202,221-222,227,237-243,994-1009,1015-1043
+docs/serving/video_stream_api.md
+  s_7498757b3af84c::t_783a90d663da0e 19-22
+docs/serving/videos_api.md
+  s_7498757b3af84c::t_d4a69d5a59b46a 312,375-376
+docs/user_guide/diffusion/attention_backends.md
+  s_7498757b3af84c::t_b589c8dbd48c80 21,38,113
+docs/user_guide/diffusion/attention_backends/sparge.md
+  s_7498757b3af84c::t_cfdb3ca1637555 1-153
+docs/user_guide/diffusion/parallelism/hsdp.md
+  s_7498757b3af84c::t_69232dd33397a5 146
+docs/user_guide/diffusion/parallelism/vae_parallelism.md
+  s_7498757b3af84c::t_a7650960e69917 10-11,126,223,236-300
+docs/user_guide/diffusion/vae_fast_path.md
+  s_7498757b3af84c::t_966794dc68370e 45,232-236
+docs/user_guide/diffusion_features.md
+  s_7498757b3af84c::t_ff69763938aa79 174,187,204
+docs/user_guide/examples/offline_inference/text_to_speech.md
+  s_7498757b3af84c::t_d4f38d7116ff03 39,255,263,275-276,285-308,331-335
+docs/user_guide/examples/online_serving/qwen3_omni.md
+  s_7498757b3af84c::t_d053fddadca27a 37-84
+docs/user_guide/examples/online_serving/text_to_speech.md
+  s_7498757b3af84c::t_54350eb73f67ae 225,452,460,476,479-481,485-504
+docs/user_guide/quantization/convrot.md
+  s_7498757b3af84c::t_d0699c315ee9cb 1-97
+docs/user_guide/quantization/modelopt.md
+  s_7498757b3af84c::t_e5006ab96faa80 222-226,232-244,299-301
+docs/user_guide/quantization/overview.md
+  s_7498757b3af84c::t_c18c0ea807db12 15,46
+examples/offline_inference/speech_to_video/speech_to_video.py
+  s_7498757b3af84c::t_13453fd2763983 2,224-237,293-296
+examples/offline_inference/text_to_speech/README.md
+  s_7498757b3af84c::t_81d98d57a543b4 47,410,418,430-431,440-463,495-499
+examples/offline_inference/text_to_speech/omnivoice/end2end.py
+  s_7498757b3af84c::t_a0af8c861ca9c3 2,8,17-21,122-123,140
+examples/offline_inference/text_to_video/text_to_video.py
+  s_7498757b3af84c::t_9f10db2ca3d60b 313-318,604-605
+examples/online_serving/openai_chat_completion_client_for_multimodal_generation.py
+  s_7498757b3af84c::t_e5dd04ce470c30 427-434,448,463-465,558-569
+examples/online_serving/qwen2_5_omni/README.md
+  s_7498757b3af84c::t_c4e8ff2c4c368c 16,24,55,62,68,143-159,161,163,188,195,206,213,218,231
+examples/online_serving/realtime_web/app/static/profiles/aura_ptt.js
+  s_7498757b3af84c::t_c137622b62f152 4-15,87-114
+examples/online_serving/text_to_speech/README.md
+  s_7498757b3af84c::t_cadc4a917444af 420,730,738,763-767,780-796
+examples/online_serving/text_to_speech/omnivoice/speech_client.py
+  s_7498757b3af84c::t_abeeed27f00da5 1-3,15-17,56
+pyproject.toml
+  s_7498757b3af84c::t_7a4cff73d5885e 42-45,80,89-90,332,416-418
+recipes/ByteDance/SeedVR2-NPU.md
+  s_7498757b3af84c::t_b96ccda4ed063f 1-81
+recipes/JD/JoyAI-VL-Interaction.md
+  s_7498757b3af84c::t_5696ea67367451 95-143
+recipes/MiniMaxAI/MiniMax-H3-NPU.md
+  s_7498757b3af84c::t_84ba603600ae98 550-581
+recipes/MiniMaxAI/MiniMax-H3.md
+  s_7498757b3af84c::t_f63086b9d5cf90 824,893-895,1067-1102,1212-1244
+recipes/README.md
+  s_7498757b3af84c::t_f8720219e27795 66,95,122
+recipes/SandAI/MAGI-2-preview-NPU.md
+  s_7498757b3af84c::t_950383303f73de 1-175
+recipes/Tongyi-MAI/Z-Image-Turbo.md
+  s_7498757b3af84c::t_5328b9590bd1af 9-10,16-18,27-32,36-38,78-240
+recipes/cosmos3/Cosmos3-Nano.md
+  s_7498757b3af84c::t_605d87f9ca89b1 109-118
+recipes/fishaudio/Drama-3.md
+  s_7498757b3af84c::t_25830b00935b16 166-168,176-251
+tests/assets/minicpmo_4_5/duplex_recognition/README.md
+  s_7498757b3af84c::t_78dcdfbbe109cb 1-58
+tests/assets/minicpmo_4_5/duplex_recognition/manifest.json
+  s_7498757b3af84c::t_cf05840938453e 1-302
+tests/assets/minicpmo_4_5/duplex_recognition/recorded_transcripts.json
+  s_7498757b3af84c::t_9da39f56001739 1-78
+tests/benchmarks/duplex/test_omni_duplex_eval_gt_references.py
+  s_7498757b3af84c::t_dae2ee05cac0da 1-63
+tests/benchmarks/duplex/test_omni_duplex_eval_judge.py
+  s_7498757b3af84c::t_76c6b926f86dc1 1-236
+tests/benchmarks/duplex/test_omni_duplex_eval_serving.py
+  s_7498757b3af84c::t_cef9353ed20cd7 280,307-308,317,540-545,551-552,554-562,904-911
+tests/benchmarks/metrics/test_metrics.py
+  s_7498757b3af84c::t_35661f77d6b659 106-139,237,417
+tests/benchmarks/patch/test_patch.py
+  s_7498757b3af84c::t_c3e05c326bb9b3 35,1515,1523-1598
+tests/benchmarks/test_accuracy_bench_utils.py
+  s_7498757b3af84c::t_9e79ff2e622eae 256-288
+tests/benchmarks/test_magi2_bf16_moe_benchmark.py
+  s_7498757b3af84c::t_09d4e952db00d5 6,59,85-87,91
+tests/benchmarks/test_serve_cli.py
+  s_7498757b3af84c::t_41ab1606b65a48 13,15,134,162,173,182,187-202,559-620
+tests/buildkite/test_aiter_mha_cache.py
+  s_7498757b3af84c::t_63dc5d0170af69 13,259,264-266,269,272-304,307-308,310-316,387,391-397,419-421,423,462-656,736-805,817
+tests/buildkite/test_amd_nightly_source_filter.py
+  s_7498757b3af84c::t_0b4aae7c8f2412 1-226
+tests/buildkite/test_amd_pipeline.py
+  s_7498757b3af84c::t_1cc7fcd94be9d9 4-8,23-24,68-106,143-159,631-796,799-801,810-811,887,892,1051-1052,1058,1062-1066,1070,1075,1164-1305,1392-1484,1538-2841
+tests/buildkite/test_amd_qwen3_omni_burnin.py
+  s_7498757b3af84c::t_8b2f60611e0612 1-207
+tests/buildkite/test_amd_ready_r2_01.py
+  s_7498757b3af84c::t_0d61cc7312f6ce 14-15,18,52-57,69,83,87,90,97-102,104-109
+tests/buildkite/test_reliability_rocm_marks.py
+  s_7498757b3af84c::t_d4b2ae3bf13ea3 10,59,62,69-85,109,123-216
+tests/buildkite/test_upload_pipeline.py
+  s_7498757b3af84c::t_aa4f310887a007 5,7-9,654-655,679-792
+tests/config/test_config_factory.py
+  s_7498757b3af84c::t_0128153d05bfba 9,41-42,1544-1545,2026-2065,2109-2183,3489-3526
+tests/config/test_endpoint_policy.py
+  s_7498757b3af84c::t_dc7c279d8c6bba 18,48-77
+tests/config/test_environment_variables.py
+  s_7498757b3af84c::t_fe60d2c93cbc4d 167,169-170,172,181
+tests/config/test_omni_config.py
+  s_7498757b3af84c::t_5004ff3ac1de8d 61,130,151,975,977-1005,1210,1249,2312-2351,2611-2635
+tests/config/test_qwen2_5_omni_ar_eager_policy.py
+  s_7498757b3af84c::t_55ec8bf4c476c9 1-61
+tests/core/sched/test_fast_allocate.py
+  s_7498757b3af84c::t_9689458539fe4f 7,21-24,78-140
+tests/core/sched/test_generation_batch_coalescing.py
+  s_7498757b3af84c::t_d96aba56284a57 13,104-105,107-108,173-176,186
+tests/core/sched/test_generation_scheduler_atomic_chunk.py
+  s_7498757b3af84c::t_2c8e67b541f265 4,40,134,142-143,181-185,189-190,200-208,223-226,235-244,260,263,267-271,274,280,324-325,327-330,344-345,348,351,358-359,362-368,370-372,374,380-387,394,396-399,401-402,404-405,408-409,422,427,430-432,440-441,443-467,469-470,482-484,488-491,496-498,506-509,520-521,532-533,537,542-544,547-550,559,575,578-579,591,596,616,621,642-715
+tests/core/sched/test_generation_scheduler_restore.py
+  s_7498757b3af84c::t_acda0e2fa6b57d 21,82,202,382
+tests/core/sched/test_omni_ar_scheduler_logprobs.py
+  s_7498757b3af84c::t_be9070f9dc3654 261-262,266,283,291-292,305-306,310-312,314-316
+tests/core/sched/test_omni_recompute_preemption.py
+  s_7498757b3af84c::t_a8b6a022dc6898 1-179
+tests/core/sched/test_omni_scheduler_input_coordinator_cleanup.py
+  s_7498757b3af84c::t_ca141578203b23 6-7,11-23,29-31,125-282
+tests/core/sched/test_omni_scheduler_mixin_shared.py
+  s_7498757b3af84c::t_d49ecb330c25a6 17,118,123-125,244-245,247-248
+tests/core/sched/test_omni_scheduler_ready_inbox.py
+  s_7498757b3af84c::t_99302c3e82074b 15,35-38,43
+tests/core/sched/test_omni_scheduling_coordinator.py
+  s_7498757b3af84c::t_ce60a7bfd1a27e 8-9,19,29,116-156,174-185,211,213,232,234,243,255,263,275
+tests/core/test_prefix_cache.py
+  s_7498757b3af84c::t_b9ca4e24a014bf 1629-1649,1895,1897-1898,1906
+tests/dfx/perf/scripts/run_benchmark.py
+  s_7498757b3af84c::t_33b79ad9aa865b 11,323-331,487-502,516-520,613,618-621,675
+tests/dfx/perf/tests/test_duplex_eval_temp_outputs.py
+  s_7498757b3af84c::t_3262f47442009f 1-85
+tests/dfx/perf/tests/test_minicpmo_4_5.json
+  s_7498757b3af84c::t_53d5327c5ea863 4,10-11,111
+tests/dfx/perf/tests/test_minicpmo_4_5_omni_duplex_eval.json
+  s_7498757b3af84c::t_786208bc7a6e40 4,8,43,55
+tests/dfx/perf/tests/test_minicpmo_4_5_ready.json
+  s_7498757b3af84c::t_1c196204dac5ee 4,34-35,39-40,57
+tests/dfx/perf/tests/test_minimax_h3_vllm_omni.json
+  s_7498757b3af84c::t_5541b71a01f948 11,19,80,88,158,166,236,246,301,314,316-377,393,398,418-419
+tests/dfx/perf/tests/test_qwen3_omni_async_chunk.json
+  s_7498757b3af84c::t_8202bd85d82bf2 9-10
+tests/dfx/perf/tests/test_qwen3_omni_multi_replicas.json
+  s_7498757b3af84c::t_d1a0c0333b9b5f 8-9,24-28
+tests/dfx/perf/tests/test_qwen3_omni_no_async_chunk.json
+  s_7498757b3af84c::t_3e67db774007ef 10-11
+tests/dfx/perf/tests/test_qwen3_omni_seed_tts.json
+  s_7498757b3af84c::t_db1dc17321fa15 11-12
+tests/dfx/perf/tests/test_qwen_image_vllm_omni.json
+  s_7498757b3af84c::t_bf405dde9ee7e4 3
+tests/dfx/perf/tests/test_runner_metadata.py
+  s_7498757b3af84c::t_2e9fd72da7c341 773-798,841-842,859,870,887,896-897
+tests/dfx/perf/tests/test_tts.json
+  s_7498757b3af84c::t_34714514c927e0 9-10,220-221,432-433,611-612
+tests/dfx/reliability/helpers.py
+  s_7498757b3af84c::t_2b786b9ed43a4d 1434-1439,1454-1457
+tests/dfx/reliability/scenarios/oom.py
+  s_7498757b3af84c::t_c10844e8f54388 80-83
+tests/dfx/reliability/test_hunyuan_image.py
+  s_7498757b3af84c::t_cf3716d95047a4 25,62-76,97
+tests/dfx/reliability/test_hunyuan_image_ep_startup.py
+  s_7498757b3af84c::t_339d5ed81ad26c 1-55
+tests/dfx/reliability/test_qwen3_omni.py
+  s_7498757b3af84c::t_3aa57b2d8a87fe 81-88,92,144-146,148-171,455-457,472
+tests/diffusion/attention/test_attention_config.py
+  s_7498757b3af84c::t_cf8fa5cd2e88ee 136-182,299-305,1034-1044,1324-1514
+tests/diffusion/attention/test_block_sparse_ops.py
+  s_7498757b3af84c::t_5127e1c22a5f26 4,7,12,14,177-216
+tests/diffusion/attention/test_flash_attn.py
+  s_7498757b3af84c::t_eb5bb23814b05a 1376-1507
+tests/diffusion/attention/test_flashinfer_attn.py
+  s_7498757b3af84c::t_cac5b9436a8be0 7,16,20,25-26,29-33,37,47,57,69,83,92,100,112,124,130-148
+tests/diffusion/attention/test_flashinfer_attn_compile.py
+  s_7498757b3af84c::t_993b075f895192 1-425
+tests/diffusion/attention/test_sdpa.py
+  s_7498757b3af84c::t_a248a5793d9b5b 8,11,37-78
+tests/diffusion/attention/test_sparge_attn.py
+  s_7498757b3af84c::t_3c25f711e0544f 1-224
+tests/diffusion/attention/test_sparge_attn_xpu.py
+  s_7498757b3af84c::t_e9f7504c1efea5 1-82
+tests/diffusion/cache/test_cache_dit.py
+  s_7498757b3af84c::t_de48e4364d88ce 9,23-25,237-339,368-418,638-692
+tests/diffusion/cache/test_teacache_cfg_branch.py
+  s_7498757b3af84c::t_7db818b23d4718 1-138
+tests/diffusion/diffusion_backend/test_diffusers_backend.py
+  s_7498757b3af84c::t_644637b3051381 158-159,161
+tests/diffusion/distributed/test_cfg_parallel.py
+  s_7498757b3af84c::t_190e5fb0b56ea2 624-693,1210-1316
+tests/diffusion/distributed/test_wan_attention_sdpa_alignment.py
+  s_7498757b3af84c::t_df18ebc943c5bd 1-276
+tests/diffusion/distributed/test_wan_attention_sdpa_alignment_cuda.py
+  s_7498757b3af84c::t_d0f21b5d004691 1-56
+tests/diffusion/distributed/test_wan_chunked_decode.py
+  s_7498757b3af84c::t_9b7d48fb6259c6 151,154,158,160-169,172-173,176,180-183,189-215
+tests/diffusion/distributed/test_wan_encode_split.py
+  s_7498757b3af84c::t_d2c4543d13624e 1-91
+tests/diffusion/distributed/test_wan_spatial_shard.py
+  s_7498757b3af84c::t_37a65d7d4a0da9 837-873
+tests/diffusion/distributed/test_wan_vae_encoder_fastpath.py
+  s_7498757b3af84c::t_2022595331ec2c 110,401,616,671
+tests/diffusion/distributed/test_wan_vae_encoder_fastpath_kernels.py
+  s_7498757b3af84c::t_33dd47020c5c10 17,28-30,35,38-40,68,94,98,114,120,131,136,150,155-156,159-160,180-181,184,187,210-211,214,258-259,263,265,268,289,304,317,319-320,335-336,360,365,369,372,396,403,419-421,446,449,477-478,491,494
+tests/diffusion/distributed/test_wan_vae_fastpath_install.py
+  s_7498757b3af84c::t_f3c4c5ba7ce54f 723,725,728-729,738,742
+tests/diffusion/distributed/test_wan_vae_fastpath_kernels.py
+  s_7498757b3af84c::t_86bec85fdc6afe 21,37-39,45,49-54,56-59,92,98-131,143,153,162,165,179,196,199,206-209,218,222,227,241,256-257,267-268,290,294,300,322-324,330,339,378,428,430,455,457,459-460,495,526-527,577,581-582,603,605,607,631-632,688,695,709,721-722,725,729,756,759,762,772,786,794,807,820,826,828-829,843,850,855,857,866-888,895,900-901,909,916,920,922,937-940,974,1006,1061,1153-1154,1159,1169,1171,1199,1206,1230,1266,1273-1274,1277-1278,1285,1290-1299,1334,1337,1349
+tests/diffusion/kernels/mot/test_mot_gemm_bias.py
+  s_7498757b3af84c::t_fffbe3257266e7 1-188
+tests/diffusion/layers/test_custom_op.py
+  s_7498757b3af84c::t_a8617b2de76941 56-99
+tests/diffusion/layers/test_mhc.py
+  s_7498757b3af84c::t_ffb523b19521e0 136-138
+tests/diffusion/layers/test_swiglu7.py
+  s_7498757b3af84c::t_8c584af726c06b 10
+tests/diffusion/lora/test_lora_manager.py
+  s_7498757b3af84c::t_0fb2ba42740d0b 284-286,291-541,620-659,1377-1379
+tests/diffusion/models/auk/test_auk_cudagraph.py
+  s_7498757b3af84c::t_6444d118d89760 12,44,75,98,113,137,184
+tests/diffusion/models/auk/test_auk_dit_fastpaths.py
+  s_7498757b3af84c::t_fa9c490dad2fcb 18,52,62,76,110
+tests/diffusion/models/boogu_image/test_boogu_image_transformer.py
+  s_7498757b3af84c::t_207e2c3fc20087 13,138,145,165,183,197,215,246,270,317,383,415,438,448,512,541,575,606,649,679,723,882,908,941,963
+tests/diffusion/models/cosmos3/test_cosmos3_pipeline.py
+  s_7498757b3af84c::t_fd0d386deeaf75 255,262-264,3278-3467,3627-3721
+tests/diffusion/models/cosmos3/test_cosmos3_transformer.py
+  s_7498757b3af84c::t_6c5383c8bf0d4d 537-588,897-898,1604-1735
+tests/diffusion/models/flux2/test_flux2_transformer_tp.py
+  s_7498757b3af84c::t_d6dc365360808c 34,146,224
+tests/diffusion/models/helios/test_helios_block_noise.py
+  s_7498757b3af84c::t_dcbe3742eeae7e 1-106
+tests/diffusion/models/hunyuan_video/test_hunyuan_video_15_fused_qk_norm_rope.py
+  s_7498757b3af84c::t_0f5f1c44c516f5 1-128
+tests/diffusion/models/lingbot_video/test_lingbot_video_moe_cuda.py
+  s_7498757b3af84c::t_735f87cf5912c1 2,82,115
+tests/diffusion/models/ltx2/test_ltx2_diffvae_attention.py
+  s_7498757b3af84c::t_0f5d93b2c95dfa 10,86
+tests/diffusion/models/ltx2/test_ltx2_diffvae_ops.py
+  s_7498757b3af84c::t_b868bb7aaef9b9 12,44,66,98,110,205
+tests/diffusion/models/ltx2/test_ltx2_output_cuda.py
+  s_7498757b3af84c::t_9a9a91c1847657 20,54,71
+tests/diffusion/models/magi2/test_bf16_moe_wiring.py
+  s_7498757b3af84c::t_83921749c7049a 10-11,174-176,195,197-199,213,226,235,256-257,259-260,282,425,436-438,472,502-504
+tests/diffusion/models/magi2/test_chunked_attention.py
+  s_7498757b3af84c::t_743d59aeabe61c 10
+tests/diffusion/models/magi2/test_mh_moe_routing.py
+  s_7498757b3af84c::t_c58c115796f37c 27-28,106,135,145,179,203,289,301,326,400
+tests/diffusion/models/magi2/test_mhc_stream_contractions.py
+  s_7498757b3af84c::t_579135b6762cdf 14-16,35-36,108-109,136,160,183,188,228,249
+tests/diffusion/models/magi2/test_moe_routing_parity.py
+  s_7498757b3af84c::t_a6dce3b7cc4f95 13-14,16,22-23,262-269,338,360-367,407
+tests/diffusion/models/magi2/test_musa_attention.py
+  s_7498757b3af84c::t_b9a88fdd475105 15-17,36,44-46,50-51,64,66,69,99,101,114,116,118-119,140-141,150,158-159,180-181,193,207-208,220-222,234,238,241,250-251,253-255,279,288-290,303,317-318
+tests/diffusion/models/magi2/test_musa_pipeline.py
+  s_7498757b3af84c::t_92c4e396a44c20 18,30,65,69,125-126,136-138
+tests/diffusion/models/magi2/test_native_compile.py
+  s_7498757b3af84c::t_50f5eee5dba54d 16
+tests/diffusion/models/magi2/test_native_distributed_parity.py
+  s_7498757b3af84c::t_b56df5b304afdb 17-18
+tests/diffusion/models/magi2/test_native_dlo_allgather.py
+  s_7498757b3af84c::t_ae9b15f5078b4d 20-21
+tests/diffusion/models/magi2/test_native_packing.py
+  s_7498757b3af84c::t_a21ccc953e577c 14
+tests/diffusion/models/magi2/test_native_preview.py
+  s_7498757b3af84c::t_838a4b450ac1b7 18
+tests/diffusion/models/magi2/test_npu_attention.py
+  s_7498757b3af84c::t_f3fb9f2d29e137 1-181
+tests/diffusion/models/magi2/test_npu_layers.py
+  s_7498757b3af84c::t_3d4120a5f05915 1-201
+tests/diffusion/models/magi2/test_npu_moe.py
+  s_7498757b3af84c::t_7ee429b5049a1e 1-163
+tests/diffusion/models/magi2/test_owned_weights.py
+  s_7498757b3af84c::t_c352dfb2ae185a 20-21,273-274
+tests/diffusion/models/magi2/test_pipeline_magi2.py
+  s_7498757b3af84c::t_43a3c3a055af59 303-304
+tests/diffusion/models/magi2/test_shared_experts.py
+  s_7498757b3af84c::t_db3d2104f8dd06 11-12,124,152
+tests/diffusion/models/mammoth_moda2/test_dit_attention_cuda.py
+  s_7498757b3af84c::t_209fa9c2607d8e 28,130
+tests/diffusion/models/mammoth_moda2/test_dit_rmsnorm_cuda.py
+  s_7498757b3af84c::t_71f9f6ebdd24c6 15
+tests/diffusion/models/minimax_h3/test_fasth3_checkpoint.py
+  s_7498757b3af84c::t_f75e80fc64dd3d 423-451
+tests/diffusion/models/minimax_h3/test_minimax_h3_audio_vae.py
+  s_7498757b3af84c::t_f8545a0de47582 1-46
+tests/diffusion/models/minimax_h3/test_minimax_h3_contract.py
+  s_7498757b3af84c::t_5940d79b516d1f 180,185,200-208,231,238,242,250-312,340-348,1010-1098,2684,2688,2700-2703,2801,2808-2812,2903,2941-3009,3242,3244,3728-3748,3763-3771
+tests/diffusion/models/minimax_h3/test_minimax_h3_dlo_lifecycle.py
+  s_7498757b3af84c::t_a4d3f74b03d61f 33,46,50,58
+tests/diffusion/models/minimax_h3/test_minimax_h3_modulation.py
+  s_7498757b3af84c::t_77d39f4e81db0c 155
+tests/diffusion/models/minimax_h3/test_minimax_h3_native_lora.py
+  s_7498757b3af84c::t_70f7fbb2e87809 21,151,185,222,235,260,299,312,350,378,415,452,474,514,537,553,614,648,669,712,718,772,829,861
+tests/diffusion/models/minimax_h3/test_minimax_h3_result_ipc.py
+  s_7498757b3af84c::t_048ae906a11db3 1-63
+tests/diffusion/models/minimax_h3/test_minimax_h3_vae_chunks.py
+  s_7498757b3af84c::t_d55bfe90c849e3 19-31
+tests/diffusion/models/minimax_h3/test_preencode_start_distributed.py
+  s_7498757b3af84c::t_449a3fb955d5bb 1-140
+tests/diffusion/models/minimax_h3/test_streaming_decoder_residency.py
+  s_7498757b3af84c::t_edfb7c7699bff6 1-86
+tests/diffusion/models/omnivoice/test_chunking.py
+  s_7498757b3af84c::t_9a8235e2b6dfa9 1-625
+tests/diffusion/models/omnivoice/test_prompt_tokenization.py
+  s_7498757b3af84c::t_7c2fd086a61483 26-28,33,37-39,45,51-52,62
+tests/diffusion/models/omnivoice/test_step_scheduling.py
+  s_7498757b3af84c::t_0893791f5a1100 1-222
+tests/diffusion/models/qwen_image/test_qwen_image_fused_qk_norm_rope.py
+  s_7498757b3af84c::t_3c26a85b80caee 144,161,329,405,417
+tests/diffusion/models/qwen_image_21/test_decode_graph.py
+  s_7498757b3af84c::t_a84634865cf4f7 4,65-71,85-121,212,240,325,377
+tests/diffusion/models/qwen_image_21/test_request_geometry_lifecycle.py
+  s_7498757b3af84c::t_88f55201f63822 86-114
+tests/diffusion/models/qwen_image_21/test_rope_device_qualification.py
+  s_7498757b3af84c::t_08c2b517840494 90,108
+tests/diffusion/models/qwen_image_21/test_transformer_numerics.py
+  s_7498757b3af84c::t_e68ca513a7e8d7 19,42,54,79
+tests/diffusion/models/qwen_image_21/test_vae.py
+  s_7498757b3af84c::t_1aa52a3cfb0c71 48-67,146-147,161-212
+tests/diffusion/models/seedvr2/test_seedvr2_e2e.py
+  s_7498757b3af84c::t_58cc14379945d8 146
+tests/diffusion/models/seedvr2/test_seedvr2_npu.py
+  s_7498757b3af84c::t_0cc2a78b0b67dd 1-94
+tests/diffusion/models/sensenova_u1/test_sensenova_u1_attention_gqa.py
+  s_7498757b3af84c::t_17315db2beae82 23,53,64,74,131,136,162
+tests/diffusion/models/sensenova_u1/test_sensenova_u1_moe_cuda.py
+  s_7498757b3af84c::t_0f154ef50c6370 89
+tests/diffusion/models/sensenova_u1/test_sensenova_u1_teacache.py
+  s_7498757b3af84c::t_f38d00ba128ea3 55
+tests/diffusion/models/taomate_h3/test_taomate_h3_lora_cuda.py
+  s_7498757b3af84c::t_20ee682d863bcc 15
+tests/diffusion/models/wan2_2/test_wan22_packed_qkv_quant_mapping.py
+  s_7498757b3af84c::t_0fa711c6daeafc 1-132
+tests/diffusion/models/wan2_2/test_wan22_s2v_quant_config.py
+  s_7498757b3af84c::t_5255abb07ca382 1-308
+tests/diffusion/models/z_image/test_z_image_fused_qk_norm_rope.py
+  s_7498757b3af84c::t_de6918df89ead4 12,43,51
+tests/diffusion/offloader/conftest.py
+  s_7498757b3af84c::t_5920eb192fcdfb 24-25
+tests/diffusion/offloader/test_chunked_transport.py
+  s_7498757b3af84c::t_2904d8b4187e3b 1-150
+tests/diffusion/offloader/test_distributed_layerwise_backend.py
+  s_7498757b3af84c::t_694803e303bc1e 302-367,2409,2433,2530,2562,2583,2591-2643
+tests/diffusion/offloader/test_layerwise_backend.py
+  s_7498757b3af84c::t_fae28732586fe7 638
+tests/diffusion/quantization/test_convrot_config.py
+  s_7498757b3af84c::t_bcc551febf6e6d 1-192
+tests/diffusion/quantization/test_cosmos3_mixed_precision.py
+  s_7498757b3af84c::t_4d5ae4ddb6f858 2,214,220,227,251,256-340,487-489,495,501-503,534-548,725-756,825-851,857,866-980
+tests/diffusion/quantization/test_cosmos3_mixed_precision_hsdp.py
+  s_7498757b3af84c::t_622efde96eec5d 1-239
+tests/diffusion/quantization/test_cosmos3_mixed_precision_nvfp4.py
+  s_7498757b3af84c::t_f7974f8bc60307 1-116
+tests/diffusion/quantization/test_cosmos3_mixed_precision_tp.py
+  s_7498757b3af84c::t_2aed8c00d0cd51 1-396
+tests/diffusion/quantization/test_hsdp_fp8.py
+  s_7498757b3af84c::t_631eee34def8eb 2,48,50-51,59-63,85,93,99,186-301
+tests/diffusion/test_diffusion_engine.py
+  s_7498757b3af84c::t_41748ec7018907 17,311,372,1029-1266
+tests/diffusion/test_diffusion_engine_metrics.py
+  s_7498757b3af84c::t_4ebb003699d5b2 182
+tests/diffusion/test_diffusion_output_metadata.py
+  s_7498757b3af84c::t_094163988b733a 2,6,10,20-50,57,90-92
+tests/diffusion/test_diffusion_request.py
+  s_7498757b3af84c::t_5b934bc5f663dc 2,7,98-122
+tests/diffusion/test_diffusion_step_pipeline.py
+  s_7498757b3af84c::t_499eed99b1c849 11-12,34-38,58-61,148-239,270,962-965,967-968,970-971,983,988,990,993-996,999-1047,1050,1063,1085-1087,1089,1297
+tests/diffusion/test_diffusion_worker.py
+  s_7498757b3af84c::t_cc08ba693c5618 23,25-26,28,68,74,104,160,183,207,225,268
+tests/diffusion/test_omni_diffusion_config_master_port.py
+  s_7498757b3af84c::t_785a584b6892d7 13-16,18-38,43-44,46-47,51-54,57-61,65-68,72-86,90-94
+tests/diffusion/test_stage_diffusion_proc.py
+  s_7498757b3af84c::t_01c174baea9991 37-148,606-641
+tests/diffusion/test_worker_wrapper_base.py
+  s_7498757b3af84c::t_e750d5d7de8356 356-357,443-444,519-522,525-535,545
+tests/diffusion/utils/test_chunked_mp4.py
+  s_7498757b3af84c::t_e6cf343a5bb2c0 5-8,14-15,25-156,189
+tests/diffusion/utils/test_chunked_video.py
+  s_7498757b3af84c::t_c4e3bd547728d2 74-94,131-190
+tests/distributed/omni_connectors/test_chunk_transfer_adapter.py
+  s_7498757b3af84c::t_3781eb837bfaec 2848,2887,3441,3460
+tests/distributed/omni_connectors/test_shm_connector.py
+  s_7498757b3af84c::t_49c82fe3f17c43 83-115
+tests/e2e/accuracy/helpers.py
+  s_7498757b3af84c::t_9366c0f736f9e9 15,23,239-246,547-548,584-588
+tests/e2e/accuracy/hunyuanvideo15_i2v/test_hunyuanvideo15_i2v_video_similarity.py
+  s_7498757b3af84c::t_a243f4bad1b63c 26-27,59-60,69,76,101-105,150,203,220,243
+tests/e2e/accuracy/hunyuanvideo15_t2v/test_hunyuanvideo15_t2v_video_similarity.py
+  s_7498757b3af84c::t_72a9264d4e0462 22,48-49,57,64,116,160,173,192
+tests/e2e/accuracy/minicpmo_4_5/test_minicpmo_4_5.py
+  s_7498757b3af84c::t_a0c2af26df9415 157,209,219
+tests/e2e/accuracy/minimax_h3/test_minimax_h3_i2va_ref2va_similarity.py
+  s_7498757b3af84c::t_c21ee090dca22e 105-109,126,138-163,247,304,325,388
+tests/e2e/accuracy/minimax_h3/test_minimax_h3_timeline_guides.py
+  s_7498757b3af84c::t_ea13ee6f4542c5 140
+tests/e2e/accuracy/omni_duplex_eval/test_omni_duplex_eval_ci.py
+  s_7498757b3af84c::t_8e8c586128c0f3 106-133,219,232,313,374-377,404
+tests/e2e/accuracy/omni_duplex_eval/validation.py
+  s_7498757b3af84c::t_7e26e36b8767ad 27-28,74-79,84-93
+tests/e2e/accuracy/qwen3_omni/test_qwen3_omni.py
+  s_7498757b3af84c::t_8600c63f3282ae 33,49,72,107,119-146,151-153,158,172-176
+tests/e2e/accuracy/qwen_image_21/contract.py
+  s_7498757b3af84c::t_0f788b00181745 22-23,68-69,72-86
+tests/e2e/accuracy/qwen_image_21/run_reference.py
+  s_7498757b3af84c::t_22d627db2da33b 89-90,97,110,130,165-171,176-180,250
+tests/e2e/accuracy/qwen_image_21/test_qwen_image_21.py
+  s_7498757b3af84c::t_d9baf23df218c2 25-28,117-136,159,204,215,219-224,330-331,344-345
+tests/e2e/accuracy/qwen_image_21/thresholds.json
+  s_7498757b3af84c::t_e6d3d6d069b5ee 3-7,13-17,20-23
+tests/e2e/accuracy/sensenova_u1.py
+  s_7498757b3af84c::t_53f82975cd7d9a 1-195
+tests/e2e/accuracy/sensenova_u1_reference.json
+  s_7498757b3af84c::t_55c18dd36d0b75 1-356
+tests/e2e/accuracy/sensenova_u1_reference.md
+  s_7498757b3af84c::t_340165d53c5994 1-120
+tests/e2e/accuracy/test_diffusers_backend_similarity.py
+  s_7498757b3af84c::t_670e6f30b02326 56-60,62,311
+tests/e2e/accuracy/test_qwen_image.py
+  s_7498757b3af84c::t_a8f4bca8f99f06 36-39,45-46,61-62,72-73,78-79,89-90,97-98,112,115,262,283
+tests/e2e/accuracy/test_sensenova_u1_reference.py
+  s_7498757b3af84c::t_9bb59c5156c6ad 1-145
+tests/e2e/accuracy/wan22_i2v/prerequisite.py
+  s_7498757b3af84c::t_dc8e7845df72cd 1-21
+tests/e2e/accuracy/wan22_i2v/test_wan22_i2v_video_similarity.py
+  s_7498757b3af84c::t_f1c717b939731d 26,28,200,222,249,264,282,289-304
+tests/e2e/features/comfyui/conftest.py
+  s_7498757b3af84c::t_67a6030d68195b 1-3,11,16,59-63,71,73-78,80,90-101,109
+tests/e2e/features/comfyui/test_comfyui_integration.py
+  s_7498757b3af84c::t_2f00fb57dceae9 19-20,36,55,93,97,100,430-451,498,521-524,568-596,696-698,1036-1086,1321-1331,1366-1367,1376-1377,1410,1553-1615
+tests/e2e/features/comfyui/test_h3_all_in_one_workflow.py
+  s_7498757b3af84c::t_a4a406e2f3a122 1-204
+tests/e2e/features/comfyui/test_h3_music_video_workflow.py
+  s_7498757b3af84c::t_edc706a1c82dd7 1-216
+tests/e2e/features/comfyui/test_h3_reference_workflow.py
+  s_7498757b3af84c::t_41eaf3a1d36dbf 55-57,100
+tests/e2e/features/comfyui/test_h3_timeline_guides_workflow.py
+  s_7498757b3af84c::t_95948833d81e68 1-120
+tests/e2e/features/comfyui/test_seedvr2_restoration.py
+  s_7498757b3af84c::t_3f6d1e5ee739c3 1-413
+tests/e2e/features/comfyui/test_seedvr2_workflows.py
+  s_7498757b3af84c::t_8d0c14ff1583de 1-54
+tests/e2e/features/comfyui/test_timeline_guides.py
+  s_7498757b3af84c::t_5f6668fc52a528 1-875
+tests/e2e/features/comfyui/test_video_references.py
+  s_7498757b3af84c::t_cbfb908c7c5f3c 4,12,140-158
+tests/e2e/features/custom_pipeline/test_async_omni_collective_rpc.py
+  s_7498757b3af84c::t_444042884ad772 33,173-174,177,184,186,199,202
+tests/e2e/features/fullduplex/test_omni_duplex_eval_cli.py
+  s_7498757b3af84c::t_f1fc24ff24bf91 11,573,585,588-591,595-679,1143-1145
+tests/e2e/features/helpers/custom_pipeline.py
+  s_7498757b3af84c::t_13ac550354f1b8 337-339
+tests/e2e/features/prefill_phase/worker_extension.py
+  s_7498757b3af84c::t_8ae6adcbd7e1a8 26,64,66-68,71-73,75-79,95
+tests/e2e/offline_inference/test_omnivoice_expansion.py
+  s_7498757b3af84c::t_42fd484a7b8ba4 2,15-16,19,22,26,62,78-122
+tests/e2e/offline_inference/test_qwen2_5_omni_expansion.py
+  s_7498757b3af84c::t_fde30b7aa766b8 16,26-29
+tests/e2e/offline_inference/test_qwen3_omni.py
+  s_7498757b3af84c::t_60f68a29fdfb1c 109-114
+tests/e2e/offline_inference/test_qwen3_omni_colocate_async.py
+  s_7498757b3af84c::t_1640d146f5e852 15,164-297
+tests/e2e/offline_inference/test_qwen3_tts_base.py
+  s_7498757b3af84c::t_de371a8430fb1d 18,63
+tests/e2e/offline_inference/test_sensenova_u1_img2img_expansion.py
+  s_7498757b3af84c::t_e1382e6e8915d6 2,7-12,33,39-50,98-100,135-136,139-148,150-158
+tests/e2e/offline_inference/test_sensenova_u1_text2img_expansion.py
+  s_7498757b3af84c::t_531c9596672ec0 2,7-12,30,36-47,94-96,126-127,129-137,139-146
+tests/e2e/offline_inference/test_stable_audio_expansion.py
+  s_7498757b3af84c::t_77f4f96ff62eef 21,25,40,53,125-141
+tests/e2e/online_serving/helpers/minicpmo_duplex_recognition.py
+  s_7498757b3af84c::t_f8c5c6c95e591f 1-100
+tests/e2e/online_serving/helpers/minicpmo_realtime_duplex_scenarios.py
+  s_7498757b3af84c::t_c6f03bba318b6f 13-14,559-580,816,818,829,832-833,1111-1128,1208-1214,1217,1219,1232,1593-1602,1687,1698,1758,1816-1817
+tests/e2e/online_serving/minimax_h3/_common.py
+  s_7498757b3af84c::t_6adb92cf640680 285-286,289-290,299,301,306,308,310
+tests/e2e/online_serving/minimax_h3/test_minimax_h3.py
+  s_7498757b3af84c::t_38fc5188faa78f 16,20,53-57,60,71-77,95,100-103,139-148
+tests/e2e/online_serving/minimax_h3/test_minimax_h3_dlo_dp2_fl2va.py
+  s_7498757b3af84c::t_b9395c6c655f81 16,21
+tests/e2e/online_serving/minimax_h3/test_minimax_h3_dlo_dp2_ref2va.py
+  s_7498757b3af84c::t_02d13ce7ba4c4a 16,21
+tests/e2e/online_serving/minimax_h3/test_minimax_h3_fasth3_lora.py
+  s_7498757b3af84c::t_08379545bd4429 12,40-52,56,60,65-66
+tests/e2e/online_serving/minimax_h3/test_minimax_h3_ref2va_rainfusion_npu.py
+  s_7498757b3af84c::t_600d72e532953f 1-110
+tests/e2e/online_serving/minimax_h3/test_minimax_h3_turbo_lora.py
+  s_7498757b3af84c::t_e9ab2009bd3f42 24,41
+tests/e2e/online_serving/run_minicpmo_realtime_duplex_multi_session.py
+  s_7498757b3af84c::t_73dec95ed58779 544
+tests/e2e/online_serving/test_audio_watermarking.py
+  s_7498757b3af84c::t_4edcb5912cf0fa 1-83
+tests/e2e/online_serving/test_drama_3.py
+  s_7498757b3af84c::t_d3225657c0ecc0 59,82,118,124,141
+tests/e2e/online_serving/test_dreamzero_expansion.py
+  s_7498757b3af84c::t_2cddb8e11be25c 74-77
+tests/e2e/online_serving/test_joyai_vl_delegation.py
+  s_7498757b3af84c::t_2c31b7a9b41f16 1-277
+tests/e2e/online_serving/test_magi2.py
+  s_7498757b3af84c::t_fa49046ef5ae3a 4,28,53-76
+tests/e2e/online_serving/test_minicpmo_4_5_duplex_expansion.py
+  s_7498757b3af84c::t_edf8e15761ba26 54,82,115
+tests/e2e/online_serving/test_minicpmo_4_5_duplex_mrv2.py
+  s_7498757b3af84c::t_ed56fe1da47482 6,50-53,58,62-64,66-67
+tests/e2e/online_serving/test_minicpmo_4_5_duplex_recognition.py
+  s_7498757b3af84c::t_cced241ce364f4 1-74
+tests/e2e/online_serving/test_minicpmo_4_5_window.py
+  s_7498757b3af84c::t_ee952ad530058d 51
+tests/e2e/online_serving/test_minicpmo_duplex_recognition_contract.py
+  s_7498757b3af84c::t_fee916bd333963 1-84
+tests/e2e/online_serving/test_minicpmo_realtime_duplex_drivers.py
+  s_7498757b3af84c::t_be90b21de06ff4 1655-1721,1892,1943-2009,2025-2036
+tests/e2e/online_serving/test_minimax_h3_dlo_dp2_t2va.py
+  s_7498757b3af84c::t_29b8159e0f561a 29,32-62,64-67,147-148
+tests/e2e/online_serving/test_omnivoice_expansion.py
+  s_7498757b3af84c::t_3085839e71cd62 17,19,65,190-191,218,221,224,227,229-242
+tests/e2e/online_serving/test_qwen2_5_omni_expansion.py
+  s_7498757b3af84c::t_7367693c1ba369 154-180
+tests/e2e/online_serving/test_qwen3_omni.py
+  s_7498757b3af84c::t_44d582167b767d 27-32
+tests/e2e/online_serving/test_qwen3_omni_multi_replicas.py
+  s_7498757b3af84c::t_e40c9569dd1777 94,111,128
+tests/e2e/online_serving/test_qwen3_tts_base.py
+  s_7498757b3af84c::t_e59d4b9006c9eb 17,54
+tests/e2e/online_serving/test_qwen_image_expansion.py
+  s_7498757b3af84c::t_99c55204950cad 24-25
+tests/e2e/online_serving/test_stable_audio_online_expansion.py
+  s_7498757b3af84c::t_884f5fb1aed1a0 11,14-16,19-20,32-35,45,47,49-50,54-56,58-60,70-82
+tests/e2e/online_serving/test_wan22_expansion.py
+  s_7498757b3af84c::t_3d709fc9e06836 33-34
+tests/e2e/online_serving/test_wan22_t2v.py
+  s_7498757b3af84c::t_07c78965cdbd97 38
+tests/engine/duplex/test_aura_silent_cause.py
+  s_7498757b3af84c::t_004b578736199c 1-451
+tests/engine/duplex/test_delivery.py
+  s_7498757b3af84c::t_d26fda91a91d0d 12-16,44-47
+tests/engine/duplex/test_duplex_events.py
+  s_7498757b3af84c::t_591e7d90d32826 323-327,493-660,698-700
+tests/engine/duplex/test_engine_session.py
+  s_7498757b3af84c::t_0db8ab66b41038 477,479,483,485,489-546,584,586,588,774,859-872
+tests/engine/duplex/test_minicpmo_window_plugin.py
+  s_7498757b3af84c::t_a4237263ba4cdb 179-182,184,201
+tests/engine/duplex/test_semantic_vad.py
+  s_7498757b3af84c::t_47a4a3ab16eddc 252-317
+tests/engine/duplex/test_session_auxiliary.py
+  s_7498757b3af84c::t_5ca5f138947cfa 1-570
+tests/engine/duplex/test_session_manager.py
+  s_7498757b3af84c::t_5a87cdae0b171a 15,605-622,2330-2354
+tests/engine/duplex/test_session_runner.py
+  s_7498757b3af84c::t_bff1e801f17406 379-384,1296-1324,1444-1500,2010-2084,3352-3412
+tests/engine/duplex/test_session_runner_personaplex.py
+  s_7498757b3af84c::t_1941ec3b2752b5 10-11,108-111,209,216
+tests/engine/test_arg_utils.py
+  s_7498757b3af84c::t_a801233a4cce77 30,32-35,37,43-45,100-101,132,137,262-297,664-821
+tests/engine/test_arg_utils_shared_fields.py
+  s_7498757b3af84c::t_98fa2a1b382494 2,33-35,40
+tests/engine/test_async_omni_engine_input.py
+  s_7498757b3af84c::t_47cecbbf42d572 4,10-14,17,25,143-168,822-841
+tests/engine/test_async_omni_engine_stage_init.py
+  s_7498757b3af84c::t_f4f6146656ee9b 14,21-23,26,33,38,151-229,343,359-363,425,442,1683-1684,1694,1701,1730-1732,1754
+tests/engine/test_duplex_omni_engine.py
+  s_7498757b3af84c::t_96d07493bc509d 94-114
+tests/engine/test_membership_controller.py
+  s_7498757b3af84c::t_28a3d20d769714 44-47,50,226,505
+tests/engine/test_omni_request_output.py
+  s_7498757b3af84c::t_8c480800db3035 2,11,16-36
+tests/engine/test_orchestrator.py
+  s_7498757b3af84c::t_9174144c972dfb 15,27,49,52,54,157,312,317-319,874-1025,3094-3152,3404,3413,3416-3455
+tests/engine/test_stage_device_layout.py
+  s_7498757b3af84c::t_ab4e5496b32a17 38
+tests/engine/test_stage_engine_args.py
+  s_7498757b3af84c::t_b89dc8c364f0de 483-484,486-492,516-518,556-557,559-565,588-596
+tests/engine/test_stage_engine_core_proc.py
+  s_7498757b3af84c::t_c0085e5d825bfd 147-165
+tests/engine/test_stage_memory_lifecycle.py
+  s_7498757b3af84c::t_93904160b016d0 1-358
+tests/engine/test_wire_multimodal_output.py
+  s_7498757b3af84c::t_b36c291207c70c 2-3
+tests/entrypoints/openai_api/test_api_server_guards.py
+  s_7498757b3af84c::t_d6aa5e2b0260de 45,239,437-476,608-664,1388-1391,1396-1397,1468-1473,1496,1500-1501
+tests/entrypoints/openai_api/test_diffusion_seed.py
+  s_7498757b3af84c::t_b66ac83c2f9a2e 1-32
+tests/entrypoints/openai_api/test_duplex_api_server.py
+  s_7498757b3af84c::t_59f04f43fbbe7a 19,29,148-199
+tests/entrypoints/openai_api/test_openpi_connection.py
+  s_7498757b3af84c::t_f1d428209e775a 160-175,177-178,184-185,187,191,195-196,200,204
+tests/entrypoints/openai_api/test_openpi_serving.py
+  s_7498757b3af84c::t_3f0ee73bf35238 15,512-592
+tests/entrypoints/openai_api/test_qwen3_omni_realtime_replay_timing.py
+  s_7498757b3af84c::t_67adecf00e73a3 1-163
+tests/entrypoints/openai_api/test_qwen3_omni_realtime_websocket.py
+  s_7498757b3af84c::t_aace09ec0787c9 275,283,298,307,309,329,375-379,404,406-417,425,428-449,467,482-484,491,502-503,506-509,609-638,733,740,743-750,758-759,762,787-829,1332,1354
+tests/entrypoints/openai_api/test_realtime_prompt_preflight.py
+  s_7498757b3af84c::t_f6907855296ca3 851-911
+tests/entrypoints/openai_api/test_realtime_server_vad.py
+  s_7498757b3af84c::t_8edb9c04ae3548 14,17-18,21,90-114,127-138,146-150,158,226-262,449,458-460,471-496,519-540
+tests/entrypoints/openai_api/test_serving_audio_generate.py
+  s_7498757b3af84c::t_7d79c46604ca67 280-286
+tests/entrypoints/openai_api/test_serving_chat_sampling_params.py
+  s_7498757b3af84c::t_585927d0fddd3f 247,263,386,395
+tests/entrypoints/openai_api/test_serving_speech.py
+  s_7498757b3af84c::t_ecd32c102f5be7 15,36,49-50,62-63,81,104-124,432-624,656-662,678-733,1244-1299,1304-1307,1323-1330,1333-1334,1352-1353,1359-1365,1434-1442,1444-1451,1457,1470-1509,4547-4555,6603-6627
+tests/entrypoints/openai_api/test_serving_speech_stream.py
+  s_7498757b3af84c::t_e62a6ac5f580c2 1994,1999,2007-2009
+tests/entrypoints/openai_api/test_serving_video_output_stream.py
+  s_7498757b3af84c::t_288fee5b2367d4 1583-1584
+tests/entrypoints/openai_api/test_tts_adapter.py
+  s_7498757b3af84c::t_0245b381f8ed4a 649-653,711
+tests/entrypoints/openai_api/test_untrusted_image.py
+  s_7498757b3af84c::t_a9afb04166b894 1-79
+tests/entrypoints/openai_api/test_video_server.py
+  s_7498757b3af84c::t_11031dbe814bd9 262-309,337,1028,1075
+tests/entrypoints/test_async_omni.py
+  s_7498757b3af84c::t_d4b3d627a8c990 12,69-77,187-216,532-534,670,896,924
+tests/entrypoints/test_async_omni_diffusion_config.py
+  s_7498757b3af84c::t_ab159be2f5b877 150,155,158,167,169,583-609,828,834
+tests/entrypoints/test_async_omni_pause_sleep_routing.py
+  s_7498757b3af84c::t_f57de5dfed7ce2 10,17,470-471,475,488-493,503-508,1115-2060
+tests/entrypoints/test_omni_entrypoints.py
+  s_7498757b3af84c::t_c137dc46de4ca0 1056-1057,1059,1065-1074,1555-1729
+tests/entrypoints/test_omni_sleep_mode.py
+  s_7498757b3af84c::t_0b73f5c636b360 22,351-358,363-377,540-542,553-557,624-629
+tests/entrypoints/test_omni_sleep_mode_xpu.py
+  s_7498757b3af84c::t_5d8c1873e896b6 1-535
+tests/entrypoints/test_serve.py
+  s_7498757b3af84c::t_933c52a93fb778 9,24,32,35,71-151,772
+tests/examples/online_serving/test_multimodal_generation_client.py
+  s_7498757b3af84c::t_246e1e89c5e32b 1-69
+tests/examples/online_serving/test_qwen2_5_omni.py
+  s_7498757b3af84c::t_cf5b7b365388da 91-94,96
+tests/helpers/assertions.py
+  s_7498757b3af84c::t_7b26ea9ae6fcf4 391-407
+tests/helpers/client.py
+  s_7498757b3af84c::t_4d7e37285cb9ac 275-279
+tests/helpers/openpi_msgpack.py
+  s_7498757b3af84c::t_e081944e038210 1-60
+tests/helpers/runtime.py
+  s_7498757b3af84c::t_2a3fa0903cc503 476-478,481,499-505,514,519-520,524-525,527,538-539,543,546,552-553,557,563,568,602-603,610,621,625,627,631-632,640-641,648,1205-1216
+tests/helpers/tests/test_check_test_marks.py
+  s_7498757b3af84c::t_de9aa47dd3979f 181-226
+tests/helpers/tests/test_runtime_omni_args.py
+  s_7498757b3af84c::t_ef818e82d82e09 1-81
+tests/helpers/tests/test_runtime_stage_cli.py
+  s_7498757b3af84c::t_5038f84a527bf5 12,41,45-48,52-80,138-142,146
+tests/helpers/tests/test_runtime_startup_timeout.py
+  s_7498757b3af84c::t_e8b1e6e56a00d5 32-33
+tests/host_weight_runtime/test_runtime_resolution.py
+  s_7498757b3af84c::t_a905a7c4edef11 59-66,536-540,551-552,576-579,600-606,610-611
+tests/metrics/test_stat_logger.py
+  s_7498757b3af84c::t_6b4e8480c8df11 7-10,13,16,23,36,41-132,481-590
+tests/model_executor/executor_common/duplex/test_data_plane.py
+  s_7498757b3af84c::t_289fb72e9b6dce 61-108
+tests/model_executor/models/aura_omni/duplex/test_aura_plugin_contract.py
+  s_7498757b3af84c::t_ec3db257e94a5c 324-351,602-623
+tests/model_executor/models/common/test_audio_in_video_cuda.py
+  s_7498757b3af84c::t_0d90b54fb730dd 18
+tests/model_executor/models/common/test_fused_adaptive_group_norm_silu.py
+  s_7498757b3af84c::t_42123094f8c388 16-19,24,299-489
+tests/model_executor/models/common/test_fused_group_norm_silu.py
+  s_7498757b3af84c::t_8de6e4f7e66364 16-19,24,345-513
+tests/model_executor/models/common/test_group_norm_split_heuristic.py
+  s_7498757b3af84c::t_ec6f41260c069f 1-104
+tests/model_executor/models/cosyvoice3/test_cosyvoice3_embed_guard.py
+  s_7498757b3af84c::t_de0999dac75d19 1-188
+tests/model_executor/models/cosyvoice3/test_cosyvoice3_f0_weight_norm.py
+  s_7498757b3af84c::t_73b1140c13f897 44
+tests/model_executor/models/cosyvoice3/test_cosyvoice3_hift_graph.py
+  s_7498757b3af84c::t_57d93830b4135e 14
+tests/model_executor/models/cosyvoice3/test_cosyvoice3_model_helpers.py
+  s_7498757b3af84c::t_d1cc8355eb75fa 14,19,121-122,145,147,150-151,156-158,610-611,613-621,623-624,673-700,715,732-859,881,922,969,1287-1335
+tests/model_executor/models/cosyvoice3/test_cosyvoice3_sampling_cuda.py
+  s_7498757b3af84c::t_ecd47c7e9864fe 1-230
+tests/model_executor/models/cosyvoice3/test_cosyvoice3_sampling_policy.py
+  s_7498757b3af84c::t_d9bfe118889ed9 1-204
+tests/model_executor/models/cosyvoice3/test_speaker_embedding_capture_failure.py
+  s_7498757b3af84c::t_3b180048e80835 1-129
+tests/model_executor/models/cosyvoice3/test_speaker_embedding_graph_npu.py
+  s_7498757b3af84c::t_25eac5b51048ec 1-61
+tests/model_executor/models/cosyvoice3/test_v1_sampling.py
+  s_7498757b3af84c::t_9823295348942a 1-105
+tests/model_executor/models/fish_omni/test_fish_omni_config.py
+  s_7498757b3af84c::t_08edb000f02fb2 11-12,151-214
+tests/model_executor/models/fish_omni/test_fish_omni_gdn.py
+  s_7498757b3af84c::t_b5193e361693e9 15,166,186
+tests/model_executor/models/fish_omni/test_fish_omni_kernels.py
+  s_7498757b3af84c::t_678ffaf02ffdab 11
+tests/model_executor/models/fish_omni/test_fish_omni_kernels_eager.py
+  s_7498757b3af84c::t_8c936e1d5fca04 1-170
+tests/model_executor/models/fish_omni/test_fish_omni_model_state.py
+  s_7498757b3af84c::t_1a9a1481022a39 8,100-101,121-122,221-310
+tests/model_executor/models/fish_omni/test_fish_omni_quantization.py
+  s_7498757b3af84c::t_81b3e7988cd4fd 3,5-10,13,17-24,35-77,104-105,111-126,128,141-281
+tests/model_executor/models/fish_omni/test_fish_omni_sampling.py
+  s_7498757b3af84c::t_1c210cbbc0728e 23
+tests/model_executor/models/fish_speech/test_dac_channels_last.py
+  s_7498757b3af84c::t_3878ce0a313a17 10
+tests/model_executor/models/fish_speech/test_fish_dac_encode.py
+  s_7498757b3af84c::t_f7d7755bb3c210 1-164
+tests/model_executor/models/higgs_audio_v3/test_mrv2_state.py
+  s_7498757b3af84c::t_89991e7a1dc6c9 17,38-41,129-130,132-133,141
+tests/model_executor/models/joyai_vl_interaction/test_duplex_delegation.py
+  s_7498757b3af84c::t_e51b5b72aad29a 1-268
+tests/model_executor/models/joyai_vl_interaction/test_duplex_delegation_session.py
+  s_7498757b3af84c::t_c8c862ece0c096 1-274
+tests/model_executor/models/joyai_vl_interaction/test_duplex_memory.py
+  s_7498757b3af84c::t_feafeecbe07981 1-1487
+tests/model_executor/models/joyai_vl_interaction/test_duplex_plugin.py
+  s_7498757b3af84c::t_a8b79764896a5b 99,323-506,1148-1160,1171-1174,1766,1797-1798,1800,1802,1811,1919-1924,2023,2174
+tests/model_executor/models/joyai_vl_interaction/test_visual_memory.py
+  s_7498757b3af84c::t_d8723efb89cf1f 1-322
+tests/model_executor/models/joyai_vl_interaction/test_visual_memory_pipeline.py
+  s_7498757b3af84c::t_10b813e94db36a 1-1052
+tests/model_executor/models/ming_flash_omni/test_talker_llm_graph.py
+  s_7498757b3af84c::t_8d685965d1e51b 45,138,239
+tests/model_executor/models/minicpmo_4_5/duplex/test_policy.py
+  s_7498757b3af84c::t_5de0eed112b768 12-36
+tests/model_executor/models/minicpmo_4_5/test_cfm_tiled_attention.py
+  s_7498757b3af84c::t_a532cf7c449ae6 13
+tests/model_executor/models/minicpmo_4_5/test_code2wav_precapture_cache_release.py
+  s_7498757b3af84c::t_812d492fcc60db 1-88
+tests/model_executor/models/minicpmo_4_5/test_code2wav_watchdog.py
+  s_7498757b3af84c::t_97a32d72e248eb 1-127
+tests/model_executor/models/minicpmo_4_5/test_cuda_graph_wrapper.py
+  s_7498757b3af84c::t_3f0e1e1bb3fe6b 26,2667,2684-2688
+tests/model_executor/models/minicpmo_4_5/test_dit_fused.py
+  s_7498757b3af84c::t_43f4c69aed7250 17
+tests/model_executor/models/minicpmo_4_5/test_duplex_mrv2_sampling.py
+  s_7498757b3af84c::t_d466da07b13912 50
+tests/model_executor/models/minicpmo_4_5/test_encoder_cuda_graph.py
+  s_7498757b3af84c::t_ad5f5466734bd6 39,68,138,197,212,250,273,294,319,332,359
+tests/model_executor/models/minicpmo_4_5/test_flow_encoder_graph.py
+  s_7498757b3af84c::t_ea6409f87de291 126,172,273
+tests/model_executor/models/minicpmo_4_5/test_fused_residual_layer_norm.py
+  s_7498757b3af84c::t_37cd61ccd614c1 12
+tests/model_executor/models/minicpmo_4_5/test_pipeline.py
+  s_7498757b3af84c::t_7ad88399297a80 155-163,249
+tests/model_executor/models/minicpmo_4_5/test_siglip_position_ids.py
+  s_7498757b3af84c::t_f1678668f0ad44 168,196
+tests/model_executor/models/minicpmo_4_5/test_speaker_cuda_graph.py
+  s_7498757b3af84c::t_0d2ade7a77b6be 52
+tests/model_executor/models/minicpmo_4_5/test_streaming_audio_batch.py
+  s_7498757b3af84c::t_eb4e204b6f1f99 22,53,89,98,109
+tests/model_executor/models/minicpmo_4_5/test_talker_gpu_state.py
+  s_7498757b3af84c::t_7db81805a2b0e8 27,293,377
+tests/model_executor/models/minicpmo_4_5/test_talker_host_sync_cuda.py
+  s_7498757b3af84c::t_6f5056c1137bdf 19
+tests/model_executor/models/minicpmo_4_5/test_talker_mrv2_cuda.py
+  s_7498757b3af84c::t_2b94388b2f894b 18
+tests/model_executor/models/minicpmo_4_5/test_vision_flash_attention.py
+  s_7498757b3af84c::t_66443f6a408521 2,256,288,309
+tests/model_executor/models/minicpmo_4_5/test_vision_fused.py
+  s_7498757b3af84c::t_137feb83f5caf8 13-16,25-61
+tests/model_executor/models/minicpmo_4_5/test_vocoder_host_sync_cuda.py
+  s_7498757b3af84c::t_6408e4fcf96447 16
+tests/model_executor/models/moss_tts/test_audio_embed_kernel.py
+  s_7498757b3af84c::t_2ecd491f8e61aa 13
+tests/model_executor/models/moss_tts/test_backbone_kernels.py
+  s_7498757b3af84c::t_3e880a213e7265 13
+tests/model_executor/models/moss_tts/test_codec_async_output.py
+  s_7498757b3af84c::t_6f7e4f5a7cb097 127,198,220,242,257,286,308
+tests/model_executor/models/moss_tts/test_codec_cudagraph.py
+  s_7498757b3af84c::t_372584d1307518 1-3,25
+tests/model_executor/models/moss_tts/test_codec_fused_layers.py
+  s_7498757b3af84c::t_b7303a20818a8f 13
+tests/model_executor/models/moss_tts/test_first_frame_special.py
+  s_7498757b3af84c::t_94ac2eaf5d365c 13
+tests/model_executor/models/moss_tts/test_local_attention_heads.py
+  s_7498757b3af84c::t_ed80e05c7d4d3d 9-10,13
+tests/model_executor/models/moss_tts/test_local_depth_qkv_lookup.py
+  s_7498757b3af84c::t_8ca282c22d2437 116
+tests/model_executor/models/moss_tts/test_local_determined_tokens.py
+  s_7498757b3af84c::t_97102057752962 27,68
+tests/model_executor/models/moss_tts/test_local_eager_mtp.py
+  s_7498757b3af84c::t_b54c4ca7ca9eea 23,137-138,148,189
+tests/model_executor/models/moss_tts/test_local_fused_depth.py
+  s_7498757b3af84c::t_413448c85bf81c 129
+tests/model_executor/models/moss_tts/test_local_kernels.py
+  s_7498757b3af84c::t_d775e077c228fc 9,19,52,85,102,120,179,195,218,251,277,295,309,329
+tests/model_executor/models/moss_tts/test_local_model_state.py
+  s_7498757b3af84c::t_6e5193b26c935c 20,29,72-107,113-115,117-118,120,201,245-246,252-254,262,277-280,298-299,348,352,354
+tests/model_executor/models/moss_tts/test_local_prefill_batch.py
+  s_7498757b3af84c::t_d43539b160bcd7 110,135
+tests/model_executor/models/moss_tts/test_local_short_attention.py
+  s_7498757b3af84c::t_ca54c2423044c6 11
+tests/model_executor/models/moss_tts/test_local_state_kernels.py
+  s_7498757b3af84c::t_8da0f49b1186af 9-14
+tests/model_executor/models/moss_tts/test_reference_encoder.py
+  s_7498757b3af84c::t_8fbdeb8acd4120 10,12,25,30-119
+tests/model_executor/models/moss_tts/test_reference_encoder_graphs.py
+  s_7498757b3af84c::t_ca2f43e992cd8c 22
+tests/model_executor/models/moss_tts/test_slot_attention.py
+  s_7498757b3af84c::t_3003b4e2a6e411 23
+tests/model_executor/models/moss_tts/test_stage0_first_audio.py
+  s_7498757b3af84c::t_8ec9e69e222abe 181
+tests/model_executor/models/moss_tts/test_streaming_attention.py
+  s_7498757b3af84c::t_654ad94348e859 16
+tests/model_executor/models/omnivoice/test_asr.py
+  s_7498757b3af84c::t_ceab2b357eb0f4 1-339
+tests/model_executor/models/omnivoice/test_audio_processing.py
+  s_7498757b3af84c::t_048294a235af43 1-614
+tests/model_executor/models/omnivoice/test_cuda_graph_generator.py
+  s_7498757b3af84c::t_06e20360cf23ea 34
+tests/model_executor/models/omnivoice/test_fused_qkv_rope.py
+  s_7498757b3af84c::t_93b910f38ab663 19,26,50,77,92,107,127
+tests/model_executor/models/omnivoice/test_pipeline_batching.py
+  s_7498757b3af84c::t_c17ca56931fe1a 89-90,138-139,206-207
+tests/model_executor/models/omnivoice/test_triton_kernels.py
+  s_7498757b3af84c::t_3e5d85639b45e8 20
+tests/model_executor/models/personaplex/duplex/test_depformer_graph.py
+  s_7498757b3af84c::t_ba523c5b6d81ed 171,200
+tests/model_executor/models/personaplex/duplex/test_plugin.py
+  s_7498757b3af84c::t_bb1df18c7ffe7c 16,350,358-361,363-364,368-379
+tests/model_executor/models/personaplex/test_mimi_cuda_graph.py
+  s_7498757b3af84c::t_60e7d35ce913e9 211
+tests/model_executor/models/personaplex/test_mimi_cudagraph.py
+  s_7498757b3af84c::t_c7938b5d48c9f3 188,219,257,299,313
+tests/model_executor/models/personaplex/test_prefill_embeddings.py
+  s_7498757b3af84c::t_d0904f64fb2335 68
+tests/model_executor/models/personaplex/test_ring_per_row_offsets.py
+  s_7498757b3af84c::t_2ce1aa3eb4f523 180,221
+tests/model_executor/models/personaplex/test_streaming_code2wav.py
+  s_7498757b3af84c::t_8c68deb40fcb4c 14,74,116,196,235,262,280,301,317,364,383
+tests/model_executor/models/qwen2_5_omni/test_qwen2_5_omni_speaker.py
+  s_7498757b3af84c::t_d48a5e76cbcdad 1-128
+tests/model_executor/models/qwen2_5_omni/test_qwen2_5_omni_talker_conditioning.py
+  s_7498757b3af84c::t_af69411191c595 1-168
+tests/model_executor/models/qwen2_5_omni/test_qwen2_5_omni_talker_preprocess.py
+  s_7498757b3af84c::t_ae9f305b9ea057 1-344
+tests/model_executor/models/qwen3_omni/test_first_frame_cuda.py
+  s_7498757b3af84c::t_d8b106448c58d6 11
+tests/model_executor/models/qwen3_omni/test_hf_numerics.py
+  s_7498757b3af84c::t_2656a9ccdb9852 1-348
+tests/model_executor/models/qwen3_omni/test_qwen3_omni_code2wav_cudnn.py
+  s_7498757b3af84c::t_04e86e6c2d04b3 9-11,15,24,41-51,53-54,59-91
+tests/model_executor/models/qwen3_omni/test_qwen3_omni_code2wav_dtype.py
+  s_7498757b3af84c::t_32ff2bfb836d6e 1-215
+tests/model_executor/models/qwen3_omni/test_qwen3_omni_deepstack_device.py
+  s_7498757b3af84c::t_8f73f6d2f9d0d3 70
+tests/model_executor/models/qwen3_omni/test_qwen3_omni_preempt_replay.py
+  s_7498757b3af84c::t_2322afa430d0b6 1-47
+tests/model_executor/models/qwen3_omni/test_vision_encoder_cudagraph_cuda.py
+  s_7498757b3af84c::t_36dc8eb12cee8b 18
+tests/model_executor/models/qwen3_tts/test_cuda_graph_decoder.py
+  s_7498757b3af84c::t_a6057ce3f840c9 47-48,118,134,147,159-162,166,171-172,175,197,213,249,291,307,321,336,351,381,426,437,449,460,471,495,542,599
+tests/model_executor/models/qwen3_tts/test_cuda_graph_decoder_memory_stats.py
+  s_7498757b3af84c::t_43c7fd118677b7 1-115
+tests/model_executor/models/qwen3_tts/test_first_audio_graphs.py
+  s_7498757b3af84c::t_b575efb03632be 123,165,206,258
+tests/model_executor/models/qwen3_tts/test_qwen3_tts_code2wav.py
+  s_7498757b3af84c::t_50fc6c129422db 6,780,1141-1146
+tests/model_executor/models/qwen3_tts/test_qwen3_tts_output_async_cuda.py
+  s_7498757b3af84c::t_4f519a49f2e97c 19
+tests/model_executor/models/qwen3_tts/test_qwen3_tts_prompt_text_batch.py
+  s_7498757b3af84c::t_746fa5eef0805f 20,23,110,148
+tests/model_executor/models/qwen3_tts/test_qwen3_tts_stateless_capture.py
+  s_7498757b3af84c::t_8dda546d43af1e 16
+tests/model_executor/models/qwen3_tts/test_qwen3_tts_talker_preprocess.py
+  s_7498757b3af84c::t_344cd2dd8ec2ce 5,28-69
+tests/model_executor/models/qwen3_tts/test_streaming_col2im_cuda.py
+  s_7498757b3af84c::t_37fab10656d26a 15
+tests/model_executor/models/step_audio2/test_hift_parity.py
+  s_7498757b3af84c::t_7383e2610ab267 2,6-7,57-174
+tests/model_executor/models/step_audio2/test_step_audio2_s3_graph_npu.py
+  s_7498757b3af84c::t_a4a77b3564b6dc 1-86
+tests/model_executor/models/step_audio2/test_step_audio2_s3_quantize_eager.py
+  s_7498757b3af84c::t_862a552fc1b5a1 1-195
+tests/model_executor/models/test_breeze_tts_2_first_code_sampler.py
+  s_7498757b3af84c::t_db46b7c89c84ef 116,201,252,283
+tests/model_executor/models/test_breeze_tts_2_graphs.py
+  s_7498757b3af84c::t_89cbe35a8effd7 23,27-32,57,59-64,79,82,84,86,93,104,129,134,139-141,150,164,204,217,242,257,266,268-269,273-274,305,316-317,413,420,423,425-426,444
+tests/model_executor/models/test_recompute_preemption_declarations.py
+  s_7498757b3af84c::t_723a62a828cfa0 1-104
+tests/model_executor/models/test_supports_pp_contract.py
+  s_7498757b3af84c::t_aa24e5aa4da0fe 1-135
+tests/model_executor/models/voxcpm2/test_incremental_vae.py
+  s_7498757b3af84c::t_5f67b680ff6fc0 10,13,28,31,34,49,52,66,75,83,94,98,112
+tests/model_executor/models/voxcpm2/test_per_patch_audio.py
+  s_7498757b3af84c::t_77d4c4252365a5 134,137,193,208,227
+tests/model_executor/models/voxcpm2/test_runtime_config.py
+  s_7498757b3af84c::t_8fab2fbc254139 9,11,172-192
+tests/model_executor/models/voxtral_tts/test_cuda_graph_acoustic_transformer.py
+  s_7498757b3af84c::t_bd1eb69ea2b748 26
+tests/model_executor/stage_input_processors/test_joyai_vl_interaction.py
+  s_7498757b3af84c::t_8638a7e184a26d 121-125
+tests/model_executor/stage_input_processors/test_minicpmo_4_5_async_chunk.py
+  s_7498757b3af84c::t_a215eb45e337ad 732-736
+tests/model_executor/stage_input_processors/test_moss_raw_empty_terminal.py
+  s_7498757b3af84c::t_6cfb80ba096528 35-42,62,65,80,87-88,91,99
+tests/model_executor/stage_input_processors/test_qwen2_5_omni_speaker_handoff.py
+  s_7498757b3af84c::t_05723f268d157d 1-72
+tests/model_executor/stage_input_processors/test_qwen2_5_omni_thinker2talker.py
+  s_7498757b3af84c::t_3de8ccc21ab1bc 2,5-7,40-41,45-47,53,57,61-62,66-69,75,77-135
+tests/model_tests/diffusion/case_filtering.py
+  s_7498757b3af84c::t_cf71b88f44b03f 31-33,45,70-78,111
+tests/model_tests/diffusion/config_types.py
+  s_7498757b3af84c::t_df991c77ad0a2f 85-88
+tests/model_tests/diffusion/diff_model_builders.py
+  s_7498757b3af84c::t_625e86c552b963 296-309
+tests/model_tests/diffusion/model_settings.py
+  s_7498757b3af84c::t_2f846681efa715 65-68,196-202
+tests/model_tests/diffusion/test_case_filtering.py
+  s_7498757b3af84c::t_457d35159af053 1-74
+tests/platforms/npu/test_fish_omni_preemption.py
+  s_7498757b3af84c::t_f722989b081981 1-33
+tests/platforms/npu/test_mamba_compat.py
+  s_7498757b3af84c::t_638b3177c01b6e 1-75
+tests/platforms/npu/test_npu_generation_output_copy.py
+  s_7498757b3af84c::t_375b2e7c50b8ea 143-178
+tests/platforms/npu/test_npu_v2_moe_comm_context.py
+  s_7498757b3af84c::t_5b91c52b135a64 1-46
+tests/platforms/npu/test_npu_worker_memory_stats.py
+  s_7498757b3af84c::t_8f3853ab59b172 1-41
+tests/platforms/npu/test_npu_worker_runner_selection.py
+  s_7498757b3af84c::t_145633e4553d4e 1-30
+tests/platforms/test_rocm_groupnorm_patch.py
+  s_7498757b3af84c::t_99c3373079db7e 23-30
+tests/quantization/test_quack_fp8_runtime.py
+  s_7498757b3af84c::t_a7e03383755242 5,7,195-226
+tests/watermarking/test_audio.py
+  s_7498757b3af84c::t_64de0d8a101055 1-300
+tests/watermarking/test_base.py
+  s_7498757b3af84c::t_e88a53b1aefca6 1-86
+tests/worker/test_gpu_ar_model_runner.py
+  s_7498757b3af84c::t_35d0047a4fbb35 313,957,1932
+tests/worker/test_gpu_worker_base.py
+  s_7498757b3af84c::t_b6b44416373387 1-51
+tests/worker/test_memory_utils.py
+  s_7498757b3af84c::t_d9f1fbf0df148e 2-3,8-10,19-25,28-29,41-42,45,49,73-94
+tests/worker/test_model_sampler_extra_args.py
+  s_7498757b3af84c::t_f146c1ca206e5f 15,17,117-146
+tests/worker/test_native_duplex_hooks.py
+  s_7498757b3af84c::t_55a57771a49700 400,428
+tests/worker/test_omni_connector_mixin.py
+  s_7498757b3af84c::t_606fe1c96b1cb9 11,30,34,81,88,162-181,508,515,820,887,1013,1156,1164,1171-1266,1302-1345,1369,1382,1543,1548,1579-1580,1620,1630
+tests/worker/test_omni_gpu_model_runner.py
+  s_7498757b3af84c::t_bbfa2f9e83f44e 8,20,29-212,329-403,541-651,660-661
+tests/worker/test_pp_async_token_broadcast.py
+  s_7498757b3af84c::t_60cdea34d3e6bb 80
+tests/worker/test_scheduling_metadata_adapter.py
+  s_7498757b3af84c::t_01ff40b9658ae4 3,8,10-13,15-83
+tests/worker/test_talker_mtp_graph_budget.py
+  s_7498757b3af84c::t_048b35e8c59fa8 321,325-330,332,337-341,347-349
+tests/worker/test_worker_base.py
+  s_7498757b3af84c::t_0fc81f8caed8ea 597-613
+tests/worker_v2/test_async_copy_tensor.py
+  s_7498757b3af84c::t_6a69d23fc871b6 1-33
+tests/worker_v2/test_eager_frame_kernels.py
+  s_7498757b3af84c::t_f4cea9b2590080 141,166-169,172,182,186,210,217-220
+tests/worker_v2/test_omni_ar_model_runner.py
+  s_7498757b3af84c::t_0832491b730f5d 579,584-587,612,620-625,637,640,652,657-660,758,762-765,931,944-947
+tests/worker_v2/test_omni_ar_model_runner_cuda.py
+  s_7498757b3af84c::t_fd571468773e4a 1-61
+tests/worker_v2/test_omni_gpu_model_runner.py
+  s_7498757b3af84c::t_0dcee4369bf737 84,171-172,184
+tests/worker_v2/test_omni_model_state.py
+  s_7498757b3af84c::t_84e7468334dd6f 9,22,75-76,88-95,136-140,149-152,164-182,187,189,197,201,256,258-260,262-263,277,397-405,418,469-470,472,474-475,483-484,492-493,496,508,510,514,517,525,532,537-538,541-542,548,555-557,575-581,583,586,588-589,592,594,597-598,601-602,652,672,675-676,678,704,710,718,720,722,736-738,742,744,746,752,755,757,761,763-765,767-769,776,778,780-782,787,793-794,810,820,822-823,854,859,861-862,864,867,875,880-881,886,894,896,966,968-970,985,989-990,1044-1367
+tools/pre_commit/check_test_marks.py
+  s_7498757b3af84c::t_e7587aeb8c0e74 70,77,85,299,424-463,465,472-474,479-483,485-496
+vllm_omni/benchmarks/data_modules/seed_tts_dataset.py
+  s_7498757b3af84c::t_eb2a217afe7072 36-37,41-45
+vllm_omni/benchmarks/duplex/omni_duplex_eval_eval.py
+  s_7498757b3af84c::t_f4d90014b2aa95 10,13,22,45-50,57-74,86-110,148-150,167-169,171-173,192-194,216-218,230-232
+vllm_omni/benchmarks/duplex/omni_duplex_eval_judge.py
+  s_7498757b3af84c::t_01b5b0f76676bd 15-23,55-61
+vllm_omni/benchmarks/duplex/omni_duplex_eval_metrics.py
+  s_7498757b3af84c::t_7d0028ae81fff6 13,34-35,45-50,59-71,73-82
+vllm_omni/benchmarks/duplex/omni_duplex_eval_runner.py
+  s_7498757b3af84c::t_50f20210bd8295 97,208-228,287-366,374-378,401,426-430,434-438,539-540,579,594-598,613-628,642-648,704
+vllm_omni/benchmarks/duplex/omni_duplex_eval_serving.py
+  s_7498757b3af84c::t_c6789b40bf644b 34,212,215-224,248
+vllm_omni/benchmarks/metrics/metrics.py
+  s_7498757b3af84c::t_2f410ce5872ba4 22-38,916-917,1003-1010,1015,1019,1059,1061
+vllm_omni/benchmarks/patch/patch.py
+  s_7498757b3af84c::t_472e650e1f0f47 4,265,274-279,964-965,2001-2002,2270-2276,3492,3500-3509,3523-3589,3772,3833,3837-3841,3845-3850,3966-3969,4146
+vllm_omni/benchmarks/serve.py
+  s_7498757b3af84c::t_f8761b37fece1d 9,23,61-74,88-89
+vllm_omni/config/__init__.py
+  s_7498757b3af84c::t_a2ca0f4c8c12ce 1-3,39,89
+vllm_omni/config/endpoint_policy.py
+  s_7498757b3af84c::t_65166ecb951c1c 27-32,53,66
+vllm_omni/config/environment_variable_inventory.py
+  s_7498757b3af84c::t_546688ccf16b80 71,145,219-220,296,298-300
+vllm_omni/config/model.py
+  s_7498757b3af84c::t_194e0f0b3d87e3 4,6,136,171-189
+vllm_omni/config/omni_config.py
+  s_7498757b3af84c::t_3a1d551cca2487 497,524,855,862,965-967,1406,1422,2066,2079-2082
+vllm_omni/config/stage_config.py
+  s_7498757b3af84c::t_8ce8f804dec6c3 34-48,376-383,435-437,663,671,1162-1169,1246-1249,1402-1404,1648-1664
+vllm_omni/config/watermarking.py
+  s_7498757b3af84c::t_afe3c137e18fe4 1-51
+vllm_omni/core/prefix_cache/manager.py
+  s_7498757b3af84c::t_b753181d89b952 446-447,1008,1026-1027,1061,1065-1072,1074-1077,1088-1095,1099-1103,1105-1110,1112-1114,1217,1220-1229,1244,1246-1247
+vllm_omni/core/sched/omni_ar_scheduler.py
+  s_7498757b3af84c::t_138a374a44e16a 994-1000,1056,1138,1145-1146
+vllm_omni/core/sched/omni_generation_scheduler.py
+  s_7498757b3af84c::t_c04f12ad5d538d 125-131,138-140,150,155-158,160-161,218
+vllm_omni/core/sched/omni_scheduler_mixin.py
+  s_7498757b3af84c::t_45c610b6127d3f 52,200-203,419,558-621
+vllm_omni/core/sched/omni_scheduling_coordinator.py
+  s_7498757b3af84c::t_f1c669a4db44de 19,91-95,115,310,312-313,317,319-330,332,336-344
+vllm_omni/deploy/fish_omni.yaml
+  s_7498757b3af84c::t_f00433e3743433 101-143
+vllm_omni/deploy/minicpmo_4_5.yaml
+  s_7498757b3af84c::t_378b3ab4fc7feb 72-74,77,158-161
+vllm_omni/deploy/minicpmo_4_5_2gpu.yaml
+  s_7498757b3af84c::t_ac078a2688ac9f 95-99
+vllm_omni/deploy/minicpmo_4_5_3gpu.yaml
+  s_7498757b3af84c::t_92d708f53c005f 100-104
+vllm_omni/deploy/minicpmo_4_5_8x4090.yaml
+  s_7498757b3af84c::t_9506a5d4bf3793 104-109
+vllm_omni/deploy/minicpmo_4_5_turn.yaml
+  s_7498757b3af84c::t_05cdfa22a0f9fd 4-25
+vllm_omni/deploy/minicpmo_4_5_turn_mrv2.yaml
+  s_7498757b3af84c::t_da0a19b96d02a2 32-34
+vllm_omni/deploy/omnivoice.yaml
+  s_7498757b3af84c::t_5e1f29e96367d1 14-21,23-24
+vllm_omni/deploy/qwen2_5_omni.yaml
+  s_7498757b3af84c::t_7dcecbdad3d478 14-22,47,78-85,88-89,92-93
+vllm_omni/deploy/qwen3_omni_duplex.yaml
+  s_7498757b3af84c::t_63f46b9cd699eb 6-7
+vllm_omni/deploy/qwen3_omni_moe.yaml
+  s_7498757b3af84c::t_48757b8de86194 32-40,106-107,118,143-144,151
+vllm_omni/deploy/qwen3_omni_moe_mrv2.yaml
+  s_7498757b3af84c::t_dc9604bb7a5a1b 38-39
+vllm_omni/diffusion/attention/backends/abstract.py
+  s_7498757b3af84c::t_f9e7da33f6b4fe 88-101
+vllm_omni/diffusion/attention/backends/cudnn_attn.py
+  s_7498757b3af84c::t_aa5e34c80d5b7f 32-38
+vllm_omni/diffusion/attention/backends/flash_attn.py
+  s_7498757b3af84c::t_17ce0cbac156f9 206-213,388-400,1124-1155,1163-1168,1201-1204,1207-1209,1260-1325
+vllm_omni/diffusion/attention/backends/flashinfer_attn.py
+  s_7498757b3af84c::t_93bb123b4abff2 6-7,39-146,233,245-249,330-337,339-340,342,345,350,357-358,364-380,535-538,547-551,570-582
+vllm_omni/diffusion/attention/backends/rainfusion_attn.py
+  s_7498757b3af84c::t_1d31c89e7626a4 9,20,273-331,339-424
+vllm_omni/diffusion/attention/backends/registry.py
+  s_7498757b3af84c::t_0942b885a16eea 63
+vllm_omni/diffusion/attention/backends/sage_attn.py
+  s_7498757b3af84c::t_ff6bdf75e304ec 2,40-42,44-51,57
+vllm_omni/diffusion/attention/backends/sdpa.py
+  s_7498757b3af84c::t_6578ab900bdc9e 25,167-170,176-180,395-401
+vllm_omni/diffusion/attention/backends/sparge_attn.py
+  s_7498757b3af84c::t_8aedc404aef916 1-324
+vllm_omni/diffusion/attention/layer.py
+  s_7498757b3af84c::t_7187a1da000357 594-617,797-844,918-924
+vllm_omni/diffusion/attention/ops/block_sparse.py
+  s_7498757b3af84c::t_ab413eb19fedae 130-131,135
+vllm_omni/diffusion/attention/ops/rainfusion_hybrid.py
+  s_7498757b3af84c::t_fbcfeee63a5944 1-242
+vllm_omni/diffusion/cache/base.py
+  s_7498757b3af84c::t_a28398c8801a03 2,111-113
+vllm_omni/diffusion/cache/cachedit/backend.py
+  s_7498757b3af84c::t_f245cba7e9b1b8 34-71,214-219,279,330-342,363-365,389
+vllm_omni/diffusion/cache/cachedit/config.py
+  s_7498757b3af84c::t_6bc4db906d2904 23-25,96-118,122-126
+vllm_omni/diffusion/cache/cachedit/model_specific.py
+  s_7498757b3af84c::t_f79603fb5cb48b 32,35,95-110,113,119,124,129-132,177,256
+vllm_omni/diffusion/cache/teacache/extractors.py
+  s_7498757b3af84c::t_6a1a70ba6abf24 1745-1750
+vllm_omni/diffusion/cache/teacache/hook.py
+  s_7498757b3af84c::t_8c11485d4f53a1 2,144-156,222-243
+vllm_omni/diffusion/data.py
+  s_7498757b3af84c::t_4f074ea3e0cd83 943,960,1241-1246,2097-2135,2197,2206,2233-2237,2286-2294,2380
+vllm_omni/diffusion/diffusion_engine.py
+  s_7498757b3af84c::t_89e78269495dbb 70-75,77,157,169,301-303,1378,1391-1413
+vllm_omni/diffusion/distributed/autoencoders/autoencoder_kl_qwenimage21.py
+  s_7498757b3af84c::t_1800def17f831e 46-62,64-65,73,81-85,89,112-117,124,126-133,135
+vllm_omni/diffusion/distributed/autoencoders/autoencoder_kl_wan.py
+  s_7498757b3af84c::t_af08821809114f 15,22-24,55-58,66,87,203,497-521,538,540,552-558,567,569,596-601
+vllm_omni/diffusion/distributed/autoencoders/distributed_vae_executor.py
+  s_7498757b3af84c::t_13e7cebde346e9 225-227
+vllm_omni/diffusion/distributed/autoencoders/wan_encode_split.py
+  s_7498757b3af84c::t_b889c3f5399b64 1-134
+vllm_omni/diffusion/distributed/autoencoders/wan_sdpa_alignment.py
+  s_7498757b3af84c::t_c02ca6135faf48 1-137
+vllm_omni/diffusion/distributed/autoencoders/wan_vae_fastpath/_utils.py
+  s_7498757b3af84c::t_7c1117e56dde6d 9-11
+vllm_omni/diffusion/distributed/autoencoders/wan_vae_fastpath/forwards.py
+  s_7498757b3af84c::t_a5440da7bf6aac 221-236,452,455-459,464,475,481,560-564,770,835
+vllm_omni/diffusion/distributed/autoencoders/wan_vae_fastpath/install.py
+  s_7498757b3af84c::t_c4172a366303b7 32,218
+vllm_omni/diffusion/distributed/autoencoders/wan_vae_fastpath/triton_data_movement.py
+  s_7498757b3af84c::t_b06d455a0d7023 25,562,723,843,961
+vllm_omni/diffusion/distributed/autoencoders/wan_vae_fastpath/triton_downsample.py
+  s_7498757b3af84c::t_6085473a0afbb8 21-22,150
+vllm_omni/diffusion/distributed/autoencoders/wan_vae_fastpath/triton_norm_cache.py
+  s_7498757b3af84c::t_d4b8026ed3ec1e 30,76,82,162
+vllm_omni/diffusion/distributed/autoencoders/wan_vae_fastpath/triton_rms_norm_cl.py
+  s_7498757b3af84c::t_0e5c62da27d1f5 37-40,58,63,139
+vllm_omni/diffusion/distributed/autoencoders/wan_vae_fastpath/triton_upsample.py
+  s_7498757b3af84c::t_c661b83f590de0 31,136
+vllm_omni/diffusion/distributed/cfg_parallel.py
+  s_7498757b3af84c::t_9cbe797f55fe18 130-135,152,155,175-176,191,196-213,371-378
+vllm_omni/diffusion/distributed/pipeline_parallel.py
+  s_7498757b3af84c::t_337605dcfe0985 5,10-15,81,85-90,134,149-153,236-238,241-243,265,267-271,275-276,278-279,281,283-284
+vllm_omni/diffusion/kv_offload_config.py
+  s_7498757b3af84c::t_778fa53a438dd2 1-36
+vllm_omni/diffusion/layers/custom_op.py
+  s_7498757b3af84c::t_c9dab8682aa3ad 1-5,7,13-14,22-43,59-60,78-81
+vllm_omni/diffusion/layers/norm.py
+  s_7498757b3af84c::t_6c08881cc99b6e 57-58,61
+vllm_omni/diffusion/layers/vae_norm_epilogue.py
+  s_7498757b3af84c::t_c996d2cff66183 22,43-53,63-84,117,123,140,206
+vllm_omni/diffusion/layers/vae_rms_norm.py
+  s_7498757b3af84c::t_a18a2f8fa79618 22-23
+vllm_omni/diffusion/lora/manager.py
+  s_7498757b3af84c::t_16c546eefb4613 88,120-126,186-190,509-532,562,632-635,641-697,1110-1127,1146-1147,1155-1156,1164-1165,1188,1222-1224,1230-1234,1248
+vllm_omni/diffusion/models/bagel/mot/ops/mot_gemm.py
+  s_7498757b3af84c::t_6ccd06146294a8 232-234,249,297,543-547,567,690-694,696-701,716-748,889-890,907-908
+vllm_omni/diffusion/models/cosmos3/mixed_precision/checkpoint.py
+  s_7498757b3af84c::t_7120bb645d14cc 2,39,160-163,177-202
+vllm_omni/diffusion/models/cosmos3/mixed_precision/runtime.py
+  s_7498757b3af84c::t_081d11d09b3971 2,12,49-52,72,89-91
+vllm_omni/diffusion/models/cosmos3/mixed_precision/strategy.py
+  s_7498757b3af84c::t_d39e36d50b93ae 11,20-21,66-74,115,154-155,166-179,190-192,202,208-210,215-218,257
+vllm_omni/diffusion/models/cosmos3/pipeline_cosmos3.py
+  s_7498757b3af84c::t_4344044daaaa03 49-50,58-64,223-265,983,1081,1088,1398-1402,1419-1424,1433-1438,1447,1452-1453,1466-1471,1564-1643,3018,3023-3025,3087-3092,3094,3100-3148,3160-3162,3166,3170,3172-3174,3183,3202,3272,3280,3290-3294,3302,3312-3319,3333,3341,3356-3357,3740-3743
+vllm_omni/diffusion/models/cosmos3/transformer_cosmos3.py
+  s_7498757b3af84c::t_80ebd470b3589d 33-38,44-48,153-172,227-229,239-240,1440-1470,1473-1481,1483-1491,1495-1496,1499-1501,1512,1514-1529,1537,1550-1554,1615-1621,1879-1924,1961-1971,1984-1989,2019,2025,2029-2071,2093-2157,2427-2432,2435,2443-2446
+vllm_omni/diffusion/models/cosmos3/transformer_cosmos3_edge.py
+  s_7498757b3af84c::t_c727591d6653e9 2,15,376-393,408-409,411-414
+vllm_omni/diffusion/models/diffusers_adapter/pipeline_diffusers_adapter.py
+  s_7498757b3af84c::t_d3daeb67695ab9 391
+vllm_omni/diffusion/models/helios/pipeline_helios.py
+  s_7498757b3af84c::t_b02f63c24129c0 74-108,1663
+vllm_omni/diffusion/models/hunyuan_video/hunyuan_video_15_transformer.py
+  s_7498757b3af84c::t_075a2a1492a459 2,33-37,423,436-450,452-457,472-491,510,592,605,889-904,913
+vllm_omni/diffusion/models/magi2/attention.py
+  s_7498757b3af84c::t_8b19e0b2070210 5,16,61,64,68-71
+vllm_omni/diffusion/models/magi2/layers/__init__.py
+  s_7498757b3af84c::t_899fbbfa67c0e6 1-31
+vllm_omni/diffusion/models/magi2/layers/cuda/__init__.py
+  s_7498757b3af84c::t_a6246b8a31ae7d 1-10
+vllm_omni/diffusion/models/magi2/layers/cuda/attention_ops.py
+  s_7498757b3af84c::t_daa2d85154a6ee 1-79
+vllm_omni/diffusion/models/magi2/layers/cuda/mh_moe.py
+  s_7498757b3af84c::t_3dc2a865df9620 5,17,22-29,40-47,368-369,422-423,431,579-583,588,591,601,604
+vllm_omni/diffusion/models/magi2/layers/musa/__init__.py
+  s_7498757b3af84c::t_79196d75c731e8 1-8
+vllm_omni/diffusion/models/magi2/layers/musa/attention_ops.py
+  s_7498757b3af84c::t_3be1c58d0a0bbf 2-3,5,10,12-16,18,20,22-23,26,30-36,38-71,73,77-80,84
+vllm_omni/diffusion/models/magi2/layers/musa/mh_moe.py
+  s_7498757b3af84c::t_8b791a608225bd 1-59
+vllm_omni/diffusion/models/magi2/layers/musa/mhc.py
+  s_7498757b3af84c::t_85ee51ce3435de 1-35
+vllm_omni/diffusion/models/magi2/layers/native/__init__.py
+  s_7498757b3af84c::t_b393649f33d5b6 1-17
+vllm_omni/diffusion/models/magi2/layers/native/attention_ops.py
+  s_7498757b3af84c::t_abff74bb17d141 1-126
+vllm_omni/diffusion/models/magi2/layers/native/mh_moe.py
+  s_7498757b3af84c::t_05c6c345fff2aa 1-312
+vllm_omni/diffusion/models/magi2/layers/native/mhc.py
+  s_7498757b3af84c::t_4428e99f56607b 1-167
+vllm_omni/diffusion/models/magi2/layers/native/normalization.py
+  s_7498757b3af84c::t_b5e76cc50042c9 1-61
+vllm_omni/diffusion/models/magi2/layers/native/rope.py
+  s_7498757b3af84c::t_3fb347020ddd2f 1-39
+vllm_omni/diffusion/models/magi2/layers/npu/__init__.py
+  s_7498757b3af84c::t_6780fe14ef80a7 1-9
+vllm_omni/diffusion/models/magi2/layers/npu/attention_ops.py
+  s_7498757b3af84c::t_306e43339e5a9a 1-78
+vllm_omni/diffusion/models/magi2/layers/npu/mh_moe.py
+  s_7498757b3af84c::t_2ca8a236d552c4 1-116
+vllm_omni/diffusion/models/magi2/layers/npu/normalization.py
+  s_7498757b3af84c::t_b620988f28397e 1-43
+vllm_omni/diffusion/models/magi2/layers/npu/rope.py
+  s_7498757b3af84c::t_fcbaaa2c27e3ba 1-44
+vllm_omni/diffusion/models/magi2/modeling_magi2.py
+  s_7498757b3af84c::t_39d4d17748db2f 27-28,35-42
+vllm_omni/diffusion/models/magi2/pipeline_magi2.py
+  s_7498757b3af84c::t_2f2b3498d1880a 553-554,1087
+vllm_omni/diffusion/models/minimax_h3/denoise_loop.py
+  s_7498757b3af84c::t_f0e27448763464 372-403,405-406,408-411,413-469,471-481
+vllm_omni/diffusion/models/minimax_h3/minimax_h3_transformer.py
+  s_7498757b3af84c::t_e39dec75d093ba 13,16,36,38,75,109-221,337,674-676,681-684,690-707,720-721,723-732,737-773,778-779,781,786,838-840,855-862,891-893,1162,1167,1209-1210,1248-1250,1525-1531,1594,1886,1898-1924,1970-1994,2045,2061-2088,2090-2102,2134,2147-2174,2176-2199,2207-2208,2210-2213,2218-2220,2224,2227-2252
+vllm_omni/diffusion/models/minimax_h3/pipeline_minimax_h3.py
+  s_7498757b3af84c::t_64eab2cc3ec19a 16,104,396-400,411-414,425,431-445,490,2308,2323-2328,2330-2338,2347-2379,3382-3384,3425,3458-3460,3851,3860,3873-3875
+vllm_omni/diffusion/models/minimax_h3/pipeline_minimax_h3_decoder.py
+  s_7498757b3af84c::t_f459bb86ce7102 23,110,123,142-144
+vllm_omni/diffusion/models/minimax_h3/reference_kv_cache.py
+  s_7498757b3af84c::t_6bddafa56c0c72 1-791
+vllm_omni/diffusion/models/minimax_h3/reference_kv_cache_dit.py
+  s_7498757b3af84c::t_31d514b368b0c7 1-157
+vllm_omni/diffusion/models/minimax_h3/vae.py
+  s_7498757b3af84c::t_ee935e8804a72e 62-66,68,74,266-267,271,1043-1052,1247-1250
+vllm_omni/diffusion/models/omnivoice/audio.py
+  s_7498757b3af84c::t_e96e9f48bbcb9a 1-405
+vllm_omni/diffusion/models/omnivoice/chunking.py
+  s_7498757b3af84c::t_9187a403c90ce6 1-256
+vllm_omni/diffusion/models/omnivoice/pipeline_omnivoice.py
+  s_7498757b3af84c::t_1d7b5f63ae46aa 9,14,20-22,27,31,36-41,61-64,68-110,119-120,204-243,260-261,309-403,424-447,460-472,506-509,519,522,524,529-530,532,534,537-543,547-601,603-659,684-685,717-726,772-773,793,889-933,938-943,947,951,953,959-964,972-999
+vllm_omni/diffusion/models/qwen_image_21/autoencoder_kl_qwenimage21.py
+  s_7498757b3af84c::t_51bfdc7c9330a2 22,52-57,59-62,1278-1279,1444-1445,1447-1452,1458-1460,1582-1608,1636-1660,1662,1664,1683,1685-1688
+vllm_omni/diffusion/models/qwen_image_21/cfg_parallel.py
+  s_7498757b3af84c::t_423b98a0b88415 130-134
+vllm_omni/diffusion/models/qwen_image_21/decode_graph.py
+  s_7498757b3af84c::t_3e14edea753bc2 462-489
+vllm_omni/diffusion/models/qwen_image_21/pipeline_qwen_image_21.py
+  s_7498757b3af84c::t_101e28ad30b0fd 1296-1315,1510-1511
+vllm_omni/diffusion/models/seedvr2/pipeline_seedvr2.py
+  s_7498757b3af84c::t_3f5f2fa10f175d 236-244,246-251
+vllm_omni/diffusion/models/wan2_2/pipeline_wan2_2.py
+  s_7498757b3af84c::t_900a08726c84ba 165-179,1205,1294
+vllm_omni/diffusion/models/wan2_2/pipeline_wan2_2_i2v.py
+  s_7498757b3af84c::t_45439f11b79315 48,538
+vllm_omni/diffusion/models/wan2_2/pipeline_wan2_2_s2v.py
+  s_7498757b3af84c::t_1ee4a302819528 44,605-614,649,706
+vllm_omni/diffusion/models/wan2_2/pipeline_wan2_2_vace.py
+  s_7498757b3af84c::t_706f3a417b1ba7 32,717
+vllm_omni/diffusion/models/wan2_2/wan2_2_s2v_transformer.py
+  s_7498757b3af84c::t_7034cba36ddd63 31-32,91-100,116-117,135-136,139-140,147,189-198,208-234,245-253,262-263,265-267,293-304,310-312,315-317,321-323,327,1190-1192,1244-1245,1276-1284,1287-1298,1908-1915,1958-1959
+vllm_omni/diffusion/models/wan2_2/wan2_2_transformer.py
+  s_7498757b3af84c::t_77e1e52c04943b 24,982-987
+vllm_omni/diffusion/offloader/base.py
+  s_7498757b3af84c::t_86de9a86f113b5 73,206-210,218
+vllm_omni/diffusion/offloader/chunked_transport.py
+  s_7498757b3af84c::t_72de8c78c2f956 1-244
+vllm_omni/diffusion/offloader/distributed_layerwise_backend.py
+  s_7498757b3af84c::t_8b96da2f442afb 42,144,165,168-178,268-272,306-314,383-432,502-507,649-698,866,883,1589,2137-2146,2216-2226
+vllm_omni/diffusion/quantization/hsdp_fp8.py
+  s_7498757b3af84c::t_6ac719cf7d2a82 2-3,33-34,37,41,49,52-53,55-56,58-68,72-73,79,99-101,108-113,122,127,130
+vllm_omni/diffusion/registry.py
+  s_7498757b3af84c::t_7bb525264ec270 530-531,533,566-567,573-574
+vllm_omni/diffusion/stage_diffusion_proc.py
+  s_7498757b3af84c::t_9347d43a63191a 77,85,91-95,376-401,403-424,426-432,642-644
+vllm_omni/diffusion/utils/chunked_video.py
+  s_7498757b3af84c::t_8593d7945d0d4e 387,394-420,450-454,500,533-540,552-555,559-560
+vllm_omni/diffusion/utils/media_utils.py
+  s_7498757b3af84c::t_06fa945e844beb 104,125,159,450,452,483-501,508-509
+vllm_omni/diffusion/utils/pipeline_utils.py
+  s_7498757b3af84c::t_66bdaa67f244b2 1-68
+vllm_omni/diffusion/utils/prompt_utils.py
+  s_7498757b3af84c::t_bb56ba6ef484b3 1-2,5-24
+vllm_omni/diffusion/worker/diffusion_worker.py
+  s_7498757b3af84c::t_66464a3c866205 238-239,241,333-339,994,1045,1184,1277,1280-1288
+vllm_omni/distributed/omni_connectors/connectors/shm_connector.py
+  s_7498757b3af84c::t_2067ab19649580 239,241,255-261
+vllm_omni/distributed/omni_connectors/model_runner/omni_connector_payload_transport.py
+  s_7498757b3af84c::t_5a9b3d189cca37 14,26-27,82-83,86-101,340,351-352,355,500,502,506-513,515-519,1217-1219
+vllm_omni/distributed/omni_connectors/model_runner/omni_connector_runtime.py
+  s_7498757b3af84c::t_2cfbfc6821aca2 25-29,118,146,205-207,299
+vllm_omni/distributed/omni_connectors/utils/config.py
+  s_7498757b3af84c::t_cb85d46e529c8a 20-32
+vllm_omni/engine/arg_utils.py
+  s_7498757b3af84c::t_26c6b9a852989e 10,16,274-276,310,324,341-416,628,636,740-742,806,844-906
+vllm_omni/engine/async_omni_engine.py
+  s_7498757b3af84c::t_5ba90dc794364f 8-9,12,14,19,32,34,41,240-248,260-266,320-329,347-382,530-594,614-620,628-661,663-761,763-765,768-823,845-853,871-896,939-947,957,959
+vllm_omni/engine/duplex/config.py
+  s_7498757b3af84c::t_44b9ae4d1cf4c4 324,352,401-402,535,551-552,603-611
+vllm_omni/engine/duplex/contracts.py
+  s_7498757b3af84c::t_332355c87f1a83 179-183
+vllm_omni/engine/duplex/plugin.py
+  s_7498757b3af84c::t_a9a8878f7b35df 16,18,49-61,358-421,440,500-557
+vllm_omni/engine/duplex/realtime_events.py
+  s_7498757b3af84c::t_9e099c6b1e651f 117-119,155-157,308,312-339,347,355-356,398,430-445,482-493,516-521,1092,1134-1137,1139-1140,1255,1507,1527
+vllm_omni/engine/duplex/session/append_task.py
+  s_7498757b3af84c::t_cbc1571b96d066 34,74-76,216,244-251
+vllm_omni/engine/duplex/session/context.py
+  s_7498757b3af84c::t_5a5f96c5e2b160 156-157
+vllm_omni/engine/duplex/session/engine_session.py
+  s_7498757b3af84c::t_3dd789ee9889c0 134,206-207,468-472,478-484,556,649,671-672,745,825,870,1516,1630,1752-1753,2010
+vllm_omni/engine/duplex/session/manager.py
+  s_7498757b3af84c::t_b245621d0d0f9c 62,497-498
+vllm_omni/engine/duplex/session/memory_runtime.py
+  s_7498757b3af84c::t_9ac104b324283d 1-432
+vllm_omni/engine/duplex/session/model_channel.py
+  s_7498757b3af84c::t_1b503bc9c84190 43,48,257,277,285,331,348,418,421-422,448-449,524-536,574-580,1800-1808
+vllm_omni/engine/duplex/session/runner.py
+  s_7498757b3af84c::t_8dcd96c0043566 110,266,331-332,415-416,572-573,593,651-652,834,839-840,846-847,898,1124,1140-1147,1568,1583-1590,1594-1595,1641,1655,1932-1948,1988,2002,2444,2633,2865-2866
+vllm_omni/engine/duplex/turn_detection.py
+  s_7498757b3af84c::t_8e80478f3e2e31 295-305,321,323,422,538-594
+vllm_omni/engine/duplex_omni_engine.py
+  s_7498757b3af84c::t_102e816ca068d9 50-55,182,204
+vllm_omni/engine/duplex_orchestrator.py
+  s_7498757b3af84c::t_bd7720913d67c6 35,279-284
+vllm_omni/engine/membership_controller.py
+  s_7498757b3af84c::t_f43cba63e8d41a 15,26,65,67,154,173-176,271-275,296,302,304,308
+vllm_omni/engine/omni_engine_base.py
+  s_7498757b3af84c::t_391ff196b6f841 25,129,141,164,312-316,415,496,560,1006,1008-1011
+vllm_omni/engine/orchestrator.py
+  s_7498757b3af84c::t_ea14e730f6eca6 76,80,508,511-512,568-628,1031,1178,1447,1568-1573,1616,3462-3464
+vllm_omni/engine/stage_engine_core_proc.py
+  s_7498757b3af84c::t_5c366a5c22e7a4 43,143
+vllm_omni/engine/stage_init_utils.py
+  s_7498757b3af84c::t_b2732d656f45a5 53,67,1146-1148,1153,1211-1212,1549,1584-1594
+vllm_omni/engine/stage_pool.py
+  s_7498757b3af84c::t_880e4f04364ead 12,15,17,20,29,36,49-51,107-128,156-157,180-182,194-195,602,1072-1076,1115,1136,1209,1325,1331-1332,1340-1342,1347-1354,1396-1453,1479,1508,1519-1522
+vllm_omni/engine/stage_runtime.py
+  s_7498757b3af84c::t_ad2dcfc2dd2d26 23,184,200,924,1442-1445,1461-1462,1497,1513,1845,1860,1879
+vllm_omni/entrypoints/async_omni.py
+  s_7498757b3af84c::t_432d185614839d 16,38,52-60,110-118,157,187-188,209-212,215,224-227,271-272,330-344,346-350,415-478,480-497,499-511,562-577,581-584,595-596,612-613,625-626,630,641-642,655-656,670-673,675-676,678-679,804-806,1027-1031,1263-1267,1441-1444
+vllm_omni/entrypoints/async_omni_base.py
+  s_7498757b3af84c::t_e87deecd1383a6 433-449,462-464,478-506,535-536
+vllm_omni/entrypoints/cli/benchmark/cli_args.py
+  s_7498757b3af84c::t_a8e1bf3385d2f9 254-263,551-557
+vllm_omni/entrypoints/cli/serve.py
+  s_7498757b3af84c::t_a1775f3699b6d0 18,27,29,70-71,119-132,367,376-377,391-397,977-985,1031-1037,1554
+vllm_omni/entrypoints/duplex/openai.py
+  s_7498757b3af84c::t_57531b9b4f07da 12,46,48-55,61-64,96
+vllm_omni/entrypoints/duplex_omni.py
+  s_7498757b3af84c::t_cfb9433458d234 53-55,381
+vllm_omni/entrypoints/omni.py
+  s_7498757b3af84c::t_c2ffaa6551bedb 15,99-104,106-107,109-110,131,163,220,224
+vllm_omni/entrypoints/omni_base.py
+  s_7498757b3af84c::t_fa3c607c7d7e73 23,175,178-179,230,518-519
+vllm_omni/entrypoints/openai/api_server.py
+  s_7498757b3af84c::t_4dd6dd03df4a74 455-469,987,1304-1309
+vllm_omni/entrypoints/openai/images/helpers.py
+  s_7498757b3af84c::t_18831e51f7b702 35,200,211,220,235
+vllm_omni/entrypoints/openai/protocol/audio.py
+  s_7498757b3af84c::t_cf55a228dcd8e5 232-235,482-485,546,568,697-700
+vllm_omni/entrypoints/openai/realtime/connection.py
+  s_7498757b3af84c::t_b05d4552845254 29,45,48,51,67,114,123-124,221-227,246-249,251-258,307-317,409-413,907-914,1126,1132
+vllm_omni/entrypoints/openai/serving_audio_generate.py
+  s_7498757b3af84c::t_4f849ff0fc8565 137
+vllm_omni/entrypoints/openai/serving_chat.py
+  s_7498757b3af84c::t_d756f934d29f4e 106,836,903,989,3630,4020,4129
+vllm_omni/entrypoints/openai/serving_speech.py
+  s_7498757b3af84c::t_4b65e34afb4eeb 7,92-94,223-239,241-243,292-311,623,635,1838,1975-1977,2009-2011,2045-2047,2139-2145,2150,2164,2182-2186,2385,2612,2652,2683,2685,2688,2690-2691,2694-2695,2706,2708-2713,2719,2721-2722,2724,2731,2768-2776,2798-2801,2861-2862,3019-3024,3110
+vllm_omni/entrypoints/openai/serving_speech_stream.py
+  s_7498757b3af84c::t_bd2a81e3f246ca 851
+vllm_omni/entrypoints/openai/serving_video.py
+  s_7498757b3af84c::t_7c8bd5965596d5 50,139,153-154,551-554,564
+vllm_omni/entrypoints/openai/tts_adapters/moss_tts.py
+  s_7498757b3af84c::t_bdd767a8405c0e 309-310,312,314-316,320-322,324,327,330-331,334-335,340
+vllm_omni/entrypoints/openai/tts_adapters/omnivoice.py
+  s_7498757b3af84c::t_543adb67d4185f 2,45
+vllm_omni/entrypoints/openai/video/generation/helpers.py
+  s_7498757b3af84c::t_0660c36c2ea0d4 43,91,733-734,787,801-804,809
+vllm_omni/entrypoints/openai/video_api_utils.py
+  s_7498757b3af84c::t_c135378f879fab 45,125
+vllm_omni/entrypoints/openai/video_frame_filter.py
+  s_7498757b3af84c::t_9f62f95ab42d4c 2,22,112
+vllm_omni/entrypoints/openai/video_stream_base.py
+  s_7498757b3af84c::t_7d9595ae8c47bc 47,77,699
+vllm_omni/entrypoints/openpi/serving.py
+  s_7498757b3af84c::t_1e094217d61e70 15,20-24,69-78,92-94,112-113,143-167,201-203,207,209-210,216-242,287,311-315
+vllm_omni/entrypoints/stage_utils.py
+  s_7498757b3af84c::t_b46c85b3f9f701 224,227
+vllm_omni/experimental/ar_diffusion/runner.py
+  s_7498757b3af84c::t_fcba23f6e6e99a 560-567,582,585,590-597,604-608,616,632-638,646
+vllm_omni/experimental/fullduplex/joyvl/memory/memory.py
+  s_7498757b3af84c::t_629a100386c1f2 2,110,112
+vllm_omni/inputs/data.py
+  s_7498757b3af84c::t_eaf0e310509aaf 7,9,141-146,222-224,457,466-481
+vllm_omni/metrics/definitions.py
+  s_7498757b3af84c::t_85e656d4e92390 229-235
+vllm_omni/metrics/stat_logger.py
+  s_7498757b3af84c::t_179e4ccf8417e7 26-29,37-39,49-79,304,323-327,347-365
+vllm_omni/model_executor/common/duplex/data_plane.py
+  s_7498757b3af84c::t_9f2e8f084f1976 3-13,21-23,56-58,111-119,150-164
+vllm_omni/model_executor/models/audio8_tts/pipeline.py
+  s_7498757b3af84c::t_a4796fb8b53690 37-40
+vllm_omni/model_executor/models/aura_omni/duplex/plugin.py
+  s_7498757b3af84c::t_0f5540ff1da00f 14,89,408-422
+vllm_omni/model_executor/models/aura_omni/duplex/sentence_tts.py
+  s_7498757b3af84c::t_dab1757d0f234a 102-122,195
+vllm_omni/model_executor/models/breeze_tts_2/depth_decoder.py
+  s_7498757b3af84c::t_ab8a72d59e1ece 336,376,378,392-395,397-414
+vllm_omni/model_executor/models/breeze_tts_2/text_encoder_graph.py
+  s_7498757b3af84c::t_f815d7c8461f92 78-79,83-84,99-101,120
+vllm_omni/model_executor/models/common/ops/_group_norm_reduction.py
+  s_7498757b3af84c::t_85796b0ba9c67d 1-400
+vllm_omni/model_executor/models/common/ops/fused_adaptive_group_norm_silu.py
+  s_7498757b3af84c::t_1d4b31b6f08fac 2,15-28,37-44,46-48,60-61,65,68-70,76-78,80-83,86-87,90-103,118,120,151-155,157,202-206,208-210,212,219,222,225-226
+vllm_omni/model_executor/models/common/ops/fused_group_norm_silu.py
+  s_7498757b3af84c::t_6236eb9a265c45 2,8-12,18-29,36-43,45-47,56-57,61,64-66,74-76,78-85,88-89,92-107,112,120,122,147-151,197-201,203-205,207,212,215,218-219,223-225
+vllm_omni/model_executor/models/common/qwen3_code_predictor.py
+  s_7498757b3af84c::t_21ae1a4b44ae84 34,930-932
+vllm_omni/model_executor/models/cosyvoice3/cosyvoice3.py
+  s_7498757b3af84c::t_17121824b1b5e1 12,37,62-68,83-97,772,774-776,801-802,920-924,933-939,955-956,958-966,970-1000,1003-1015,1021,1023-1026,1031,1033-1037,1043-1045,1066-1076,1103-1106,1108-1111,1118-1122,1124-1139,1142-1186,1294-1295,1299-1316,1320,1327-1339,1344-1350,1352-1353,1370-1374
+vllm_omni/model_executor/models/cosyvoice3/pipeline.py
+  s_7498757b3af84c::t_9f5c10fecc05a2 20-23,37-66
+vllm_omni/model_executor/models/cosyvoice3/speaker_embedding_torch.py
+  s_7498757b3af84c::t_827493ab5b3810 19,33-53,57-63,67-83,89-94,96-175
+vllm_omni/model_executor/models/cosyvoice3/v1_sampling.py
+  s_7498757b3af84c::t_9303e76e585310 1-427
+vllm_omni/model_executor/models/covo_audio/covo_audio_code2wav.py
+  s_7498757b3af84c::t_acc92709e41b75 20
+vllm_omni/model_executor/models/fish_omni/codebook_tower.py
+  s_7498757b3af84c::t_210f1971d2e93a 34,38,191-192
+vllm_omni/model_executor/models/fish_omni/fish_omni_model.py
+  s_7498757b3af84c::t_77ffc187f72421 43,169-183,199,217-222,224-243,319,321
+vllm_omni/model_executor/models/fish_omni/kernels.py
+  s_7498757b3af84c::t_5e85683e011a62 19-88,148-149,204-205,264-265,297-299,372-375,402-491
+vllm_omni/model_executor/models/fish_omni/model_state.py
+  s_7498757b3af84c::t_184fc983579a91 36,43-57,167,242-246,331-342,428-437
+vllm_omni/model_executor/models/fish_omni/pipeline.py
+  s_7498757b3af84c::t_ada8f35c71eb37 36-37
+vllm_omni/model_executor/models/fish_omni/quantization.py
+  s_7498757b3af84c::t_d80285a432d185 3,10-11,14-15,17,20,47-53,57-144
+vllm_omni/model_executor/models/fish_speech/dac_encoder.py
+  s_7498757b3af84c::t_57e6a90c5a560d 1-3,62
+vllm_omni/model_executor/models/fish_speech/dac_modules/codec.py
+  s_7498757b3af84c::t_df850ead5e1faf 2,323
+vllm_omni/model_executor/models/fish_speech/dac_modules/rvq.py
+  s_7498757b3af84c::t_961ce9600d96f0 2,120-129,135,142-143,173-179
+vllm_omni/model_executor/models/fish_speech/pipeline.py
+  s_7498757b3af84c::t_0fc97d23cb01a6 2,39-41
+vllm_omni/model_executor/models/gepard/pipeline.py
+  s_7498757b3af84c::t_056663a9757634 2,43-47
+vllm_omni/model_executor/models/higgs_audio_v3/model_state.py
+  s_7498757b3af84c::t_1f521be88051a0 17,76,292
+vllm_omni/model_executor/models/joyai_vl_interaction/duplex/data_plane.py
+  s_7498757b3af84c::t_4d2d9c5f1dbe97 7,9,16-19,21-59,68-94,104-112,114,116-118,176-182,189,197-207,213-243,245,291-362
+vllm_omni/model_executor/models/joyai_vl_interaction/duplex/delegation.py
+  s_7498757b3af84c::t_1e86387fab3eda 1-436
+vllm_omni/model_executor/models/joyai_vl_interaction/duplex/memory.py
+  s_7498757b3af84c::t_163aca17df5d87 1-287
+vllm_omni/model_executor/models/joyai_vl_interaction/duplex/plugin.py
+  s_7498757b3af84c::t_534f02d437ceea 9-10,12-14,20,26-35,37-64,66-79,83,86-88,92,96-106,112-115,117,181-186,188,191-202,206,211-216,219,223-238,247,257-268,287-288,291,297-403,406-767,794-835,839,846-856,865-1251,1269-1357,1359-1377,1382,1386-1392,1396,1402-1432,1458,1460,1468-1616
+vllm_omni/model_executor/models/mimo_audio/mimo_audio_code2wav.py
+  s_7498757b3af84c::t_a789878f812e3c 437
+vllm_omni/model_executor/models/mimo_audio/mimo_audio_llm.py
+  s_7498757b3af84c::t_94579a674c154c 873-875,929-931
+vllm_omni/model_executor/models/minicpmo_4_5/batched_token2wav.py
+  s_7498757b3af84c::t_0a6d28a2ea0632 22,366,372,1466-1469,1486-1493,1725-1731,1812-1818,1828-1835,2006-2013,2029-2036,2050-2053,2072-2075,2086-2089,2190-2198,2240-2247,2262-2265,2311-2318,2329-2336
+vllm_omni/model_executor/models/minicpmo_4_5/code2wav_watchdog.py
+  s_7498757b3af84c::t_4ed83de4e019e8 1-256
+vllm_omni/model_executor/models/minicpmo_4_5/duplex/plugin.py
+  s_7498757b3af84c::t_f13903837d6b94 26,149,821-823
+vllm_omni/model_executor/models/minicpmo_4_5/duplex/policy.py
+  s_7498757b3af84c::t_db6767d412ff47 133-136,138-140
+vllm_omni/model_executor/models/minicpmo_4_5/duplex/stage0.py
+  s_7498757b3af84c::t_0489be356d4bf8 21,1340
+vllm_omni/model_executor/models/minicpmo_4_5/minicpmo_4_5_code2wav.py
+  s_7498757b3af84c::t_0b09fb376b63d1 36,399,915-925,931-937,1058-1059,1080,1117,1157-1164,1237-1243,1248-1254,1299-1306,1371-1378,1500-1506,1522,1527,1543,1545,1751,1760-1765,1767-1786
+vllm_omni/model_executor/models/minicpmo_4_5/minicpmo_4_5_omni_llm.py
+  s_7498757b3af84c::t_3c2adcf80d3e9f 4260-4261
+vllm_omni/model_executor/models/minicpmo_4_5/talker_codec_sample.py
+  s_7498757b3af84c::t_db5e2186a77b29 157-177,196
+vllm_omni/model_executor/models/minimax_h3/checkpoint.py
+  s_7498757b3af84c::t_ee7a1e79d6cd6c 17,59-63
+vllm_omni/model_executor/models/minimax_h3/preprocessing.py
+  s_7498757b3af84c::t_df0862a48a2d08 25,49,71,75
+vllm_omni/model_executor/models/minimax_h3/reference_video.py
+  s_7498757b3af84c::t_41be554242f858 100-106,120,232,356-389,550,581,685,697,717,736-741
+vllm_omni/model_executor/models/moss_tts/local_model_state.py
+  s_7498757b3af84c::t_77988ba7453e1a 27,386,481,506-508,530,533,540-544,570-571,587,591,598-602
+vllm_omni/model_executor/models/moss_tts/modeling_moss_tts_talker.py
+  s_7498757b3af84c::t_a635328ac248d2 1723-1725,1727
+vllm_omni/model_executor/models/moss_tts/pipeline.py
+  s_7498757b3af84c::t_62d0f37f4f3cb9 44-46,78-80,120-122
+vllm_omni/model_executor/models/moss_tts/reference_encoder.py
+  s_7498757b3af84c::t_91c2e0a3d63ef4 734,738,743-760
+vllm_omni/model_executor/models/omnivoice/omnivoice_generator.py
+  s_7498757b3af84c::t_94c210ad16882d 971,991-992,1003-1012
+vllm_omni/model_executor/models/personaplex/duplex/data_plane.py
+  s_7498757b3af84c::t_62fc5249748a21 3,12,15-16
+vllm_omni/model_executor/models/personaplex/duplex/plugin.py
+  s_7498757b3af84c::t_6424b1d8d8652d 20,118-126
+vllm_omni/model_executor/models/personaplex/pipeline.py
+  s_7498757b3af84c::t_d5635f4e9922ae 53-56
+vllm_omni/model_executor/models/qwen2_5_omni/qwen2_5_omni.py
+  s_7498757b3af84c::t_e70f8aef35e59a 57-61,66-79,402-406,595,604,703-735,742-749,751-762,767-787,801-802,806-807,810-811,819-829,831-832,834,838-848,897-898,900-924,972,975-976
+vllm_omni/model_executor/models/qwen3_omni/duplex/plugin.py
+  s_7498757b3af84c::t_1437ec2cf29fc6 23,1133
+vllm_omni/model_executor/models/qwen3_omni/hf_numerics.py
+  s_7498757b3af84c::t_8ec37fae6886c7 1-209
+vllm_omni/model_executor/models/qwen3_omni/pipeline.py
+  s_7498757b3af84c::t_7aa8a0145323ce 74-79
+vllm_omni/model_executor/models/qwen3_omni/qwen3_omni.py
+  s_7498757b3af84c::t_86a363a738fced 307,799,847,849
+vllm_omni/model_executor/models/qwen3_omni/qwen3_omni_code2wav.py
+  s_7498757b3af84c::t_96becd64061953 171-173,230-232,239-267
+vllm_omni/model_executor/models/qwen3_omni/qwen3_omni_moe_thinker.py
+  s_7498757b3af84c::t_552cd12c69945c 80,130-133,560-571,622-629
+vllm_omni/model_executor/models/qwen3_tts/pipeline.py
+  s_7498757b3af84c::t_50d95a6d240d98 52-54,107-109
+vllm_omni/model_executor/models/qwen3_tts/qwen3_tts_code2wav.py
+  s_7498757b3af84c::t_6ecfe8c19908a0 23,401-408
+vllm_omni/model_executor/models/qwen3_tts/qwen3_tts_talker.py
+  s_7498757b3af84c::t_a22c81cd75680e 254,375,587-596,606,612-616,619,679,682,685-686
+vllm_omni/model_executor/models/qwen3_tts/segmented_graph_wrapper.py
+  s_7498757b3af84c::t_b438dfcf3ea40c 70,411,476-489
+vllm_omni/model_executor/models/step_audio2/step_audio2_token2wav.py
+  s_7498757b3af84c::t_7a24c89fb49d49 6,24,49-90,194-207,246-252,275-284,336-353,391-512,524-536,541-545,566-569
+vllm_omni/model_executor/models/voxcpm2/model_state.py
+  s_7498757b3af84c::t_3e3d796210454f 339-352
+vllm_omni/model_executor/models/voxcpm2/pipeline.py
+  s_7498757b3af84c::t_65dcd627cbb9ad 2,35-41
+vllm_omni/model_executor/models/voxcpm2/runtime_config.py
+  s_7498757b3af84c::t_104d582e87a9f7 15-37
+vllm_omni/model_executor/models/voxcpm2/voxcpm2_talker.py
+  s_7498757b3af84c::t_f860455a4fc8bf 53,513-514,518,971-972
+vllm_omni/model_executor/stage_input_processors/joyai_vl_interaction.py
+  s_7498757b3af84c::t_542522981b8db8 5,18,20,52-70,80-83,85-91,93-95,98,107-109,113-116,122-127,151-153,175-177,210-213
+vllm_omni/model_executor/stage_input_processors/qwen2_5_omni.py
+  s_7498757b3af84c::t_c7eeb25821c58b 1-3,5,18-21,75,82-84,87,95-96,133,137-140,170-171,185,192-193,232-239,280,314-317,355-370,372,374,393-395
+vllm_omni/outputs/__init__.py
+  s_7498757b3af84c::t_7457a6418ceaae 16-32,43-44,53,87-88
+vllm_omni/outputs/mm_outputs.py
+  s_7498757b3af84c::t_87440c0eea367c 3
+vllm_omni/outputs/output_metadata.py
+  s_7498757b3af84c::t_4e3ab63ef1dca7 2,6,127,221-229
+vllm_omni/patch.py
+  s_7498757b3af84c::t_28c55eb98a6171 664-667,714-747,749
+vllm_omni/platforms/interface.py
+  s_7498757b3af84c::t_2ebe2a2efeae86 4,61-65,375-401
+vllm_omni/platforms/npu/mamba_compat.py
+  s_7498757b3af84c::t_f31d23b9d02c50 1-58
+vllm_omni/platforms/npu/models/fish_omni.py
+  s_7498757b3af84c::t_25cb19055da166 1-66
+vllm_omni/platforms/npu/models/fish_omni_model_state.py
+  s_7498757b3af84c::t_f235040e63bc9d 1-34
+vllm_omni/platforms/npu/platform.py
+  s_7498757b3af84c::t_f8273d6a4be2a4 162-167
+vllm_omni/platforms/npu/quant/fish_omni.py
+  s_7498757b3af84c::t_618ad662eb5355 1-75
+vllm_omni/platforms/npu/worker/base.py
+  s_7498757b3af84c::t_1266d3ca6b9884 26-31,45-48
+vllm_omni/platforms/npu/worker/npu_ar_worker.py
+  s_7498757b3af84c::t_da98d9b05b00be 4,12-13,32-38
+vllm_omni/platforms/npu/worker/npu_generation_model_runner.py
+  s_7498757b3af84c::t_420a4e1c780b07 594-596,602
+vllm_omni/platforms/npu/worker/npu_generation_worker.py
+  s_7498757b3af84c::t_aa83e6764ae54a 22-29
+vllm_omni/platforms/npu/worker/npu_omni_v2_model_runner.py
+  s_7498757b3af84c::t_910d1b7d7c8fe5 1-230
+vllm_omni/platforms/xpu/platform.py
+  s_7498757b3af84c::t_47b5cdda1cea68 5,12,110-124
+vllm_omni/platforms/xpu/worker/xpu_ar_worker.py
+  s_7498757b3af84c::t_f8f09079092b49 2,8,14
+vllm_omni/platforms/xpu/worker/xpu_generation_worker.py
+  s_7498757b3af84c::t_aa1f3f31c8249f 2,8,14
+vllm_omni/quantization/convrot_config.py
+  s_7498757b3af84c::t_d066aa54e0e946 1-276
+vllm_omni/quantization/factory.py
+  s_7498757b3af84c::t_665a096b4812ff 105-118,201-202
+vllm_omni/quantization/quack_fp8.py
+  s_7498757b3af84c::t_0622ced4c2a588 182-184
+vllm_omni/transformers_utils/configs/omnivoice.py
+  s_7498757b3af84c::t_a9e5e22caab64a 2,78-79
+vllm_omni/utils/seeded_exponential.py
+  s_7498757b3af84c::t_7b68002e58e974 20,41-60,62
+vllm_omni/utils/torch_compile.py
+  s_7498757b3af84c::t_923e4e35226fb5 1-32
+vllm_omni/utils/tracking_parser.py
+  s_7498757b3af84c::t_514c863696fcea 120,123-124,163-191
+vllm_omni/watermarking/__init__.py
+  s_7498757b3af84c::t_4cdf157375fbd0 1-19
+vllm_omni/watermarking/audio_seal.py
+  s_7498757b3af84c::t_7b7319dcbd8917 1-149
+vllm_omni/watermarking/base.py
+  s_7498757b3af84c::t_61140af94ff105 1-270
+vllm_omni/watermarking/converters.py
+  s_7498757b3af84c::t_6f62b9c7a09688 1-59
+vllm_omni/watermarking/types.py
+  s_7498757b3af84c::t_e8e4fdfaf86989 1-14
+vllm_omni/watermarking/utils.py
+  s_7498757b3af84c::t_506876d46e85ec 1-177
+vllm_omni/worker/base.py
+  s_7498757b3af84c::t_e2852e9e591f4d 97-113,349,351,364,374,392,394
+vllm_omni/worker/gpu_ar_model_runner.py
+  s_7498757b3af84c::t_a744907752666e 67,205-218,1518-1520,1544-1545,2224-2228,2462-2463,2500-2504
+vllm_omni/worker/gpu_model_runner.py
+  s_7498757b3af84c::t_9701fd815319a8 84-115,131,214,1739-1787,1839-1851
+vllm_omni/worker/memory_utils.py
+  s_7498757b3af84c::t_ca3d6e18bb2b11 6-8,17,19,30-36,41-43
+vllm_omni/worker/omni_connector_validation.py
+  s_7498757b3af84c::t_17fa28e860ce4d 1-3,26,30
+vllm_omni/worker/sampling_utils.py
+  s_7498757b3af84c::t_3097d5bc2c83ef 5,15,26-33,88,103,112-114,123,125-126
+vllm_omni/worker/scheduling_metadata_adapter.py
+  s_7498757b3af84c::t_675870d917aaea 1-112
+vllm_omni/worker_v2/model_states/mtp_model_state.py
+  s_7498757b3af84c::t_8ee6e7a855584f 3,13-14,16,20,28,87-88,92-93,121-158,166-167,218,227,229,359,361,364,366-367,375,377,403,428-429,432-433,437,449-452,458,519,584-589,595,749-1161
+vllm_omni/worker_v2/model_states/omni_model_state.py
+  s_7498757b3af84c::t_6bcf0306cdb01e 39,43,45,103,105,151,181-185,187,192,195,199,204,207-213,219,222,225,257,260-263,282,287,317,362-393,411-412,621,624-625,652-653,659,663,666,679,682,696,729,731,834-836,839,856-857,860-861,866,868,872,874-882,884-885,937,945,1002
+vllm_omni/worker_v2/omni_ar_model_runner.py
+  s_7498757b3af84c::t_a07f492b92befa 221-223,538-541
+vllm_omni/worker_v2/omni_model_runner.py
+  s_7498757b3af84c::t_64e84c67a4db1a 51,294,522-545,694,791,795-796
+vllm_omni/worker_v2/warmup.py
+  s_7498757b3af84c::t_b6fd0ae34dc189 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7cf3e06fef67ed66299e68e1b56c15d2ffe56ed0",
+  "prompts": {},
+  "sessions": {
+    "s_7498757b3af84c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18137-b369-7fc3-befb-f811c87bef71",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
