@@ -684,6 +684,7 @@ def test_source_file_dependencies_key_expands_from_registry() -> None:
         "vllm_omni/platforms/npu/models/minimax_h3.py",
         "vllm_omni/diffusion/models/minimax_h3/vdnh3.py",
         "tests/dfx/perf/scripts/run_benchmark.py",
+        "tests/e2e/online_serving/minimax_h3/_common.py",
         "tests/e2e/online_serving/minimax_h3/test_minimax_h3_ref2va_rainfusion_npu.py",
         "tests/dfx/perf/tests/test_minimax_h3_vllm_omni.json",
     ],
