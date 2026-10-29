@@ -1,0 +1,33 @@
+.buildkite/common/ci_source_file_dependencies.yml
+  s_7498757b3af84c::t_26ff5eeba7ff59 743,745
+.buildkite/npu/test-npu-nightly.yml
+  s_7498757b3af84c::t_0d587a27fcdcd0 418,420-421
+tests/buildkite/test_minimax_h3_rainfusion_trace.py
+  s_7498757b3af84c::t_adde52c93ad7e1 1-35
+tests/buildkite/test_upload_pipeline.py
+  s_7498757b3af84c::t_c07fce0ab2197c 688-689
+tests/diffusion/attention/test_rainfusion_plan.py
+  s_7498757b3af84c::t_00029115ec900f 14,17,23,140-202
+tests/e2e/online_serving/minimax_h3/_common.py
+  s_7498757b3af84c::t_380848e245102e 211
+tests/e2e/online_serving/minimax_h3/rainfusion_trace.py
+  s_7498757b3af84c::t_24bd1e124aeda4 1-51
+tests/e2e/online_serving/minimax_h3/test_minimax_h3_ref2va_rainfusion_npu.py
+  s_7498757b3af84c::t_d3b1de853ca69a 62-63,83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f17e881f533f67b9204901f93bf7995b36552da3",
+  "prompts": {},
+  "sessions": {
+    "s_7498757b3af84c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18137-b369-7fc3-befb-f811c87bef71",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
