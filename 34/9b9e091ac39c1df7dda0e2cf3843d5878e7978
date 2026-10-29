@@ -1,0 +1,19 @@
+tests/buildkite/test_minimax_h3_rainfusion_trace.py
+  s_7498757b3af84c::t_2bbc68373639c6 12-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "349b9e091ac39c1df7dda0e2cf3843d5878e7978",
+  "prompts": {},
+  "sessions": {
+    "s_7498757b3af84c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18137-b369-7fc3-befb-f811c87bef71",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
