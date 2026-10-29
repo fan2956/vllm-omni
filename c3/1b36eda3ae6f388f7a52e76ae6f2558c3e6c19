@@ -1,0 +1,21 @@
+.buildkite/common/ci_source_file_dependencies.yml
+  s_7498757b3af84c::t_5e56fab08f4a22 742
+vllm_omni/diffusion/worker/diffusion_worker.py
+  s_7498757b3af84c::t_3dfd607d57c6c4 30,33,98,1825-1830
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c31b36eda3ae6f388f7a52e76ae6f2558c3e6c19",
+  "prompts": {},
+  "sessions": {
+    "s_7498757b3af84c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18137-b369-7fc3-befb-f811c87bef71",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
