@@ -208,7 +208,7 @@ def run_ref2va_video(
     """Submit a video-reference Ref2VA request with the benchmark workload."""
     form = _h3_form("ref2va", workload["seed"])
     form["model"] = model
-    for key in ("width", "height", "fps", "num_inference_steps", "seed", "flow_shift"):
+    for key in ("width", "height", "fps", "num_frames", "num_inference_steps", "seed", "flow_shift"):
         form[key] = str(workload[key])
     form["extra_params"] = workload["extra_params"]
     with reference.open("rb") as video:

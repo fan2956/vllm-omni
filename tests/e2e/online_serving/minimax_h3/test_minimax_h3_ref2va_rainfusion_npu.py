@@ -59,6 +59,8 @@ def test_ref2va_rainfusion_laser_video(
 ) -> None:
     """Generate video and audio from a video reference using the benchmark configuration."""
     assert os.environ.get("MINDIE_SD_FA_TYPE") == "ascend_laser_attention"
+    assert SERVE_ARGS["diffusion-attention-config"]["default"]["block_sparse"]["start_step"] == 2
+    assert WORKLOAD["num_inference_steps"] > 2
     reference = tmp_path / "reference.mp4"
     subprocess.run(
         [
@@ -78,6 +80,7 @@ def test_ref2va_rainfusion_laser_video(
         ],
         check=True,
     )
+    print("MINIMAX_H3_REF2VA_REQUEST_BEGIN", flush=True)
     video = run_ref2va_video(openai_client, omni_server.model, reference, WORKLOAD)
     assert_h3_video(video, width=WORKLOAD["width"], height=WORKLOAD["height"])
     assert_video_audio_valid(video, sample_rate=32000, channels=2)
