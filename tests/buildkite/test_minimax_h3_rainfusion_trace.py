@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.core_model, pytest.mark.cpu]
+
 TRACE_SCRIPT = Path("tests/e2e/online_serving/minimax_h3/rainfusion_trace.py")
 MULTI_VIDEO = "RAINFUSION_ATTN multi-video active: sparsity=0.80"
 SPARSE = "RainFusion uses MindIE-SD sparse attention, precision=bf16."
