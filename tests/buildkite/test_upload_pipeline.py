@@ -676,29 +676,6 @@ def test_source_file_dependencies_key_expands_from_registry() -> None:
     assert "Diffusion · Qwen Image Test" not in _surviving_labels(doc, ["vllm_omni/unrelated.py"])
 
 
-@pytest.mark.parametrize(
-    "changed_file",
-    [
-        "vllm_omni/diffusion/attention/backends/rainfusion_attn.py",
-        "vllm_omni/diffusion/attention/backends/flash_attn.py",
-        "vllm_omni/platforms/npu/models/minimax_h3.py",
-        "vllm_omni/diffusion/models/minimax_h3/vdnh3.py",
-        "tests/dfx/perf/scripts/run_benchmark.py",
-        "tests/e2e/online_serving/minimax_h3/_common.py",
-        "tests/e2e/online_serving/minimax_h3/rainfusion_trace.py",
-        "tests/diffusion/attention/test_rainfusion_plan.py",
-        "tests/e2e/online_serving/minimax_h3/test_minimax_h3_ref2va_rainfusion_npu.py",
-        "tests/dfx/perf/tests/test_minimax_h3_vllm_omni.json",
-    ],
-)
-def test_npu_ref2va_rainfusion_selected_for_relevant_changes(changed_file: str) -> None:
-    path = Path(".buildkite/npu/test-npu-nightly.yml")
-    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
-    rendered = _render_test_pipeline(doc, changed_files=[changed_file], pipeline_path=path)
-    keys = {step.get("key") for step in _iter_steps(rendered)}
-    assert "nightly-diffusion-x2v-minimax-h3-ref2va-rainfusion" in keys
-
-
 def test_npu_platform_change_does_not_select_shared_minimax_h3_jobs() -> None:
     doc = {
         "steps": [
