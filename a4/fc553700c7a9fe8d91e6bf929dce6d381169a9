@@ -1,0 +1,19 @@
+.buildkite/npu/test-npu-nightly.yml
+  s_7498757b3af84c::t_01aaacdf4609f3 401,407
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a4fc553700c7a9fe8d91e6bf929dce6d381169a9",
+  "prompts": {},
+  "sessions": {
+    "s_7498757b3af84c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18137-b369-7fc3-befb-f811c87bef71",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
