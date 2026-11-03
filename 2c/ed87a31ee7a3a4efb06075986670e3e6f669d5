@@ -1,0 +1,21 @@
+vllm_omni/config/environment_variable_inventory.py
+  s_7498757b3af84c::t_b0953e37ea4d2f 108
+tests/config/test_environment_variables.py
+  s_7498757b3af84c::t_b0953e37ea4d2f 168
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2ced87a31ee7a3a4efb06075986670e3e6f669d5",
+  "prompts": {},
+  "sessions": {
+    "s_7498757b3af84c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18137-b369-7fc3-befb-f811c87bef71",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
