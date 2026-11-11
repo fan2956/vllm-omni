@@ -1,0 +1,24 @@
+tests/diffusion/attention/test_mindie_runtime.py
+  s_3190eb85109e4b::t_ceb88017bf48be 270,348,370-379
+  s_3190eb85109e4b::t_aa8b0e35be3765 380-381
+tests/diffusion/attention/test_attention_schedule_candidates.py
+  s_3190eb85109e4b::t_ceb88017bf48be 492-493,500,519-524,530,534-540
+vllm_omni/diffusion/attention/layer.py
+  s_3190eb85109e4b::t_6a5fb852969c0c 433,860-862,879,884-886,888-891,907-909,1637,1657-1659,1692-1693,1714
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4296ea0c3508fb714c189f304d785a0dd3d49f3c",
+  "prompts": {},
+  "sessions": {
+    "s_3190eb85109e4b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c5aa-9760-76a3-888f-d1a106b1b03a",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
