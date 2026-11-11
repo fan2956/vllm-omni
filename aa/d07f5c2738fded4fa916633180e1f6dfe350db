@@ -1,0 +1,29 @@
+tests/diffusion/attention/test_mindie_runtime.py
+  s_3190eb85109e4b::t_19f4be1ee52d48 171,173,177-179
+  s_3190eb85109e4b::t_fd038a9cc63d8c 14,116-139,141-145,153-154,156,168-170,172,174-176,180-206
+  s_3190eb85109e4b::t_383a34f1300bea 40,43,140
+  s_3190eb85109e4b::t_953cf6473aa875 146-152,155,157-167
+  s_3190eb85109e4b::t_6f58ba9e8d1ee0 207-208
+vllm_omni/diffusion/attention/backends/flash_attn.py
+  s_3190eb85109e4b::t_19f4be1ee52d48 1116,1124-1125,1146-1148
+  s_3190eb85109e4b::t_c7655f7efd9339 1074,1078-1082,1086
+  s_3190eb85109e4b::t_562c342813d1f8 1073,1075-1077,1096-1097,1117-1123,1126,1145
+docs/user_guide/quantization/quantized_kvcache.md
+  s_3190eb85109e4b::t_44c7dbecdbcc10 47-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aad07f5c2738fded4fa916633180e1f6dfe350db",
+  "prompts": {},
+  "sessions": {
+    "s_3190eb85109e4b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c5aa-9760-76a3-888f-d1a106b1b03a",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
