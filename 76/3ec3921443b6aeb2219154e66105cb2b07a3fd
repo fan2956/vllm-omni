@@ -1,0 +1,19 @@
+vllm_omni/diffusion/attention/layer.py
+  s_3190eb85109e4b::t_549255dee52770 862-863,885
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "763ec3921443b6aeb2219154e66105cb2b07a3fd",
+  "prompts": {},
+  "sessions": {
+    "s_3190eb85109e4b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c5aa-9760-76a3-888f-d1a106b1b03a",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
