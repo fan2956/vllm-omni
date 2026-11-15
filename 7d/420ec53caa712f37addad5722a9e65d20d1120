@@ -1,0 +1,149 @@
+.buildkite/common/ci_source_file_dependencies.yml
+  s_3190eb85109e4b::t_d3cbd1634ccff2 431-434
+docs/.nav.yml
+  s_3190eb85109e4b::t_7ea71c312e539b 152
+docs/configuration/kv_offload.md
+  s_3190eb85109e4b::t_f39b25ac61f82e 8-10,115-250
+docs/design/feature/ar_diffusion_kv_backends.md
+  s_3190eb85109e4b::t_91be4b9fccb063 1-115
+docs/design/feature/mooncake_kv_hs_cache.md
+  s_3190eb85109e4b::t_73cc880f6c80d4 1-265
+docs/design/feature/noisy_pp.md
+  s_3190eb85109e4b::t_37c6f0ac87f960 198-221,239-240,245-247,262,280
+docs/design/feature/realtime_ar_diffusion.md
+  s_3190eb85109e4b::t_40ea84dcbc571a 17-19,116-126
+docs/design/index.md
+  s_3190eb85109e4b::t_8a0055b7b6c52d 29
+docs/design/module/ar_runtime.md
+  s_3190eb85109e4b::t_3eead19b6fa0b9 35-58
+tests/config/test_environment_variables.py
+  s_3190eb85109e4b::t_5fe13943b18633 169
+tests/diffusion/ar_diffusion/test_chunk_executor.py
+  s_3190eb85109e4b::t_255e395046cb92 1-69
+tests/diffusion/ar_diffusion/test_kv_backend.py
+  s_3190eb85109e4b::t_b2e5e70554de48 1-319
+tests/diffusion/ar_diffusion/test_kv_orchestration.py
+  s_3190eb85109e4b::t_49a479ec6e69d5 2,9-10,84-123
+tests/diffusion/ar_diffusion/test_noisy_kv.py
+  s_3190eb85109e4b::t_a454ae92c17b5c 18,104-250
+tests/diffusion/ar_diffusion/test_noisy_kv_transport.py
+  s_3190eb85109e4b::t_7b4dfb5d0e8c08 13,37-126,181,220-228,253-260,285-286,342-349,356,367
+tests/diffusion/ar_diffusion/test_noisy_session.py
+  s_3190eb85109e4b::t_ef8dbf9302142b 42-86,189,201,204-207,209-212,266,304
+tests/diffusion/ar_diffusion/test_noisy_session_single_chunk.py
+  s_3190eb85109e4b::t_87ec95c47065a4 1-137
+tests/diffusion/distributed/noisy_pipeline_parallel/test_noisy_pp_executor.py
+  s_3190eb85109e4b::t_ad45a5f7ec4413 7-10,23,56-196,358,360,462,478,551,606-644,659-662,685-686,690
+tests/diffusion/models/hy_nomas/test_ar.py
+  s_3190eb85109e4b::t_e3e9774da7e0ec 163-164,906-959
+tests/diffusion/models/hy_nomas/test_attention.py
+  s_3190eb85109e4b::t_ade318ce974b72 68-120
+tests/diffusion/models/hy_nomas/test_attention_cuda.py
+  s_3190eb85109e4b::t_1e3f8c747f6221 11,13,61-167
+tests/diffusion/models/hy_nomas/test_hy_nomas.py
+  s_3190eb85109e4b::t_6725163f9802ee 20,222,604,837-858
+tests/diffusion/models/hy_nomas/test_native_runtime.py
+  s_3190eb85109e4b::t_102225e2334dbe 5,17,23,164-364,455-456,459-460,484-486,488-490
+tests/diffusion/models/lingbot_world/test_lingbot_world_imports.py
+  s_3190eb85109e4b::t_06ae02d5d9ec1f 33-34
+tests/diffusion/test_member_batch.py
+  s_3190eb85109e4b::t_526054a645a953 1-87
+tests/diffusion/test_member_step_execution.py
+  s_3190eb85109e4b::t_1d9acf74f371e8 1-69
+tests/diffusion/test_sampling_step.py
+  s_3190eb85109e4b::t_c7dae9053ef121 46-49,119-122
+tests/distributed/test_mooncake_connector.py
+  s_3190eb85109e4b::t_48b18a23d4a077 1-1475
+tests/distributed/test_mooncake_hs_store.py
+  s_3190eb85109e4b::t_61093a03301e7a 1-220
+tests/distributed/test_mooncake_thinker_captures.py
+  s_3190eb85109e4b::t_4a094597fec13f 1-224
+tests/engine/kv_offload_helpers.py
+  s_3190eb85109e4b::t_6b9c6c97f2a55f 104
+tests/engine/mooncake_helpers.py
+  s_3190eb85109e4b::t_91fe7ababd4fea 1-92
+tests/engine/test_map_offload_config.py
+  s_3190eb85109e4b::t_027dca6a6bf3b0 15,198-303
+tests/engine/test_mooncake_turn_consistency_qwen3.py
+  s_3190eb85109e4b::t_9c74a9e2e1006c 1-216
+tests/model_executor/models/moss_tts/test_local_eager_mtp.py
+  s_3190eb85109e4b::t_15e8fc0d43051a 161-163
+tests/platforms/npu/test_qwen3_omni_model_state.py
+  s_3190eb85109e4b::t_e0ab72868b2903 5,56-112,115-146,148,150-160
+tests/worker_v2/test_mooncake_capture.py
+  s_3190eb85109e4b::t_0fcf23265167eb 1-269
+tests/worker_v2/test_omni_ar_model_runner.py
+  s_3190eb85109e4b::t_f0ab882a526ae4 176-178,278-280
+tests/worker_v2/test_omni_gpu_model_runner.py
+  s_3190eb85109e4b::t_b03f403545c801 14,519-524,547-554,562-566,571
+vllm_omni/config/environment_variable_inventory.py
+  s_3190eb85109e4b::t_ae7829a6963c07 138
+vllm_omni/diffusion/distributed/member_batch.py
+  s_3190eb85109e4b::t_fcc23855317af6 1-116
+vllm_omni/diffusion/distributed/noisy_pipeline_parallel/noisy_pp_executor.py
+  s_3190eb85109e4b::t_d860b0e0a73187 101,295-296,664,742
+vllm_omni/diffusion/distributed/noisy_pipeline_parallel/noisy_pp_plan.py
+  s_3190eb85109e4b::t_63aab63a13dfba 37-38,92-100,175,392-397,408-423,624,633-634,695
+vllm_omni/diffusion/models/hy_nomas/attention.py
+  s_3190eb85109e4b::t_6caec0e62ee2c7 6,105-144,171,187-215,217-218,226
+vllm_omni/diffusion/models/hy_nomas/hy_nomas_transformer.py
+  s_3190eb85109e4b::t_733ec234d6835f 5-6,10,16,124-125,127-131,140-161,163-176,195-198,200-202,219-220,224-238,243-248,252,258-279,282-283,341-504,541,544-547,550-559,575-576,578,581,593-595
+vllm_omni/diffusion/models/hy_nomas/layers.py
+  s_3190eb85109e4b::t_3aaff66909188e 46,104
+vllm_omni/diffusion/models/hy_nomas/pipeline_hy_nomas.py
+  s_3190eb85109e4b::t_c8379055c42ff5 22,121-132,158,178-184,219,328-331,576,649,728,758-776,802,823,880-882,887-889,904,907-912
+vllm_omni/diffusion/worker/diffusion_model_runner.py
+  s_3190eb85109e4b::t_d9e1e7af512e7a 19,59,179-208,416-420,1358-1363,1570-1586,1631-1632,1669-1673,1687,1762
+vllm_omni/diffusion/worker/input_batch.py
+  s_3190eb85109e4b::t_08779ea9c576f3 20,424-429,636
+vllm_omni/distributed/kv_transfer/__init__.py
+  s_3190eb85109e4b::t_e20e6f3aeca099 1-3
+vllm_omni/distributed/kv_transfer/mooncake/__init__.py
+  s_3190eb85109e4b::t_f2468aa042a37d 1-3
+vllm_omni/distributed/kv_transfer/mooncake/config.py
+  s_3190eb85109e4b::t_ced2f9ef70abb0 1-76
+vllm_omni/distributed/kv_transfer/mooncake/connector.py
+  s_3190eb85109e4b::t_445203c005f02a 1-822
+vllm_omni/distributed/kv_transfer/mooncake/thinker_captures.py
+  s_3190eb85109e4b::t_585bc8d0ef0ffd 1-254
+vllm_omni/engine/arg_utils.py
+  s_3190eb85109e4b::t_c84a2996f4a942 233-263
+vllm_omni/experimental/ar_diffusion/chunk_executor.py
+  s_3190eb85109e4b::t_26f5e0196c1c32 1-61
+vllm_omni/experimental/ar_diffusion/kv_cache/__init__.py
+  s_3190eb85109e4b::t_13b3f2fa8c7316 2,15,48-49
+vllm_omni/experimental/ar_diffusion/kv_cache/lifecycle.py
+  s_3190eb85109e4b::t_e1b0624aedc567 1-50
+vllm_omni/experimental/ar_diffusion/kv_cache/manager.py
+  s_3190eb85109e4b::t_016f0119329244 20,40,55-123,252,417-424,429-437,479-488,490,507,509-510,512,528,874-885,896-899
+vllm_omni/experimental/ar_diffusion/kv_cache/noisy.py
+  s_3190eb85109e4b::t_b52220bd63c31e 7,26,57-66,69-70,452,456,488,530,532-546,566-574,584-585,605,613-616,640-641,650-651,668-671,673,675-677,680-684,693-712,722-724,726-727,736-742,746-748,758-760,768-770,837-846,850,872-873,907,911-920,972-973
+vllm_omni/experimental/ar_diffusion/kv_cache/segmented.py
+  s_3190eb85109e4b::t_a2b102f5e88187 291
+vllm_omni/experimental/ar_diffusion/kv_cache/state.py
+  s_3190eb85109e4b::t_644feb59cb4294 7-8,16,24-33,43,72,93-95,109-137,143-147,191-196,216,312-324,335,341,362,372
+vllm_omni/platforms/npu/worker/npu_omni_v2_model_runner.py
+  s_3190eb85109e4b::t_48a5816cd3a73a 475-481
+vllm_omni/worker_v2/mooncake_capture.py
+  s_3190eb85109e4b::t_95976609892a1d 1-132
+vllm_omni/worker_v2/omni_ar_model_runner.py
+  s_3190eb85109e4b::t_6782b010869303 46,279,384-392,408
+vllm_omni/worker_v2/omni_model_runner.py
+  s_3190eb85109e4b::t_eb313eb032b469 17,551-554
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7d420ec53caa712f37addad5722a9e65d20d1120",
+  "prompts": {},
+  "sessions": {
+    "s_3190eb85109e4b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c5aa-9760-76a3-888f-d1a106b1b03a",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
