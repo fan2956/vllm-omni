@@ -1,0 +1,22 @@
+vllm_omni/diffusion/attention/backends/flash_attn.py
+  s_3190eb85109e4b::t_2d98907ac778b3 1103-1104,1130-1135,1155,1192-1198
+tests/diffusion/attention/test_mindie_runtime.py
+  s_3190eb85109e4b::t_be610b6f2b2035 130-164,274-289
+  s_3190eb85109e4b::t_fe19f8d1543e2b 290-291
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1c92fb0003d03ae50d4f570e05e1ebf145581b7d",
+  "prompts": {},
+  "sessions": {
+    "s_3190eb85109e4b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c5aa-9760-76a3-888f-d1a106b1b03a",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
