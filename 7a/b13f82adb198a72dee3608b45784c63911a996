@@ -1,0 +1,24 @@
+tests/diffusion/test_denoise_graph.py
+  s_3190eb85109e4b::t_6caf7c0b8f44a6 24-30,243-264
+  s_3190eb85109e4b::t_13d8735d1715a7 265-272
+docs/user_guide/diffusion/denoise_graph.md
+  s_3190eb85109e4b::t_8c07f2bcd3f16c 64-68
+vllm_omni/diffusion/graph.py
+  s_3190eb85109e4b::t_8c07f2bcd3f16c 112-113,122-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7ab13f82adb198a72dee3608b45784c63911a996",
+  "prompts": {},
+  "sessions": {
+    "s_3190eb85109e4b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c5aa-9760-76a3-888f-d1a106b1b03a",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
