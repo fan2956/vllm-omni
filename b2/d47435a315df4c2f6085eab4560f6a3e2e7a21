@@ -1,0 +1,31 @@
+tests/diffusion/models/qwen_image_21/test_decode_graph.py
+  s_3190eb85109e4b::t_12128870d8305e 6,143-162
+  s_3190eb85109e4b::t_1bde54193e7320 163-164
+vllm_omni/diffusion/models/qwen_image_21/decode_graph.py
+  s_3190eb85109e4b::t_00dd2968ad8154 246-249
+docs/user_guide/quantization/quantized_kvcache.md
+  s_3190eb85109e4b::t_381e59c87f2fc4 187-190
+docs/user_guide/diffusion/denoise_graph.md
+  s_3190eb85109e4b::t_381e59c87f2fc4 137-140
+tests/diffusion/attention/test_mindie_runtime.py
+  s_3190eb85109e4b::t_12128870d8305e 64-87
+vllm_omni/diffusion/attention/backends/flash_attn.py
+  s_3190eb85109e4b::t_00dd2968ad8154 301-304
+  s_3190eb85109e4b::t_16014e224f4b34 300,305-306
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b2d47435a315df4c2f6085eab4560f6a3e2e7a21",
+  "prompts": {},
+  "sessions": {
+    "s_3190eb85109e4b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c5aa-9760-76a3-888f-d1a106b1b03a",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
