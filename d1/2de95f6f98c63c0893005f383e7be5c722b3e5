@@ -1,0 +1,25 @@
+vllm_omni/diffusion/attention/layer.py
+  s_3190eb85109e4b::t_83e2e87c748cbc 892-898
+docs/design/feature/diffusion_paged_kv_cache.md
+  s_3190eb85109e4b::t_83e2e87c748cbc 320-322
+docs/user_guide/quantization/quantized_kvcache.md
+  s_3190eb85109e4b::t_83e2e87c748cbc 187-191
+tests/diffusion/attention/test_mindie_runtime.py
+  s_3190eb85109e4b::t_2cedd74d0bb550 447-479
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d12de95f6f98c63c0893005f383e7be5c722b3e5",
+  "prompts": {},
+  "sessions": {
+    "s_3190eb85109e4b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c5aa-9760-76a3-888f-d1a106b1b03a",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "fan2956 <zhoufan53@huawei.com>"
+    }
+  }
+}
